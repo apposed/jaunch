@@ -1,0 +1,6 @@
+headers = jni.h
+package = jni
+#headerFilter = JNI/*
+compilerOpts.linux = -I/usr/lib/jvm/default-java/include -I/usr/lib/jvm/default-java/include/linux
+#linkerOpts.osx = -L/opt/local/lib -L/usr/local/opt/curl/lib -lcurl
+#linkerOpts.linux = -L/usr/lib/jvm/default-java/lib/server -ljvm
