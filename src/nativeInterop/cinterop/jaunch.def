@@ -1,0 +1,4 @@
+headers = jaunch/jaunch.h
+package = jaunch
+compilerOpts.linux = -I.
+linkerOpts.linux = -L. -ljaunch -ldl

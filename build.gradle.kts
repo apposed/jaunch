@@ -2,8 +2,8 @@ plugins {
     kotlin("multiplatform") version "1.9.20"
 }
 
-group = "me.curtis"
-version = "1.0-SNAPSHOT"
+group = "org.scijava"
+version = "1.0.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -25,7 +25,7 @@ kotlin {
     nativeTarget.apply {
         compilations.getByName("main") {
             cinterops {
-                val jni by creating
+                val jaunch by creating
             }
         }
         binaries {
