@@ -1,3 +1,5 @@
 #!/bin/sh
-gcc -shared -Wl,--no-as-needed -I/usr/lib/jvm/default-java/include -I/usr/lib/jvm/default-java/include/linux -fPIC -fno-stack-protector jaunch/jaunch.c -o libjaunch.so -ldl
+jdkdir=$JAVA_HOME
+test -d "$jdkdir" || jdkdir=$(update-java-alternatives -l | head -n1 | sed 's/.* //')
+gcc -shared -Wl,--no-as-needed -I"$jdkdir/include" -I"$jdkdir"/include/linux -fPIC -fno-stack-protector jaunch/jaunch.c -o libjaunch.so -ldl
 gcc -I./jaunch -L. -fPIC -fno-stack-protector jaunch/fiji.c -o launch-fiji -ljaunch
