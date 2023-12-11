@@ -36,7 +36,7 @@ int launch_java(const char *libjvm_path, const int jvm_argc, const char *jvm_arg
 	printf("POPULATING VM OPTIONS\n");
 	JavaVMOption vmOptions[jvm_argc + 1];
 	for (i = 0; i < jvm_argc; i++) {
-		vmOptions[i].optionString = jvm_argv[i];
+		vmOptions[i].optionString = (char *)jvm_argv[i];
 	}
 	vmOptions[jvm_argc].optionString = NULL;
 
