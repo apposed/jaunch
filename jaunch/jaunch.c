@@ -1,3 +1,24 @@
+/*
+ * A minimal but general-purpose C program to launch Java in the same process.
+ *
+ * It has two functions:
+ *
+ * launch_jvm:
+ *   1. path to libjvm
+ *   2. argc + argv for the jvm
+ *   3. main class to run
+ *   4. argc + argv for the main invocation
+ * And it actually loads that libjvm and invokes the main function with those parameters.
+ *
+ * config_and_launch:
+ *	 1. path to configurator executable
+ *	 2. argc + argv to pass to the configurator
+ * And it invokes that configurator executable with those arguments in its own process,
+ * and waits for the process to complete. The configurator produces output suitable for
+ * passing to the `launch_jvm` function above. and then calls the low-level function with the
+ * outputs.
+ */
+
 #include <stdio.h>
 #include <dlfcn.h>
 
@@ -9,7 +30,7 @@
 #define ERROR_FIND_CLASS 4
 #define ERROR_GET_STATIC_METHOD_ID 5
 
-int launch_java(const char *libjvm_path, const int jvm_argc, const char *jvm_argv[],
+int launch_jvm(const char *libjvm_path, const int jvm_argc, const char *jvm_argv[],
 	const char *main_class_name, const int main_argc, const char *main_argv[])
 {
 	int i;
@@ -100,4 +121,8 @@ int launch_java(const char *libjvm_path, const int jvm_argc, const char *jvm_arg
 	printf("CLOSING LIBJVM\n");
 	dlclose(jvm_library);
 	printf("GOODBYE\n");
+}
+
+int main(const int argc, const char *argv[]) {
+	return 0;
 }
