@@ -268,7 +268,7 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 }
 
 int main(const int argc, const char *argv[]) {
-	const char *command = "fiji/configure-jvm";
+	const char *command = "./configure-jvm";
 
 	char **outputLines;
 	size_t numOutput;

@@ -1,3 +1,6 @@
+/jaunch
+/configure-jvm
+
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar

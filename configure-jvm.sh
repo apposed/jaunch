@@ -6,6 +6,8 @@ test -d "$jdkdir" || {
   >&2 echo "No Java installation found."
 }
 
+libjvmPath=$(find -L "$jdkdir" -name libjvm.so | head -n1)
+
 fijidir=$FIJI_HOME
 test -d "$fijidir" || fijidir=$HOME/Applications/Fiji.app
 test -d "$jdkdir" || {
@@ -17,7 +19,7 @@ classpath=$(find "$fijidir/jars" "$fijidir/plugins" -name "*.jar" | tr '\n' ':')
 kbMemAvailable=$(cat /proc/meminfo | grep 'MemAvailable' | head -n1 | sed 's/[^0-9]//g')
 mbToUse=$(echo "3 * $kbMemAvailable / 4 / 1024" | bc)
 
-echo "$jdkdir/lib/server/libjvm.so"
+echo "$libjvmPath"
 echo 5
 echo "-Xmx${mbToUse}m"
 echo "--add-opens=java.base/java.lang=ALL-UNNAMED"

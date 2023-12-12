@@ -5,4 +5,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "java-launcher"
+rootProject.name = "jaunch"
