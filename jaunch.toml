@@ -1,0 +1,99 @@
+[launch]
+
+# The launch section configures how Jaunch will launch the JVM.
+
+# Path to splash screen image to show, if desired.
+splash-image = "images/icon-flat.png"
+
+# Runtime classpath elements to pass to Java.
+classpath = [
+    "jars/*",
+    "jars/bio-formats/*",
+    "plugins/*",
+]
+
+[java-search]
+
+# This section configures how Jaunch will discover Java installations.
+
+# Acceptable range of Java versions to match.
+version-min = 8
+#version-max = 21
+
+win.root-paths = [
+    "C:\Program Files\Java",
+    "C:\Program Files (x86)\Java",
+    "~/scoop/Apps/..."              # TODO: Scoop
+]
+
+# Additional paths to check on macOS systems.
+macosx.root-paths = [
+    "/Library/Java/JavaVirtualMachines",         # Java 8+
+    "/System/Library/Java/JavaVirtualMachines",  # Apple Java 6
+    "/usr/local/...",                            # TODO: Homebrew
+]
+
+# Additional paths to check on Linux systems.
+linux.root-paths = [
+    "/usr/lib/jvm",               # package manager
+    "~/.sdkman/candidates/java",  # sdkman.io
+    "~/.cache/cjdk/v*/jdks/*",    # github.com/cachedjdk/cjdk
+    "~/.jdk",                     # github.com/jyksnw/install-jdk
+    "~/.jre",                     # github.com/jyksnw/install-jdk
+]
+
+# Additional paths to check on all systems.
+root-paths = [
+    "$CONDA_PREFIX/pkgs/openjdk*/lib/jvm",  # openjdk 9+
+    "$CONDA_PREFIX/pkgs/openjdk*",          # openjdk 8
+]
+
+# And then there are programmatic ways to glean the Java installations,
+# depending on operating system:
+#
+# - Windows: look for registry keys
+# - macOS: /usr/libexec/java_home -V
+# - Linux: /usr/sbin/update-java-alternatives -l
+#
+# TODO: Invent schema elements to support programmatic detection approaches.
+
+# Any of the following can be bare, or nested in another JDK root folder.
+# No assumption is made about the naming scheme of such a JDK root folder,
+# because not all distros are predictably named. Examples:
+#
+# macosx  JBRSDK 8u252          : jdk/Contents/Home/jre/lib/jli/libjli.dylib
+# linux64 JBRSDK 11.0.6-b520.66 : jbrsdk/lib/server/libjvm.so
+# linux64 JBRSDK 11.0.8         : jbrsdk_11.0.8_x64/jbr/lib/server/libjvm.so
+
+# The nested jre/ is only present for OpenJDK 8, nothing after.
+# But one wrinkle: on macOS, some distros *also* have a libjli.dylib
+# in Contents/MacOS in addition to its other location. And the two
+# are *not* binary identical. Testing is needed to determine if
+# there's any difference in behavior based on which one gets linked.
+
+libjvm-suffixes = []
+
+# Paths to search on macOS systems.
+macos.libjvm-suffixes = [
+    "Contents/Home/jre/lib/jli/libjli.dylib",  # Java 8
+    "Contents/Home/lib/jli/libjli.dylib",      # Java 9-11
+    "Contents/Home/lib/libjli.dylib",          # Java 12+
+    #"Contents/MacOS/libjli.dylib",             # some distros Java 8+
+    "Contents/Libraries/libjli.jnilib",        # Apple Java 6
+]
+
+# Paths to search on Windows systems.
+win.libjvm-suffixes = [
+    "bin/server/jvm.dll",      # Java 9+
+    "bin/client/jvm.dll",      # Java 9+
+    "jre/bin/server/jvm.dll",  # Java 8
+    "jre/bin/client/jvm.dll",  # Java 8
+]
+
+# Paths to search on Linux systems.
+linux.libjvm-suffixes = [
+    "lib/server/libjvm.so",            # Java 9+
+    "jre/lib/amd64/server/libjvm.so",  # Java 8 (64-bit)
+    "jre/lib/i386/server/libjvm.so",   # Java 8 (32-bit)
+    "jbr/lib/server/libjvm.so",        # jbrsdk_11.0.8_x64
+]

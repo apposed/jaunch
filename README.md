@@ -18,6 +18,15 @@ Jaunch: launch Java the right way!
   * Be a good citizen of our native environment.
   * Integrate properly with application docks, system trays, taskbars, and other icon-oriented thingamajigs.
 
+## Building
+
+```shell
+./compile.sh
+./jaunch
+```
+
+Linux only for the moment, but targeting Windows and macOS is also a near-term goal.
+
 ## Alternatives
 
 As so often in technology, there are so many. And yet nothing that does what this program does!
