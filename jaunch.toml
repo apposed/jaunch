@@ -1,51 +1,211 @@
 [launch]
-
 # The launch section configures how Jaunch will launch the JVM.
 
 # Path to splash screen image to show, if desired.
-splash-image = "images/icon-flat.png"
+splash-image = 'images/icon-flat.png'
 
 # Runtime classpath elements to pass to Java.
 classpath = [
-    "jars/*",
-    "jars/bio-formats/*",
-    "plugins/*",
+    'jars/*',
+    'jars/bio-formats/*',
+    'plugins/*',
 ]
 
-[java-search]
+# Maximum amount of memory for the Java heap to consume. Examples:
+# - For 1567 MB: "1567m"
+# - For 48 GB: "48g"
+# - For 75% of available RAM: "75%"
+# - For 3 GB less than available RAM: "-3g"
+# These will be translated into an appropriate "-Xmx..." argument.
 
-# This section configures how Jaunch will discover Java installations.
+max-heap = '75%'
+
+# Q: How to specify flags that should only be used for certain Java version ranges? Certain OSes?
+
+flags = [
+    # acardona: "When running in a machine with many CPU cores (like 64, or 256) and
+    # lots of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
+    # I find that the concurrent garbage collector (G1 GC) works *a lot* better."
+    '-XX:+G1GC',
+
+    # Necessary for Java 17, for ij1-patcher to work.
+    '--add-opens=java.base/java.lang=ALL-UNNAMED',
+    '--add-opens=java.base/java.util=ALL-UNNAMED',  # Why?
+    '--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # Why?
+    '--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # Linux only; what about Wayland?
+    '--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
+
+    '-Dpython.cachedir.skip=true',  # Make Jython behave better.
+    '-Dplugins.dir=${ijDirPath}',  # ImageJ cares about this property.
+    '-Dimagej.splash=true',
+
+    # TODO: How can we support the --full-classpath mode via only configuration,
+    # without customizing the jaunch Kotlin program?
+    '-Djava.class.path=${launcherJar.getAbsolutePath}',
+
+    '-Dimagej.dir=${ijDirPath}',
+    '-Dij.dir=${ijDirPath}',
+    '-Dfiji.dir=${ijDirPath}',
+
+    # These will become `fiji.exe`, `fiji`, `Contents/MacOS/fiji`
+    '-Dfiji.executable=${ijDirPath}/ImageJ-${systemType}.exe',
+    '-Dij.executable=${ijDirPath}/ImageJ-${systemType}.exe',
+
+    '-Djava.library.path=${ijDirPath}/lib/$systemType;${ijDirPath}/mm/${systemType}',
+
+    '-Dscijava.context.strict=false',  # Make SciJava startup less brittle.
+    '-Dpython.console.encoding=UTF-8',  # TODO: What is this for?
+
+    'net.imagej.launcher.ClassLauncher',
+    '-ijjarpath', 'jars',
+    '-ijjarpath', 'plugins',
+    'net.imagej.Main',
+]
+
+# Usage: ./ImageJ-linux64 [<Java options>.. --] [<ImageJ options>..] [<files>..]
+
+# ImageJ launcher 6.0.3-SNAPSHOT (build 47befcbd)
+# Java options are passed to the Java Runtime, ImageJ
+# options to ImageJ (or Jython, JRuby, ...).
+
+# In addition, the following options are supported by ImageJ:
+# General options:
+# --help, -h
+#                     show this help
+# --dry-run
+#                     show the command line, but do not run anything
+# --info
+#                     informational output
+# --debug
+#                     verbose output
+# --system
+#                     do not try to run bundled Java
+# --java-home <path>
+#                     specify JAVA_HOME explicitly
+# --print-java-home
+#                     print ImageJ's idea of JAVA_HOME
+# --print-ij-dir
+#                     print where ImageJ thinks it is located
+# --headless
+#                     run in text mode
+# --ij-dir <path>
+#                     set the ImageJ directory to <path> (used to find
+#                     jars/, plugins/ and macros/)
+# --heap, --mem, --memory <amount>
+#                     set Java's heap size to <amount> (e.g. 512M)
+# --class-path, --classpath, -classpath, --cp, -cp <path>
+#                     append <path> to the class path
+# --jar-path, --jarpath, -jarpath <path>
+#                     append .jar files in <path> to the class path
+# --pass-classpath
+#                     pass -classpath <classpath> to the main() method
+# --full-classpath
+#                     call the main class with the full ImageJ class path
+# --dont-patch-ij1
+#                     do not try to runtime-patch ImageJ1
+# --ext <path>
+#                     set Java's extension directory to <path>
+# --default-gc
+#                     do not use advanced garbage collector settings by default
+#                     (-Xincgc -XX:PermSize=128m)
+# --gc-g1
+#                     use the G1 garbage collector
+# --debug-gc
+#                     show debug info about the garbage collector on stderr
+# --debugger=<port>[,suspend]
+#                     start the JVM in a mode so Eclipse's debugger can attach to it
+# --no-splash
+#                     suppress showing a splash screen upon startup
+
+# Options for ImageJ:
+# --ij2
+#                     start ImageJ2 instead of ImageJ1
+# --ij1
+#                     start ImageJ1
+# --allow-multiple
+#                     do not reuse existing ImageJ instance
+# --plugins <dir>
+#                     use <dir> to discover plugins
+# --run <plugin> [<arg>]
+#                     run <plugin> in ImageJ, optionally with arguments
+# --compile-and-run <path-to-.java-file>
+#                     compile and run <plugin> in ImageJ
+# --edit [<file>...]
+#                     edit the given file in the script editor
+
+# Options to run programs other than ImageJ:
+# --update
+#                     start the command-line version of the ImageJ updater
+# --main-class <class name>
+#                     start the given class instead of ImageJ
+#                     (this is the default when called with a file ending in .class)
+
+# --------------------------
+
+[java-search]
+# The java-search section defines where Jaunch will discover Java installations.
 
 # Acceptable range of Java versions to match.
 version-min = 8
 #version-max = 21
 
-win.root-paths = [
-    "C:\Program Files\Java",
-    "C:\Program Files (x86)\Java",
-    "~/scoop/Apps/..."              # TODO: Scoop
-]
-
-# Additional paths to check on macOS systems.
-macosx.root-paths = [
-    "/Library/Java/JavaVirtualMachines",         # Java 8+
-    "/System/Library/Java/JavaVirtualMachines",  # Apple Java 6
-    "/usr/local/...",                            # TODO: Homebrew
-]
-
-# Additional paths to check on Linux systems.
-linux.root-paths = [
-    "/usr/lib/jvm",               # package manager
-    "~/.sdkman/candidates/java",  # sdkman.io
-    "~/.cache/cjdk/v*/jdks/*",    # github.com/cachedjdk/cjdk
-    "~/.jdk",                     # github.com/jyksnw/install-jdk
-    "~/.jre",                     # github.com/jyksnw/install-jdk
-]
-
-# Additional paths to check on all systems.
+# Paths to check on all systems.
 root-paths = [
-    "$CONDA_PREFIX/pkgs/openjdk*/lib/jvm",  # openjdk 9+
-    "$CONDA_PREFIX/pkgs/openjdk*",          # openjdk 8
+    '$JAVA_HOME',
+    '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',  # openjdk 9+
+    '$CONDA_PREFIX/pkgs/openjdk*',          # openjdk 8
+]
+
+# Additional paths to check on 32-bit Windows systems.
+# TODO: Should we even support this? Does Kotlin Native?
+win32.root-paths = [
+    'java/win32',
+    'C:/Program Files (x86)/Java',
+]
+
+# Additional paths to check on 64-bit Windows systems.
+win64.root-paths = [
+    'java/win64',
+    'C:/Program Files/Java',
+]
+
+# Additional paths to check on all Windows systems.
+win.root-paths = [
+    '~/scoop/Apps/...',    # TODO: Scoop
+]
+
+# Additional paths to check on ARM macOS systems (M1, M2, etc.).
+macosx-arm64.root-paths = [
+    'java/macosx-arm64',
+]
+
+# Additional paths to check on all macOS systems.
+macosx.root-paths = [
+    'java/macosx',
+    '/Library/Java/JavaVirtualMachines',         # Java 8+
+    '/System/Library/Java/JavaVirtualMachines',  # Apple Java 6
+    '/usr/local/...',                            # TODO: Homebrew
+]
+
+# Additional paths to check on 32-bit Linux systems.
+# TODO: Should we even support this? Does Kotlin Native?
+linux32.root-paths = [
+    'java/linux32',
+    'java/linux',
+]
+
+# Additional paths to check on 64-bit Linux systems.
+linux64.root-paths = [
+    'java/linux64',
+]
+
+# Additional paths to check on all Linux systems.
+linux.root-paths = [
+    '/usr/lib/jvm',               # package manager
+    '~/.sdkman/candidates/java',  # sdkman.io
+    '~/.cache/cjdk/v*/jdks/*',    # github.com/cachedjdk/cjdk
+    '~/.jdk',                     # github.com/jyksnw/install-jdk
+    '~/.jre',                     # github.com/jyksnw/install-jdk
 ]
 
 # And then there are programmatic ways to glean the Java installations,
@@ -75,25 +235,25 @@ libjvm-suffixes = []
 
 # Paths to search on macOS systems.
 macos.libjvm-suffixes = [
-    "Contents/Home/jre/lib/jli/libjli.dylib",  # Java 8
-    "Contents/Home/lib/jli/libjli.dylib",      # Java 9-11
-    "Contents/Home/lib/libjli.dylib",          # Java 12+
-    #"Contents/MacOS/libjli.dylib",             # some distros Java 8+
-    "Contents/Libraries/libjli.jnilib",        # Apple Java 6
+    'Contents/Home/jre/lib/jli/libjli.dylib',  # Java 8
+    'Contents/Home/lib/jli/libjli.dylib',      # Java 9-11
+    'Contents/Home/lib/libjli.dylib',          # Java 12+
+    #'Contents/MacOS/libjli.dylib',             # some distros Java 8+
+    'Contents/Libraries/libjli.jnilib',        # Apple Java 6
 ]
 
 # Paths to search on Windows systems.
 win.libjvm-suffixes = [
-    "bin/server/jvm.dll",      # Java 9+
-    "bin/client/jvm.dll",      # Java 9+
-    "jre/bin/server/jvm.dll",  # Java 8
-    "jre/bin/client/jvm.dll",  # Java 8
+    'bin/server/jvm.dll',      # Java 9+
+    'bin/client/jvm.dll',      # Java 9+
+    'jre/bin/server/jvm.dll',  # Java 8
+    'jre/bin/client/jvm.dll',  # Java 8
 ]
 
 # Paths to search on Linux systems.
 linux.libjvm-suffixes = [
-    "lib/server/libjvm.so",            # Java 9+
-    "jre/lib/amd64/server/libjvm.so",  # Java 8 (64-bit)
-    "jre/lib/i386/server/libjvm.so",   # Java 8 (32-bit)
-    "jbr/lib/server/libjvm.so",        # jbrsdk_11.0.8_x64
+    'lib/server/libjvm.so',            # Java 9+
+    'jre/lib/amd64/server/libjvm.so',  # Java 8 (64-bit)
+    'jre/lib/i386/server/libjvm.so',   # Java 8 (32-bit)
+    'jbr/lib/server/libjvm.so',        # jbrsdk_11.0.8_x64
 ]
