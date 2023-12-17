@@ -22,13 +22,22 @@ max-heap = '75%'
 
 # Q: How to specify flags that should only be used for certain Java version ranges? Certain OSes?
 
+# IDEA: Layer the jaunch.toml with fiji.toml. The fiji.toml will be used when fiji.exe is used,
+# layered on top of the base jaunch.toml, which is always read with any launcher.
+# In this way, we can have a Fiji-agnostic jaunch.toml, which is rarely modified, and a more
+# frequently customized fiji.toml.
+# But... to make the updater happy, we may also need a fiji-default.toml, so that users can
+# edit their fiji.toml without the updater seeing it as locally modified, and so that fiji.toml
+# has a template to start from initially.
+
 flags = [
-    # acardona: "When running in a machine with many CPU cores (like 64, or 256) and
-    # lots of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
-    # I find that the concurrent garbage collector (G1 GC) works *a lot* better."
+    # In https://forum.image.sc/t/88620, acardona wrote:
+    # > When running in a machine with many CPU cores (like 64, or 256) and lots
+    # > of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
+    # > I find that the concurrent garbage collector (G1 GC) works *a lot better*.
     '-XX:+G1GC',
 
-    # Necessary for Java 17, for ij1-patcher to work.
+    # Necessary for ij1-patcher to work properly with Java 17+.
     '--add-opens=java.base/java.lang=ALL-UNNAMED',
     '--add-opens=java.base/java.util=ALL-UNNAMED',  # Why?
     '--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # Why?

@@ -1,3 +1,7 @@
+import com.akuleshov7.ktoml.TomlInputConfig
+import com.akuleshov7.ktoml.file.TomlFileReader
+import kotlinx.serialization.serializer
+
 /*
 == DESIGN GOALS ==
 
@@ -30,6 +34,13 @@ This can be done in general by having a hardcoded list of directories in the def
 ... more to come ...
 */
 fun main(args: Array<String>) {
+    val config = TomlFileReader(
+        inputConfig = TomlInputConfig(
+            ignoreUnknownNames = true,
+        )
+    ).decodeFromFile<Config>(serializer(), "jaunch.toml")
+    println(config)
+
     val jdkDir = getenv("JAVA_HOME")
 
     if (jdkDir == null || !File(jdkDir).isDirectory) {
