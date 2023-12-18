@@ -4,14 +4,16 @@ jdkdir=$JAVA_HOME
 test -d "$jdkdir" || jdkdir=$(update-java-alternatives -l | head -n1 | sed 's/.* //')
 test -d "$jdkdir" || {
   >&2 echo "No Java installation found."
+  exit 1
 }
 
 libjvmPath=$(find -L "$jdkdir" -name libjvm.so | head -n1)
 
 fijidir=$FIJI_HOME
 test -d "$fijidir" || fijidir=$HOME/Applications/Fiji.app
-test -d "$jdkdir" || {
+test -d "$fijidir" || {
   >&2 echo "No Fiji installation found."
+  exit 2
 }
 
 classpath=$(find "$fijidir/jars" "$fijidir/plugins" -name "*.jar" | tr '\n' ':')
