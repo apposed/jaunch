@@ -2,15 +2,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Suppress("ArrayInDataClass")
 data class Config (
-    val launch: Launch,
-    @SerialName("java-search")
-    val javaSearch: JavaSearch,
-)
-
-/** The launch section configures how Jaunch will launch the JVM. */
-@Serializable
-data class Launch (
 
     /** Path to splash screen image to show, if desired. */
     @SerialName("splash-image")
@@ -32,13 +25,9 @@ data class Launch (
     @SerialName("max-heap")
     val maxHeap: String? = "75%",
 
-    /** Additional flags to pass to the JVM at launch. */
-    val flags: Array<String>,
-)
-
-/** The java-search section defines where Jaunch will discover Java installations. */
-@Serializable
-data class JavaSearch (
+    /** TODO */
+    @SerialName("jaunch-options")
+    val jaunchOptions: Array<String>,
 
     /** Minimum acceptable Java version to match. */
     @SerialName("version-min")
@@ -53,6 +42,8 @@ data class JavaSearch (
     val rootPaths: Array<String> = emptyArray(),
 
     /**
+     * TODO
+     *
      * Any of the following can be bare, or nested in another JDK root folder.
      * No assumption is made about the naming scheme of such a JDK root folder,
      * because not all distros are predictably named. Examples:
@@ -69,4 +60,22 @@ data class JavaSearch (
      */
     @SerialName("libjvm-suffixes")
     val libjvmSuffixes: Array<String> = emptyArray(),
+
+    /** TODO */
+    val modes: Array<String>,
+
+    /** TODO */
+    val directives: Array<String>,
+
+    /** Additional flags to pass to the JVM at launch. */
+    @SerialName("jvm-args")
+    val jvmArgs: Array<String>,
+
+    /** TODO */
+    @SerialName("main-class")
+    val mainClass: String,
+
+    /** TODO */
+    @SerialName("main-args")
+    val mainArgs: Array<String>,
 )

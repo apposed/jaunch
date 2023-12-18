@@ -1,4 +1,4 @@
-Jaunch: launch Java the right way!
+*Jaunch: Launch Java **Your** Way!™*
 
 * Native launcher that integrates well into its natural environment.
   * Windows EXE
@@ -17,6 +17,36 @@ Jaunch: launch Java the right way!
 * Run Java in the same process as the launcher.
   * Be a good citizen of our native environment.
   * Integrate properly with application docks, system trays, taskbars, and other icon-oriented thingamajigs.
+
+## Design Goals
+
+Support for launching *your* JVM-based application.
+- jaunch.exe is the Kotlin program. It does not need to be modified.
+- The native launcher (built from jaunch.c) should be named whatever you want. E.g. fiji.exe.
+- fiji.toml is the configuration that jaunch.exe uses to decide how to behave.
+  - When fiji.exe invokes jaunch.exe, it passes `fiji` (can I do this from cross-platform C?) to jaunch.exe.
+- In this way, there can be multiple different launchers that all lean on the same jaunch.exe.
+  - (Or, if this turns out to be "hard", we can just have jaunch.toml.)
+
+Discover available Javas from:
+- Subfolders of the application (i.e. bundled Java).
+- Known OS-specific system installation locations.
+  - /usr/libexec/java_home (macOS)
+  - /usr/lib/update-java-alternatives (Linux)
+  - Windows registry?
+- Known tool-specific installation locations.
+  - sdkman
+  - install-jdk
+  - cjdk
+  - conda (base only?)
+  - brew
+  - scoop
+    This can be done in general by having a hardcoded list of directories in the default CFG content.
+- Q: Should the directory list be platform-specific?
+  - A: Probably want to have common dirs list, plus additions per platform.
+    Can make each platform its own section with the same schema as the base one.
+
+.. more to come ...
 
 ## Building
 
