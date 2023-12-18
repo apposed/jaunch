@@ -1,6 +1,3 @@
-[launch]
-# The launch section configures how Jaunch will launch the JVM.
-
 # Path to splash screen image to show, if desired.
 splash-image = 'images/icon-flat.png'
 
@@ -9,7 +6,7 @@ classpath = [
     '--full-classpath|jars/*.jar',
     '--full-classpath|jars/bio-formats/*.jar',
     '--full-classpath|plugins/*.jar',
-    '!--full-classpath|jars/imagej-launcher*.jar',  # TODO: Figure out best syntax here and make it work.
+    '!--full-classpath|jars/imagej-launcher*.jar',
 ]
 
 # Maximum amount of memory for the Java heap to consume. Examples:
@@ -20,8 +17,6 @@ classpath = [
 # These will be translated into an appropriate "-Xmx..." argument.
 
 max-heap = '75%'
-
-# Q: How to specify flags that should only be used for certain Java version ranges? Certain OSes?
 
 # IDEA: Layer the jaunch.toml with fiji.toml. The fiji.toml will be used when fiji.exe is used,
 # layered on top of the base jaunch.toml, which is always read with any launcher.
@@ -37,7 +32,6 @@ max-heap = '75%'
 # - specific architecture and/or bitness
 # - specific Java version range -- e.g. GC flags that only work for some versions
 #   - java8 = Only Java 8
-#   - java9-11 = Java 9, Java 10, Java 11
 #   - java9+ = Java 9 or later
 # - specific Java vendors?
 #   - zulu* =
@@ -55,7 +49,6 @@ max-heap = '75%'
 #
 # We can also support conditional flags.
 # Typically, each flag on the CLI takes some number of additional parameters after it, maybe 0.
-# We can write the Kotlin code to parse them into a nice key/value store (TODO: what about repeated keys?).
 # - If it takes zero parameters, its value becomes a boolean.
 # - We can say "--foo bar" and we'll get "foo=bar" in the table.
 # - We can say "--foo=bar" and same.
@@ -89,15 +82,15 @@ jaunch-options = [
     '--jar-path,--jarpath,-jarpath=<path>|append .jar files in <path> to the class path',
     '--pass-classpath=<classpath>|pass -classpath <classpath> to the main() method',
     '--full-classpath|call the main class with the full ImageJ class path',
-    '--dont-patch-ij1|do not try to runtime-patch ImageJ1',
-    "--ext=<path>|set Java's extension directory to <path>",  # TODO: This is no longer a thing in later versions of Java.
-    "--default-gc|do not use advanced garbage collector settings by default\n(-XX:+G1GC)",  # TODO: This changed.
+    "--ext=<path>|set Java's extension directory to <path>",  # TODO: This is no longer a thing in later versions of Java. And the current launcher crashes when this option is used.
+    "--default-gc|do not use advanced garbage collector settings by default\n(-XX:+G1GC)",
     '--gc-g1|use the G1 garbage collector',  # TODO: Did this change?
     '--debug-gc|show debug info about the garbage collector on stderr',
     "--debugger=<port>[,suspend]|start the JVM in a mode so an IDE's debugger can attach to it",
     '--no-splash|suppress showing a splash screen upon startup',
 
-    # Fiji-specific
+    # ImageJ/Fiji-specific
+    '--dont-patch-ij1|do not try to runtime-patch ImageJ1 (implies --ij1)',
     '--ij2|start ImageJ2 instead of ImageJ1',
     '--ij1|start ImageJ1',
     '--allow-multiple|do not reuse existing ImageJ instance',
@@ -111,6 +104,68 @@ jaunch-options = [
     "--main-class=<class name>|start the given class instead of ImageJ\n(this is the default when called with a file ending in .class)",
 ]
 
+# Options that override Jaunch's usual behavior of launching Java.
+# Each of these runs a different directive other than launch.
+# The previous launcher's behavior was that as soon as one of these directives
+# is encountered, it *happens immediately and other flags are ignored*.
+# Except for dry-run... that one does not short-circuit terminate arg parsing...
+# TODO: Finalize the architecture for handling these cases.
+directives = [
+  "--help|help",
+  "-h|help",
+  "--dry-run|dry-run",
+  "--print-java-home|print-java-home",
+  "--print-app-dir|print-app-dir",  # ImageJ/Fiji-specific flavor.
+  "--print-ij-dir|print-app-dir",  # ImageJ/Fiji-specific flavor.
+]
+
+# TODO: Should we just call them "hints" rather than "modes" here?
+# A mode is an activation criterion that gets manually enabled
+# by the presence of options. Most modes are false by default,
+# but there are some special ones that get enabled based on environment:
+# - Java:
+#   - `java8` - If Java 8 is selected.
+#   - `java9` - If Java 9 is selected.
+#   - etc.
+# - Windows:
+#   - `win64` - For 64-bit Windows OS.
+#   - `win32` - For 32-bit Windows OS.
+# - MacOS:
+#   - `macosx` - For x86_64 macOS.
+#   - `macosx-arm64` - For ARM (M1, M2, etc.) macOS.
+# - Linux:
+#   - `linux32` - For 32-bit Linux.
+#   - `linux64` - For 64-bit Linux.
+#
+# Options of the form `--foo` set a corresponding mode `--foo`.
+#
+# Options of the form `--foo=bar` set a corresponding mode `--foo`
+# and a variable `${foo}` with the value `bar` (see "Variables" below).
+# (Such options may alternately be written `--foo bar` as two arguments.)
+# 
+# Modes are used as hints for activating arguments to the JVM and main class.
+modes = [
+  "--dont-patch-ij1|ij1-mode",
+  "--ij1|ij1-mode",
+  "--ij2|!ij1-mode",
+]
+
+# TODO: How to know java version and vendor? We need to discern
+# them from the Java installation as inexpensively as possibly.
+# Potential strategies:
+# - Parse the directory name.
+#   - Fast but fragile.
+# - Look inside the <dir>/release file for IMPLEMENTOR and JAVA_VERSION.
+#   - Some flavors (JBRSDK 8, Corretto 8) may be missing this file.
+#   - Some flavors (JBRSDK 8, macOS Adopt 8, macOS Zulu 8) do not have IMPLEMENTOR.
+#   - And some other flavors (JBRSDK 11, macOS Adopt 9) put "N/A" for IMPLEMENTOR.
+#   - Can also look at OS_ARCH and OS_NAME if we want to glean those things.
+#     All release files I possess appear to include these two lines.
+# - Call `java SysProps` to run a class to print System.getProperties() to stdout.
+#   - Slow but reliable.
+#   - Ideally would avoid doing this if we already know the os/arch is wrong.
+# - After succeeding at identifying a Java installation, we can cache the results.
+
 # Arguments to pass to the JVM.
 jvm-args = [
     # In https://forum.image.sc/t/88620, acardona wrote:
@@ -118,6 +173,25 @@ jvm-args = [
     # > of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
     # > I find that the concurrent garbage collector (G1 GC) works *a lot better*.
     '!--default-gc|-XX:+G1GC',
+
+    # TODO: How to handle `-Dfoo=bar`?
+
+    # Handle --gc-g1 option.
+    '--gc-g1|-XX:+UseCompressedOops',
+    '--gc-g1|-XX:+UnlockExperimentalVMOptions',
+    '--gc-g1|-XX:+UseG1GC',
+    '--gc-g1|-XX:NewRatio=5',
+
+    # Handle --heap / --mem / --memory option.
+    '--heap|-Xmx${heap}',
+    '--mem|-Xmx${mem}',
+    '--memory|-Xmx${memory}',
+
+    # Handle --dont-patch-ij1 option.
+    '--dont-patch-ij1|-Dpatch.ij1=false',
+
+    # Handle ij1 mode.
+    'ij1-mode|-Dsun.java.command=ImageJ',
 
     # Supported since Jigsaw was introduced in Java 9.
     # Necessary for ij1-patcher to work properly with Java 17+.
@@ -131,16 +205,16 @@ jvm-args = [
     '-Dplugins.dir=${ijDirPath}',  # ImageJ cares about this property.
     '-Dimagej.splash=true',
 
-    # TODO: How can we support the --full-classpath mode via only configuration, without customizing the Kotlin program?
-    '-Djava.class.path=${launcherJar.getAbsolutePath}',
-
-    '-Dimagej.dir=${ijDirPath}',
-    '-Dij.dir=${ijDirPath}',
-    '-Dfiji.dir=${ijDirPath}',
+    # TODO: Make this work better with aliases.
+    # And consider using ${cwd} instead of ${app-dir} as the canonical name.
+    '-Dimagej.dir=${app-dir}',
+    '-Dij.dir=${app-dir}',
+    '-Dfiji.dir=${app-dir}',
 
     # These will become `fiji.exe`, `fiji`, `Contents/MacOS/fiji`
-    '-Dfiji.executable=${ijDirPath}/ImageJ-${systemType}.exe',
-    '-Dij.executable=${ijDirPath}/ImageJ-${systemType}.exe',
+    '-Dapp.executable=${ijDirPath}/fiji-${systemType}.exe',
+    '-Dfiji.executable=${ijDirPath}/fiji-${systemType}.exe',
+    '-Dij.executable=${ijDirPath}/fiji-${systemType}.exe',
 
     '-Djava.library.path=${ijDirPath}/lib/$systemType;${ijDirPath}/mm/${systemType}',
 
@@ -151,94 +225,13 @@ jvm-args = [
 main-class = 'net.imagej.launcher.ClassLauncher'
 
 main-args = [
-    '-ijjarpath', 'jars',
-    '-ijjarpath', 'plugins',
-    'net.imagej.Main',
+    '!ij1-mode|-ijjarpath', 'jars',
+    '!ij1-mode|-ijjarpath', 'plugins',
+    '!ij1-mode|net.imagej.Main',
+    'ij1-mode|-classpath',
+    'ij1-mode|jars/ij-*.jar',
+    'ij1-mode|ij.ImageJ',
 ]
-
-
-# Usage: ./ImageJ-linux64 [<Java options>.. --] [<ImageJ options>..] [<files>..]
-
-# ImageJ launcher 6.0.3-SNAPSHOT (build 47befcbd)
-# Java options are passed to the Java Runtime, ImageJ
-# options to ImageJ (or Jython, JRuby, ...).
-
-# In addition, the following options are supported by ImageJ:
-# General options:
-# --help, -h
-#                     show this help
-# --dry-run
-#                     show the command line, but do not run anything
-# --info
-#                     informational output
-# --debug
-#                     verbose output
-# --system
-#                     do not try to run bundled Java
-# --java-home <path>
-#                     specify JAVA_HOME explicitly
-# --print-java-home
-#                     print ImageJ's idea of JAVA_HOME
-# --print-ij-dir
-#                     print where ImageJ thinks it is located
-# --headless
-#                     run in text mode
-# --ij-dir <path>
-#                     set the ImageJ directory to <path> (used to find
-#                     jars/, plugins/ and macros/)
-# --heap, --mem, --memory <amount>
-#                     set Java's heap size to <amount> (e.g. 512M)
-# --class-path, --classpath, -classpath, --cp, -cp <path>
-#                     append <path> to the class path
-# --jar-path, --jarpath, -jarpath <path>
-#                     append .jar files in <path> to the class path
-# --pass-classpath
-#                     pass -classpath <classpath> to the main() method
-# --full-classpath
-#                     call the main class with the full ImageJ class path
-# --dont-patch-ij1
-#                     do not try to runtime-patch ImageJ1
-# --ext <path>
-#                     set Java's extension directory to <path>
-# --default-gc
-#                     do not use advanced garbage collector settings by default
-#                     (-Xincgc -XX:PermSize=128m)
-# --gc-g1
-#                     use the G1 garbage collector
-# --debug-gc
-#                     show debug info about the garbage collector on stderr
-# --debugger=<port>[,suspend]
-#                     start the JVM in a mode so Eclipse's debugger can attach to it
-# --no-splash
-#                     suppress showing a splash screen upon startup
-
-# Options for ImageJ:
-# --ij2
-#                     start ImageJ2 instead of ImageJ1
-# --ij1
-#                     start ImageJ1
-# --allow-multiple
-#                     do not reuse existing ImageJ instance
-# --plugins <dir>
-#                     use <dir> to discover plugins
-# --run <plugin> [<arg>]
-#                     run <plugin> in ImageJ, optionally with arguments
-# --compile-and-run <path-to-.java-file>
-#                     compile and run <plugin> in ImageJ
-# --edit [<file>...]
-#                     edit the given file in the script editor
-
-# Options to run programs other than ImageJ:
-# --update
-#                     start the command-line version of the ImageJ updater
-# --main-class <class name>
-#                     start the given class instead of ImageJ
-#                     (this is the default when called with a file ending in .class)
-
-# --------------------------
-
-[java-search]
-# The java-search section defines where Jaunch will discover Java installations.
 
 # Acceptable range of Java versions to match.
 version-min = 8
