@@ -94,6 +94,8 @@ jaunch-options = [
     # Options to run programs other than ImageJ:
     '--update|start the command-line version of the ImageJ updater',
     "--main-class=<class name>|start the given class instead of ImageJ\n(this is the default when called with a file ending in .class)",
+# Nico: NEED: execute a script with parameters
+# ./ImageJ-linux64 --ij2 --headless --console --run hello.py 'name="Mr Kraken"'
 ]
 
 # Acceptable range of Java versions to match.

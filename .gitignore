@@ -1,5 +1,5 @@
+/runme
 /jaunch
-/configure-jvm
 
 .gradle
 build/

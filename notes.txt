@@ -1,6 +1,0 @@
-Giuseppe's fix for dlopen not found in Kotlin/Native.
-
-989  /home/elect/.konan/kotlin-native-prebuilt-linux-x86_64-1.9.20/bin/run_konan clang clang linux_x64 @/home/elect/IdeaProjects/java-launcher/args
-990  /home/elect/.konan/kotlin-native-prebuilt-linux-x86_64-1.9.20/bin/run_konan clang clang linux_x64 @/home/elect/IdeaProjects/java-launcher/args1
-
-The problem is due to the tooling using an old version of glibc by default.

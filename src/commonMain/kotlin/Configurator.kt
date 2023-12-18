@@ -12,6 +12,7 @@ fun main(args: Array<String>) {
         )
     ).decodeFromFile<Config>(serializer(), "jaunch.toml")
     println(config)
+    if (true) return
     */
 
     val jdkDir = getenv("JAVA_HOME")

@@ -55,6 +55,32 @@ void debug(const char *fmt, ...) {
 	fflush(stderr);
 }
 
+/* result=$(dirname "$argv0")/"$command" */
+char *path(const char *argv0, const char *command) {
+	// Calculate string lengths.
+	const char *last_slash = argv0 == NULL ? NULL : strrchr(argv0, '/');
+	size_t dir_len = (size_t)(last_slash == NULL ? 1 : last_slash - argv0);
+	size_t command_len = strlen(command);
+	size_t result_len = dir_len + 1 + command_len;
+
+	// Allocate the result string.
+	char *result = (char *)malloc(result_len + 1);
+	if (result == NULL) return NULL;
+
+	// Build the result string.
+  if (last_slash == NULL) {
+		result[0] = '.';
+	}
+	else {
+		strncpy(result, argv0, dir_len);
+	}
+	result[dir_len] = '/';
+	result[dir_len + 1] = '\0';
+  strcat(result, command); // result += command
+
+	return result;
+}
+
 void run_command(const char *command,
 	const char *input[], size_t numInput,
 	char ***output, size_t *numOutput)
@@ -268,7 +294,13 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 }
 
 int main(const int argc, const char *argv[]) {
-	const char *command = "./configure-jvm";
+	// TODO: run jaunch in same dir as this program, NOT necessarily CWD.
+	const char *command = path(argc == 0 ? NULL : argv[0], "jaunch");
+	if (command == NULL) {
+		error("command path");
+		exit(EXIT_FAILURE);
+	}
+	debug("jaunch command = %s\n", command);
 
 	char **outputLines;
 	size_t numOutput;
