@@ -6,9 +6,10 @@ splash-image = 'images/icon-flat.png'
 
 # Runtime classpath elements to pass to Java.
 classpath = [
-    'jars/*',
-    'jars/bio-formats/*',
-    'plugins/*',
+    '--full-classpath|jars/*.jar',
+    '--full-classpath|jars/bio-formats/*.jar',
+    '--full-classpath|plugins/*.jar',
+    '!--full-classpath|jars/imagej-launcher*.jar',  # TODO: Figure out best syntax here and make it work.
 ]
 
 # Maximum amount of memory for the Java heap to consume. Examples:
@@ -29,27 +30,108 @@ max-heap = '75%'
 # But... to make the updater happy, we may also need a fiji-default.toml, so that users can
 # edit their fiji.toml without the updater seeing it as locally modified, and so that fiji.toml
 # has a template to start from initially.
+#
+# Override scenarios:
+# - global settings
+# - specific OS family
+# - specific architecture and/or bitness
+# - specific Java version range -- e.g. GC flags that only work for some versions
+#   - java8 = Only Java 8
+#   - java9-11 = Java 9, Java 10, Java 11
+#   - java9+ = Java 9 or later
+# - specific Java vendors?
+#   - zulu* =
+# - any/all of the above, for only a specific launcher (e.g. fiji)
+#   - in a separate .toml file named the same as the launcher
+#   - just layered/appended, no subtraction, no prepending
+# Order matters. So we cannot use separate sections unless we use arrays of tables,
+# which gets pretty complicated. Let's use a simpler syntax instead: hints before a bar (|) symbol.
+# So, for every string in the file, we split on bar and then filter by matching environments.
+# Let's hope Jaunch never needs to support literal bar symbols!
+#
+# We can also allow the negation of any criterion by prepending with ! symbol.
+# - !java8 = Every Java version except 8
+# - !zulu* = Every Java vendor except Zulu
+#
+# We can also support conditional flags.
+# Typically, each flag on the CLI takes some number of additional parameters after it, maybe 0.
+# We can write the Kotlin code to parse them into a nice key/value store (TODO: what about repeated keys?).
+# - If it takes zero parameters, its value becomes a boolean.
+# - We can say "--foo bar" and we'll get "foo=bar" in the table.
+# - We can say "--foo=bar" and same.
+# - We can say "--foo fizz buzz" and we'll get "foo=[fizz, buzz]" in the table.
+# - We can say "--foo" and we'll get "foo=true".
+# - We can say *nothing*, and when checking for the value 'foo' in the table, we'll be told `false`.
+# With this scheme, we have additive options, and can limitedly fake subtractive behavior based on falsy parameters.
+# Examples:
+#     classpath = [
+#         '--full-classpath|jars/*',
+#         '--full-classpath|jars/bio-formats/*',
+#         '--full-classpath|plugins/*',
+#         '!--full-classpath|${launcherJar.getAbsolutePath}',
+#     ]
+#
 
-flags = [
+jaunch-options = [
+    # TODO: Some of these are still ImageJ/Fiji-specific. Sort them out.
+    '--help,-h|show this help',
+    '--dry-run|show the command line, but do not run anything',
+    '--info|informational output',
+    '--debug|verbose output',
+    '--system|do not try to run bundled Java',
+    '--java-home=<path>|specify JAVA_HOME explicitly',
+    "--print-java-home|print ImageJ's idea of JAVA_HOME",
+    '--print-ij-dir|print where ImageJ thinks it is located',
+    '--headless|run in text mode',
+    "--ij-dir=<path>|set the ImageJ directory to <path> (used to find\njars/, plugins/ and macros/)",
+    "--heap,--mem,--memory=<amount>|set Java's heap size to <amount> (e.g. 512M)",
+    '--class-path,--classpath,-classpath,--cp,-cp=<path>|append <path> to the class path',
+    '--jar-path,--jarpath,-jarpath=<path>|append .jar files in <path> to the class path',
+    '--pass-classpath=<classpath>|pass -classpath <classpath> to the main() method',
+    '--full-classpath|call the main class with the full ImageJ class path',
+    '--dont-patch-ij1|do not try to runtime-patch ImageJ1',
+    "--ext=<path>|set Java's extension directory to <path>",  # TODO: This is no longer a thing in later versions of Java.
+    "--default-gc|do not use advanced garbage collector settings by default\n(-XX:+G1GC)",  # TODO: This changed.
+    '--gc-g1|use the G1 garbage collector',  # TODO: Did this change?
+    '--debug-gc|show debug info about the garbage collector on stderr',
+    "--debugger=<port>[,suspend]|start the JVM in a mode so an IDE's debugger can attach to it",
+    '--no-splash|suppress showing a splash screen upon startup',
+
+    # Fiji-specific
+    '--ij2|start ImageJ2 instead of ImageJ1',
+    '--ij1|start ImageJ1',
+    '--allow-multiple|do not reuse existing ImageJ instance',
+    '--plugins=<dir>|use <dir> to discover plugins',
+    '--run <plugin> [<arg>]|run <plugin> in ImageJ, optionally with arguments
+    '--compile-and-run <path-to-.java-file>|compile and run <plugin> in ImageJ',
+    '--edit [<file>...]|edit the given file in the script editor',
+
+    # Options to run programs other than ImageJ:
+    '--update|start the command-line version of the ImageJ updater',
+    "--main-class=<class name>|start the given class instead of ImageJ\n(this is the default when called with a file ending in .class)",
+]
+
+# Arguments to pass to the JVM.
+jvm-args = [
     # In https://forum.image.sc/t/88620, acardona wrote:
     # > When running in a machine with many CPU cores (like 64, or 256) and lots
     # > of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
     # > I find that the concurrent garbage collector (G1 GC) works *a lot better*.
-    '-XX:+G1GC',
+    '!--default-gc|-XX:+G1GC',
 
+    # Supported since Jigsaw was introduced in Java 9.
     # Necessary for ij1-patcher to work properly with Java 17+.
-    '--add-opens=java.base/java.lang=ALL-UNNAMED',
-    '--add-opens=java.base/java.util=ALL-UNNAMED',  # Why?
-    '--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # Why?
-    '--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # Linux only; what about Wayland?
-    '--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
+    'java9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
+    'java9+|--add-opens=java.base/java.util=ALL-UNNAMED',  # TODO: Why? What triggers this?
+    'java9+|linux*|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # TODO: Why? Is this Linux-specific?
+    'java9+|linux*|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # Linux only; what about Wayland?
+    'java9+|macos*|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
 
     '-Dpython.cachedir.skip=true',  # Make Jython behave better.
     '-Dplugins.dir=${ijDirPath}',  # ImageJ cares about this property.
     '-Dimagej.splash=true',
 
-    # TODO: How can we support the --full-classpath mode via only configuration,
-    # without customizing the jaunch Kotlin program?
+    # TODO: How can we support the --full-classpath mode via only configuration, without customizing the Kotlin program?
     '-Djava.class.path=${launcherJar.getAbsolutePath}',
 
     '-Dimagej.dir=${ijDirPath}',
@@ -64,12 +146,16 @@ flags = [
 
     '-Dscijava.context.strict=false',  # Make SciJava startup less brittle.
     '-Dpython.console.encoding=UTF-8',  # TODO: What is this for?
+]
 
-    'net.imagej.launcher.ClassLauncher',
+main-class = 'net.imagej.launcher.ClassLauncher'
+
+main-args = [
     '-ijjarpath', 'jars',
     '-ijjarpath', 'plugins',
     'net.imagej.Main',
 ]
+
 
 # Usage: ./ImageJ-linux64 [<Java options>.. --] [<ImageJ options>..] [<files>..]
 
@@ -158,63 +244,32 @@ flags = [
 version-min = 8
 #version-max = 21
 
-# Paths to check on all systems.
+# Paths to check for Java installations.
 root-paths = [
+    '--java-home|${java-home}',
     '$JAVA_HOME',
-    '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',  # openjdk 9+
-    '$CONDA_PREFIX/pkgs/openjdk*',          # openjdk 8
-]
-
-# Additional paths to check on 32-bit Windows systems.
-# TODO: Should we even support this? Does Kotlin Native?
-win32.root-paths = [
-    'java/win32',
-    'C:/Program Files (x86)/Java',
-]
-
-# Additional paths to check on 64-bit Windows systems.
-win64.root-paths = [
-    'java/win64',
-    'C:/Program Files/Java',
-]
-
-# Additional paths to check on all Windows systems.
-win.root-paths = [
-    '~/scoop/Apps/...',    # TODO: Scoop
-]
-
-# Additional paths to check on ARM macOS systems (M1, M2, etc.).
-macosx-arm64.root-paths = [
-    'java/macosx-arm64',
-]
-
-# Additional paths to check on all macOS systems.
-macosx.root-paths = [
-    'java/macosx',
-    '/Library/Java/JavaVirtualMachines',         # Java 8+
-    '/System/Library/Java/JavaVirtualMachines',  # Apple Java 6
-    '/usr/local/...',                            # TODO: Homebrew
-]
-
-# Additional paths to check on 32-bit Linux systems.
-# TODO: Should we even support this? Does Kotlin Native?
-linux32.root-paths = [
-    'java/linux32',
-    'java/linux',
-]
-
-# Additional paths to check on 64-bit Linux systems.
-linux64.root-paths = [
-    'java/linux64',
-]
-
-# Additional paths to check on all Linux systems.
-linux.root-paths = [
-    '/usr/lib/jvm',               # package manager
-    '~/.sdkman/candidates/java',  # sdkman.io
-    '~/.cache/cjdk/v*/jdks/*',    # github.com/cachedjdk/cjdk
-    '~/.jdk',                     # github.com/jyksnw/install-jdk
-    '~/.jre',                     # github.com/jyksnw/install-jdk
+    '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',               # Conda (openjdk 9+)
+    '$CONDA_PREFIX/pkgs/openjdk*',                       # Conda (openjdk 8)
+    '!--system|win64|java/win64',
+    # TODO: Should we support 32-bit Windows or 32-bit Linux? Does Kotlin Native?
+    '!--system|win32|java/win32',
+    '!--system|macosx-arm64|java/macosx-arm64',
+    '!--system|macosx*|java/macosx',
+    '!--system|linux64|java/linux64',
+    '!--system|linux32|java/linux32',
+    '!--system|linux32|java/linux',
+    'win32|C:/Program Files (x86)/Java',
+    'win64|C:/Program Files/Java',
+    'win*|~/scoop/Apps/...',                             # TODO: Scoop
+    'macosx*|/Library/Java/JavaVirtualMachines',         # Java 8+
+    'macosx*|/System/Library/Java/JavaVirtualMachines',  # Apple Java 6
+    'macosx*|/usr/local/...',                            # TODO: Homebrew
+    'linux*|/usr/lib/jvm',                               # package manager
+    'linux*|/var/lib/flatpak/...',                       # TODO: Flatpak
+    'linux*|~/.sdkman/candidates/java',                  # sdkman.io
+    'linux*|~/.cache/cjdk/v*/jdks/*',                    # github.com/cachedjdk/cjdk
+    'linux*|~/.jdk',                                     # github.com/jyksnw/install-jdk
+    'linux*|~/.jre',                                     # github.com/jyksnw/install-jdk
 ]
 
 # And then there are programmatic ways to glean the Java installations,
@@ -240,29 +295,21 @@ linux.root-paths = [
 # are *not* binary identical. Testing is needed to determine if
 # there's any difference in behavior based on which one gets linked.
 
-libjvm-suffixes = []
-
-# Paths to search on macOS systems.
-macos.libjvm-suffixes = [
-    'Contents/Home/jre/lib/jli/libjli.dylib',  # Java 8
-    'Contents/Home/lib/jli/libjli.dylib',      # Java 9-11
-    'Contents/Home/lib/libjli.dylib',          # Java 12+
-    #'Contents/MacOS/libjli.dylib',             # some distros Java 8+
-    'Contents/Libraries/libjli.jnilib',        # Apple Java 6
-]
-
-# Paths to search on Windows systems.
-win.libjvm-suffixes = [
-    'bin/server/jvm.dll',      # Java 9+
-    'bin/client/jvm.dll',      # Java 9+
-    'jre/bin/server/jvm.dll',  # Java 8
-    'jre/bin/client/jvm.dll',  # Java 8
-]
-
-# Paths to search on Linux systems.
-linux.libjvm-suffixes = [
-    'lib/server/libjvm.so',            # Java 9+
-    'jre/lib/amd64/server/libjvm.so',  # Java 8 (64-bit)
-    'jre/lib/i386/server/libjvm.so',   # Java 8 (32-bit)
-    'jbr/lib/server/libjvm.so',        # jbrsdk_11.0.8_x64
+libjvm-suffixes = [
+    # Paths to search on macOS systems.
+    'macos*|Contents/Home/jre/lib/jli/libjli.dylib',  # Java 8
+    'macos*|Contents/Home/lib/jli/libjli.dylib',      # Java 9-11
+    'macos*|Contents/Home/lib/libjli.dylib',          # Java 12+
+    #'macos|Contents/MacOS/libjli.dylib',             # some distros Java 8+
+    'macos*|Contents/Libraries/libjli.jnilib',        # Apple Java 6
+    # Paths to search on Windows systems.
+    'win*|bin/server/jvm.dll',                        # Java 9+
+    'win*|bin/client/jvm.dll',                        # Java 9+
+    'win*|jre/bin/server/jvm.dll',                    # Java 8
+    'win*|jre/bin/client/jvm.dll',                    # Java 8
+    # Paths to search on Linux systems.
+    'linux*|lib/server/libjvm.so',                    # Java 9+
+    'linux*|jre/lib/amd64/server/libjvm.so',          # Java 8 (64-bit)
+    'linux*|jre/lib/i386/server/libjvm.so',           # Java 8 (32-bit)
+    'linux*|jbr/lib/server/libjvm.so',                # jbrsdk_11.0.8_x64
 ]
