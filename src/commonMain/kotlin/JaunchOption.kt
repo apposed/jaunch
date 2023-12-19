@@ -8,7 +8,7 @@ data class JaunchOption(
         val sb = StringBuilder()
         sb.append(flags.joinToString(", "))
         if (assignment != null) sb.append(" = $assignment")
-        sb.append("\n                    $help");
+        sb.append("\n                    $help")
         return sb.toString()
     }
 }
