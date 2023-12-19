@@ -59,14 +59,4 @@ actual class File actual constructor(val path: String) {
     override fun toString(): String {
         return path
     }
-
-    actual val directoryPath: String
-        get() {
-            val slash = path.lastIndexOf('/')
-            return if (slash < 0) "." else path.substring(0, slash)
-        }
-
-    actual fun contents(): String {
-        TODO("Not yet implemented")
-    }
 }

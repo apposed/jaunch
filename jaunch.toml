@@ -152,14 +152,12 @@ root-paths = [
     '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific
     '!--system|OS:LINUX|ARCH:X86|java/linux32',            # TODO: Fiji-specific
     '!--system|OS:LINUX|ARCH:X86|java/linux',              # TODO: Fiji-specific
-    'OS:WINDOWS:ARCH:X86|C:/Program Files (x86)/Java',
+    'OS:WINDOWS|ARCH:X86|C:/Program Files (x86)/Java',
     'OS:WINDOWS|ARCH:X64|C:/Program Files/Java',
     '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',                 # Conda (openjdk 9+)
     '$CONDA_PREFIX/pkgs/openjdk*',                         # Conda (openjdk 8)
     'OS:WINDOWS|~/scoop/Apps/...',                         # TODO: Scoop
     'OS:MACOSX|/Library/Java/JavaVirtualMachines',         # Java 8+
-    # TODO: It's probably futile to attempt support for old Apple Javas...
-    'OS:MACOSX|/System/Library/Java/JavaVirtualMachines',  # Apple Java 6
     'OS:MACOSX|/usr/local/...',                            # TODO: Homebrew
     'OS:LINUX|/usr/lib/jvm',                               # Linux distro package manager (e.g. apt)
     'OS:LINUX|/var/lib/flatpak/...',                       # TODO: Flatpak

@@ -3,8 +3,6 @@ import com.akuleshov7.ktoml.file.TomlFileReader
 import kotlinx.serialization.serializer
 import kotlin.experimental.ExperimentalNativeApi
 
-/*
-*/
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
     val stdinArgs = stdinLines()
@@ -12,32 +10,28 @@ fun main(args: Array<String>) {
     val inputArgs = stdinArgs.slice(1..<stdinArgs.size) + args
 
     // Discern the directory containing this program.
-    val dir = File(executable ?: "").directoryPath
+    val exeFile = if (executable == null) null else File(executable)
+    val dir = exeFile?.directoryPath ?: "."
 
-    // Load the configuration from the TOML file.
-    val config = TomlFileReader(
-        inputConfig = TomlInputConfig(
-            ignoreUnknownNames = true,
-        )
-    ).decodeFromFile<JaunchConfig>(serializer(), "$dir/jaunch.toml")
-
-    // TODO: Get the filename portion of `executable`, strip `.exe` suffix if present, then load that `.toml` as well,
-    //  combining it with the general-purpose `jaunch.toml`. Probably want to prepend, not append, but is it OK?
+    // Load the configuration from the TOML files.
+    var config = readConfig("$dir/jaunch.toml")
+    if (exeFile != null) {
+        // Parse and merge the app-specific TOML file as well.
+        config += readConfig("${exeFile.withoutSuffix}.toml")
+    }
 
     // Parse the configuration's declared Jaunch options.
     //
     // For each option, we have a string of the form:
-    //   --alpha,...,--beta=assignment|Description of what this option does.
+    //   --alpha,...,--omega=assignment|Description of what this option does.
     //
     // We need to parse out the help text, the actual flags list, and whether the flags expect an assignment value.
 
     val supportedOptions = mutableMapOf<String, JaunchOption>()
     for (optionLine in config.supportedOptions) {
-        val (flagsString, help) = optionLine.split("|", limit = 2)
-        val equals = flagsString.indexOf("=")
-        val flagsList = if (equals < 0) flagsString else flagsString.substring(0, equals)
-        val assignment = if (equals < 0) null else flagsString.substring(equals + 1)
-        val flags = flagsList.split(",")
+        val (optionString, help) = partition(optionLine, "|")
+        val (flagsString, assignment) = partition(optionString, "=")
+        val flags = flagsString.split(",")
         val option = JaunchOption(flags.toTypedArray(), assignment, help)
         for (flag in flags) supportedOptions[flag] = option
     }
@@ -80,7 +74,7 @@ fun main(args: Array<String>) {
             hints += arg
         }
         else {
-            // The argument is not special to Jaunch. Pass it through directly.
+            // The argument is not a Jaunch one. Pass it through directly.
             // TODO: There is a third case: no divider is ever declared through the input args.
             //  In that case, we should make a best guess on a per-arg basis whether it's for JVM or main.
             //  We can use config.recognizedJvmArgs (after stripping [:/=].*) and config.allowUnrecognizedJvmArgs.
@@ -154,6 +148,21 @@ fun main(args: Array<String>) {
     for (mainArg in mainArgs) println(mainArg)
 }
 
+private fun readConfig(tomlPath: String): JaunchConfig {
+    val tomlFile = File(tomlPath)
+    if (!tomlFile.exists) return JaunchConfig()
+    return TomlFileReader(
+        inputConfig = TomlInputConfig(
+            ignoreUnknownNames = true,
+        )
+    ).decodeFromFile<JaunchConfig>(serializer(), tomlPath)
+}
+
+private fun partition(s: String, delimiter: String): Pair<String, String?> {
+    val index = s.indexOf(delimiter)
+    return if (index < 0) Pair(s, null) else Pair(s.substring(0, index), s.substring(index + 1))
+}
+
 private fun rulesApply(rules: List<String>, hints: Set<String>): Boolean {
     for (rule in rules) {
         val negation = rule.startsWith("!")
@@ -164,9 +173,33 @@ private fun rulesApply(rules: List<String>, hints: Set<String>): Boolean {
     return true
 }
 
-private fun interpolate(arg: String, vars: Map<String, String>): String {
-    // TODO: replace ${var} expressions with var values.
-    return arg
+/** Replaces ${var} expressions with values from a vars map. */
+private fun interpolate(s: String, vars: Map<String, String>): String {
+    val result = StringBuilder()
+    var pos = 0
+    while (true) {
+        // Find the next variable expression.
+        val start = s.indexOf("\${", pos)
+        val end = if (start < 0) -1 else s.indexOf("}", start + 2)
+        if (start < 0 || end < 0) {
+            // No more variable expressions found; append remaining string.
+            result.append(s.substring(pos))
+            break
+        }
+
+        // Add the text before the variable.
+        result.append(s.substring(pos, start))
+
+        // Evaluate the expression and add it to the result.
+        // If the variable is missing from the map, just leave the expression alone.
+        val name = s.substring(start + 2, end)
+        val value = vars.getOrElse(name) { s.substring(start, end) }
+        result.append(value)
+
+        // Advance the position beyond the variable expression.
+        pos = end + 1
+    }
+    return result.toString()
 }
 
 @OptIn(ExperimentalNativeApi::class)

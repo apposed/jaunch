@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class JaunchConfig (
 
     /** Runtime classpath elements to pass to Java. */
-    val classpath: Array<String>,
+    val classpath: Array<String> = emptyArray(),
 
     /**
      * Maximum amount of memory for the Java heap to consume. Examples:
@@ -19,19 +19,19 @@ data class JaunchConfig (
      * These will be translated into an appropriate "-Xmx..." argument.
      */
     @SerialName("max-heap")
-    val maxHeap: String? = "75%",
+    val maxHeap: String? = null,
 
     /** TODO */
     @SerialName("supported-options")
-    val supportedOptions: Array<String>,
+    val supportedOptions: Array<String> = emptyArray(),
 
     /** TODO */
     @SerialName("recognized-jvm-args")
-    val recognizedJvmArgs: Array<String>,
+    val recognizedJvmArgs: Array<String> = emptyArray(),
 
     /** TODO */
     @SerialName("allow-unrecognized-jvm-args")
-    val allowUnrecognizedJvmArgs: Boolean = true,
+    val allowUnrecognizedJvmArgs: Boolean? = null,
 
     /** Minimum acceptable Java version to match. */
     @SerialName("version-min")
@@ -66,14 +66,14 @@ data class JaunchConfig (
     val libjvmSuffixes: Array<String> = emptyArray(),
 
     /** TODO */
-    val modes: Array<String>,
+    val modes: Array<String> = emptyArray(),
 
     /** TODO */
-    val directives: Array<String>,
+    val directives: Array<String> = emptyArray(),
 
     /** Additional flags to pass to the JVM at launch. */
     @SerialName("jvm-args")
-    val jvmArgs: Array<String>,
+    val jvmArgs: Array<String> = emptyArray(),
 
     /** TODO */
     @SerialName("main-class")
@@ -85,11 +85,31 @@ data class JaunchConfig (
 
     /** TODO */
     @SerialName("main-args")
-    val mainArgs: Array<String>,
+    val mainArgs: Array<String> = emptyArray(),
 ) {
     /** TODO */
     val mainClasses: Array<String>
         get() {
             return if (mainClass == null) mainClassCandidates else arrayOf(mainClass) + mainClassCandidates
         }
+
+    operator fun plus(config: JaunchConfig): JaunchConfig {
+        return JaunchConfig(
+            classpath = config.classpath + classpath,
+            maxHeap = config.maxHeap ?: maxHeap,
+            supportedOptions = config.supportedOptions + supportedOptions,
+            recognizedJvmArgs = config.recognizedJvmArgs + recognizedJvmArgs,
+            allowUnrecognizedJvmArgs = config.allowUnrecognizedJvmArgs ?: allowUnrecognizedJvmArgs,
+            versionMin = config.versionMin ?: versionMin,
+            versionMax = config.versionMax ?: versionMax,
+            rootPaths = config.rootPaths + rootPaths,
+            libjvmSuffixes = config.libjvmSuffixes + libjvmSuffixes,
+            modes = config.modes + modes,
+            directives = config.directives + directives,
+            jvmArgs = config.jvmArgs + jvmArgs,
+            mainClass = config.mainClass ?: mainClass,
+            mainClassCandidates = config.mainClassCandidates + mainClassCandidates,
+            mainArgs = config.mainArgs + mainArgs,
+        )
+    }
 }
