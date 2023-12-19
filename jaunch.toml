@@ -95,6 +95,47 @@ supported-options = [
 # ./ImageJ-linux64 --ij2 --headless --console --run hello.py 'name="Mr Kraken"'
 ]
 
+# These are used to guess, when the minus-minus divider is absent, whether each arg is a JVM one or a main one.
+recognized-jvm-args = [
+    '?',
+    'D*',
+    'X*',
+    'agentlib',
+    'agentpath',
+    'client',
+    'd32',
+    'd64',
+    'da',
+    'disableassertions',
+    'disablesystemassertions',
+    'dsa',
+    'ea',
+    'enableassertions',
+    'enablesystemassertions',
+    'esa',
+    'help',
+    'jar',
+    'javaagent',
+    'jre-restrict-search',
+    'no-jre-restrict-search',
+    'server',
+    'showversion',
+    'splash',
+    'verbose',
+    'version',
+]
+
+# When the minus-minus divider is absent, the only args that end up as JVM args will be ones from the list above.
+# But if the minus-minus divider *is* given, it becomes possible to force a particular argument to be construed
+# as a JVM argument, even when it does not appear on the list. Depending on your application, it might not be
+# desirable for such unrecognized JVM args to be allowed through to the Java launch.
+#
+# If you want to allow all user-specified JVM args through to the Java launch, set this value to true.
+#
+# If you want full control over what arguments the user can pass to the JVM, set this value to false,
+# and edit the recognized-jvm-args list above according to your needs.
+allow-unrecognized-jvm-args = true
+
 # Acceptable range of Java versions to match.
 version-min = 8
 #version-max = 21
@@ -105,13 +146,13 @@ root-paths = [
     '$JAVA_HOME',
     '!--system|OS:WINDOWS|ARCH:X64|java/win64',            # TODO: Fiji-specific
     # TODO: Should we support 32-bit Windows or 32-bit Linux? Does Kotlin Native?
-    '!--system|OS:WINDOWS|ARCH:X32|java/win32',            # TODO: Fiji-specific
+    '!--system|OS:WINDOWS|ARCH:X86|java/win32',            # TODO: Fiji-specific
     '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64',    # TODO: Fiji-specific
     '!--system|OS:MACOSX|ARCH:X64|java/macosx',            # TODO: Fiji-specific
     '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific
-    '!--system|OS:LINUX|ARCH:X32|java/linux32',            # TODO: Fiji-specific
-    '!--system|OS:LINUX|ARCH:X32|java/linux',              # TODO: Fiji-specific
-    'OS:WINDOWS:ARCH:X32|C:/Program Files (x86)/Java',
+    '!--system|OS:LINUX|ARCH:X86|java/linux32',            # TODO: Fiji-specific
+    '!--system|OS:LINUX|ARCH:X86|java/linux',              # TODO: Fiji-specific
+    'OS:WINDOWS:ARCH:X86|C:/Program Files (x86)/Java',
     'OS:WINDOWS|ARCH:X64|C:/Program Files/Java',
     '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',                 # Conda (openjdk 9+)
     '$CONDA_PREFIX/pkgs/openjdk*',                         # Conda (openjdk 8)
@@ -240,7 +281,7 @@ jvm-args = [
     # > I find that the concurrent garbage collector (G1 GC) works *a lot better*.
     '!--default-gc|-XX:+G1GC',
 
-    # TODO: How to handle `-Dfoo=bar`?
+    # TODO: How to handle actual JVM args given verbatim, like `-Dfoo=bar` and `-Xms111m`?
 
     # Handle --gc-g1 option.
     '--gc-g1|-XX:+UseCompressedOops',
@@ -253,8 +294,6 @@ jvm-args = [
 
     # Handle --heap / --mem / --memory option.
     '--heap|-Xmx${heap}',
-    '--mem|-Xmx${mem}',
-    '--memory|-Xmx${memory}',
 
     # Handle --dont-patch-ij1 option.
     'no-ij1-patching|-Dpatch.ij1=false',

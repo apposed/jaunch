@@ -6,9 +6,10 @@ import kotlin.experimental.ExperimentalNativeApi
 /*
 */
 fun main(args: Array<String>) {
-    // Treat both arguments on the CLI and lines of stdin as inputs.
-    val executable = args.getOrNull(0)
-    val inputArgs = args.slice(1..<args.size) + stdinLines()
+    // Treat both lines of stdin and arguments on the CLI as inputs.
+    val stdinArgs = stdinLines()
+    val executable = stdinArgs.getOrNull(0)
+    val inputArgs = stdinArgs.slice(1..<stdinArgs.size) + args
 
     // Discern the directory containing this program.
     val dir = File(executable ?: "").directoryPath
@@ -42,26 +43,51 @@ fun main(args: Array<String>) {
     }
 
     // The set of active hints, for activation of configuration elements.
-    val hints = mutableSetOf<String>()
+    // Initially populated with hints for the current operating system and CPU architecture.
+    val hints = mutableSetOf<String>(
+        // Kotlin knows these operating systems:
+        //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
+        "OS:${osName()}",
+        // Kotlin knows these CPU architectures:
+        //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
+        "ARCH:${cpuArch()}"
+    )
 
-    // Parse the input arguments.
+    val jvmArgs = mutableListOf<String>()
+    val mainArgs = mutableListOf<String>()
+    val vars = mutableMapOf<String, String>()
+
+    // Parse the input arguments. Each input argument becomes an active hint.
     var i = 0
+    var afterDivider = false
     while (i < inputArgs.size) {
         val arg = inputArgs[i++]
+        if (arg == "--") {
+            if (afterDivider) error("Divider symbol (--) may only be given once")
+            afterDivider = true
+        }
         if (arg in supportedOptions) {
-            val option = supportedOptions[arg]
-            val param = if (option?.assignment == null || i >= inputArgs.size) null else inputArgs[i++]
-            // START HERE: Keep track of these in a good data structure.
+            // The argument is declared in Jaunch's configuration. Deal with it appropriately.
+            val option: JaunchOption = supportedOptions[arg]!!
+            if (option.assignment != null) {
+                // option with value assignment
+                if (i >= inputArgs.size) error("No value given for argument $arg")
+                val value = inputArgs[i++]
+                // TODO: What if --arg=value is passed multiple times?
+                //  Should we save all values in a list? Or overwrite?
+                vars[arg] = value
+            }
+            hints += arg
+        }
+        else {
+            // The argument is not special to Jaunch. Pass it through directly.
+            // TODO: There is a third case: no divider is ever declared through the input args.
+            //  In that case, we should make a best guess on a per-arg basis whether it's for JVM or main.
+            //  We can use config.recognizedJvmArgs (after stripping [:/=].*) and config.allowUnrecognizedJvmArgs.
+            if (afterDivider) mainArgs += arg
+            else jvmArgs += arg
         }
     }
-
-    // TODO: Compute platform hints.
-    // Kotlin knows these operating systems:
-    //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
-    hints.add("OS:${osName()}")
-    // Kotlin knows these CPU architectures:
-    //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
-    hints.add("ARCH:${cpuArch()}")
 
     // Apply mode hints.
     // TODO: config.modes
@@ -97,7 +123,7 @@ fun main(args: Array<String>) {
     //  And mix in classpath elements from above, if any.
     val kbMemAvailable = getMemAvailable()
     val mbToUse = 3 * kbMemAvailable / 4 / 1024
-    val jvmArgs = arrayOf(
+    jvmArgs += arrayOf(
         "-Xmx${mbToUse}m",
         "--add-opens=java.base/java.lang=ALL-UNNAMED",
         "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED",
@@ -110,10 +136,14 @@ fun main(args: Array<String>) {
     val mainClassName = "sc.fiji.Main"
 
     // Calculate main args.
-    // TODO: use config.mainArgs
-    val mainArgs = arrayOf(
-        "-DtestFooMain=testBarMain",
-    )
+    for (argLine in config.mainArgs) {
+        val tokens = argLine.split("|")
+        val rules = tokens.slice(0..<tokens.size-1)
+        val arg = tokens.last()
+        if (rulesApply(rules, hints)) {
+            mainArgs.add(interpolate(arg, vars))
+        }
+    }
 
     // Emit final configuration.
     println(libjvmPath)
@@ -124,13 +154,28 @@ fun main(args: Array<String>) {
     for (mainArg in mainArgs) println(mainArg)
 }
 
+private fun rulesApply(rules: List<String>, hints: Set<String>): Boolean {
+    for (rule in rules) {
+        val negation = rule.startsWith("!")
+        val hint = if (negation) rule.substring(1) else rule
+        if (negation && hint in hints) return false
+        if (!negation && hint !in hints) return false
+    }
+    return true
+}
+
+private fun interpolate(arg: String, vars: Map<String, String>): String {
+    // TODO: replace ${var} expressions with var values.
+    return arg
+}
+
 @OptIn(ExperimentalNativeApi::class)
-fun osName(): String {
+private fun osName(): String {
     return Platform.osFamily.name
 }
 
 @OptIn(ExperimentalNativeApi::class)
-fun cpuArch(): String {
+private fun cpuArch(): String {
     return Platform.cpuArchitecture.name
 }
 

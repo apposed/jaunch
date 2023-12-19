@@ -25,6 +25,14 @@ data class JaunchConfig (
     @SerialName("supported-options")
     val supportedOptions: Array<String>,
 
+    /** TODO */
+    @SerialName("recognized-jvm-args")
+    val recognizedJvmArgs: Array<String>,
+
+    /** TODO */
+    @SerialName("allow-unrecognized-jvm-args")
+    val allowUnrecognizedJvmArgs: Boolean = true,
+
     /** Minimum acceptable Java version to match. */
     @SerialName("version-min")
     val versionMin: Long? = null,
