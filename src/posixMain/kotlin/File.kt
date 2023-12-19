@@ -3,6 +3,7 @@
 import kotlinx.cinterop.*
 import platform.posix.*
 
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class File actual constructor(val path: String) {
 
     actual val exists: Boolean
@@ -57,5 +58,15 @@ actual class File actual constructor(val path: String) {
 
     override fun toString(): String {
         return path
+    }
+
+    actual val directoryPath: String
+        get() {
+            val slash = path.lastIndexOf('/')
+            return if (slash < 0) "." else path.substring(0, slash)
+        }
+
+    actual fun contents(): String {
+        TODO("Not yet implemented")
     }
 }

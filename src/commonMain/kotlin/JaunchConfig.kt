@@ -3,11 +3,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @Suppress("ArrayInDataClass")
-data class Config (
-
-    /** Path to splash screen image to show, if desired. */
-    @SerialName("splash-image")
-    val splashImage: String?,
+data class JaunchConfig (
 
     /** Runtime classpath elements to pass to Java. */
     val classpath: Array<String>,
@@ -26,8 +22,8 @@ data class Config (
     val maxHeap: String? = "75%",
 
     /** TODO */
-    @SerialName("jaunch-options")
-    val jaunchOptions: Array<String>,
+    @SerialName("supported-options")
+    val supportedOptions: Array<String>,
 
     /** Minimum acceptable Java version to match. */
     @SerialName("version-min")
@@ -73,9 +69,19 @@ data class Config (
 
     /** TODO */
     @SerialName("main-class")
-    val mainClass: String,
+    val mainClass: String? = null,
+
+    /** TODO */
+    @SerialName("main-class-candidates")
+    val mainClassCandidates: Array<String> = emptyArray(),
 
     /** TODO */
     @SerialName("main-args")
     val mainArgs: Array<String>,
-)
+) {
+    /** TODO */
+    val mainClasses: Array<String>
+        get() {
+            return if (mainClass == null) mainClassCandidates else arrayOf(mainClass) + mainClassCandidates
+        }
+}

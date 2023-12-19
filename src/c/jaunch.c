@@ -294,13 +294,12 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 }
 
 int main(const int argc, const char *argv[]) {
-	// TODO: run jaunch in same dir as this program, NOT necessarily CWD.
 	const char *command = path(argc == 0 ? NULL : argv[0], "jaunch");
 	if (command == NULL) {
 		error("command path");
 		exit(EXIT_FAILURE);
 	}
-	debug("jaunch command = %s\n", command);
+	debug("jaunch command = %s", command);
 
 	char **outputLines;
 	size_t numOutput;

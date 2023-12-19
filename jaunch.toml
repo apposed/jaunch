@@ -1,6 +1,3 @@
-# Path to splash screen image to show, if desired.
-splash-image = 'images/icon-flat.png'
-
 # Runtime classpath elements to pass to Java.
 classpath = [
     '--full-classpath|jars/*.jar',
@@ -31,8 +28,8 @@ max-heap = '75%'
 # - specific OS family
 # - specific architecture and/or bitness
 # - specific Java version range -- e.g. GC flags that only work for some versions
-#   - java8 = Only Java 8
-#   - java9+ = Java 9 or later
+#   - JAVA:8 = Only Java 8
+#   - JAVA:9+ = Java 9 or later
 # - specific Java vendors?
 #   - zulu* =
 # - any/all of the above, for only a specific launcher (e.g. fiji)
@@ -44,8 +41,8 @@ max-heap = '75%'
 # Let's hope Jaunch never needs to support literal bar symbols!
 #
 # We can also allow the negation of any criterion by prepending with ! symbol.
-# - !java8 = Every Java version except 8
-# - !zulu* = Every Java vendor except Zulu
+# - !JAVA:8 = Every Java version except 8
+# - !DISTRO:Zulu = Every Java distribution flavor except Zulu
 #
 # We can also support conditional flags.
 # Typically, each flag on the CLI takes some number of additional parameters after it, maybe 0.
@@ -57,7 +54,7 @@ max-heap = '75%'
 # - We can say *nothing*, and when checking for the value 'foo' in the table, we'll be told `false`.
 # With this scheme, we have additive options, and can limitedly fake subtractive behavior based on falsy parameters.
 
-jaunch-options = [
+supported-options = [
     # TODO: Some of these are still ImageJ/Fiji-specific. Sort them out.
     '--help,-h|show this help',
     '--dry-run|show the command line, but do not run anything',
@@ -106,28 +103,29 @@ version-min = 8
 root-paths = [
     '--java-home|${java-home}',
     '$JAVA_HOME',
-    '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',               # Conda (openjdk 9+)
-    '$CONDA_PREFIX/pkgs/openjdk*',                       # Conda (openjdk 8)
-    '!--system|win64|java/win64',
+    '!--system|OS:WINDOWS|ARCH:X64|java/win64',            # TODO: Fiji-specific
     # TODO: Should we support 32-bit Windows or 32-bit Linux? Does Kotlin Native?
-    '!--system|win32|java/win32',
-    '!--system|macosx-arm64|java/macosx-arm64',
-    '!--system|macosx*|java/macosx',
-    '!--system|linux64|java/linux64',
-    '!--system|linux32|java/linux32',
-    '!--system|linux32|java/linux',
-    'win32|C:/Program Files (x86)/Java',
-    'win64|C:/Program Files/Java',
-    'win*|~/scoop/Apps/...',                             # TODO: Scoop
-    'macosx*|/Library/Java/JavaVirtualMachines',         # Java 8+
-    'macosx*|/System/Library/Java/JavaVirtualMachines',  # Apple Java 6
-    'macosx*|/usr/local/...',                            # TODO: Homebrew
-    'linux*|/usr/lib/jvm',                               # package manager
-    'linux*|/var/lib/flatpak/...',                       # TODO: Flatpak
-    'linux*|~/.sdkman/candidates/java',                  # sdkman.io
-    'linux*|~/.cache/cjdk/v*/jdks/*',                    # github.com/cachedjdk/cjdk
-    'linux*|~/.jdk',                                     # github.com/jyksnw/install-jdk
-    'linux*|~/.jre',                                     # github.com/jyksnw/install-jdk
+    '!--system|OS:WINDOWS|ARCH:X32|java/win32',            # TODO: Fiji-specific
+    '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64',    # TODO: Fiji-specific
+    '!--system|OS:MACOSX|ARCH:X64|java/macosx',            # TODO: Fiji-specific
+    '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific
+    '!--system|OS:LINUX|ARCH:X32|java/linux32',            # TODO: Fiji-specific
+    '!--system|OS:LINUX|ARCH:X32|java/linux',              # TODO: Fiji-specific
+    'OS:WINDOWS:ARCH:X32|C:/Program Files (x86)/Java',
+    'OS:WINDOWS|ARCH:X64|C:/Program Files/Java',
+    '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',                 # Conda (openjdk 9+)
+    '$CONDA_PREFIX/pkgs/openjdk*',                         # Conda (openjdk 8)
+    'OS:WINDOWS|~/scoop/Apps/...',                         # TODO: Scoop
+    'OS:MACOSX|/Library/Java/JavaVirtualMachines',         # Java 8+
+    # TODO: It's probably futile to attempt support for old Apple Javas...
+    'OS:MACOSX|/System/Library/Java/JavaVirtualMachines',  # Apple Java 6
+    'OS:MACOSX|/usr/local/...',                            # TODO: Homebrew
+    'OS:LINUX|/usr/lib/jvm',                               # Linux distro package manager (e.g. apt)
+    'OS:LINUX|/var/lib/flatpak/...',                       # TODO: Flatpak
+    'OS:LINUX|~/.sdkman/candidates/java',                  # sdkman.io
+    'OS:LINUX|~/.cache/cjdk/v*/jdks/*',                    # github.com/cachedjdk/cjdk
+    'OS:LINUX|~/.jdk',                                     # github.com/jyksnw/install-jdk
+    'OS:LINUX|~/.jre',                                     # github.com/jyksnw/install-jdk
 ]
 
 # And then there are programmatic ways to glean the Java installations,
@@ -154,22 +152,19 @@ root-paths = [
 # there's any difference in behavior based on which one gets linked.
 
 libjvm-suffixes = [
-    # Paths to search on macOS systems.
-    'macos*|Contents/Home/jre/lib/jli/libjli.dylib',  # Java 8
-    'macos*|Contents/Home/lib/jli/libjli.dylib',      # Java 9-11
-    'macos*|Contents/Home/lib/libjli.dylib',          # Java 12+
-    #'macos|Contents/MacOS/libjli.dylib',             # some distros Java 8+
-    'macos*|Contents/Libraries/libjli.jnilib',        # Apple Java 6
-    # Paths to search on Windows systems.
-    'win*|bin/server/jvm.dll',                        # Java 9+
-    'win*|bin/client/jvm.dll',                        # Java 9+
-    'win*|jre/bin/server/jvm.dll',                    # Java 8
-    'win*|jre/bin/client/jvm.dll',                    # Java 8
-    # Paths to search on Linux systems.
-    'linux*|lib/server/libjvm.so',                    # Java 9+
-    'linux*|jre/lib/amd64/server/libjvm.so',          # Java 8 (64-bit)
-    'linux*|jre/lib/i386/server/libjvm.so',           # Java 8 (32-bit)
-    'linux*|jbr/lib/server/libjvm.so',                # jbrsdk_11.0.8_x64
+    'OS:MACOSX|Contents/Home/jre/lib/jli/libjli.dylib',  # Java 8
+    'OS:MACOSX|Contents/Home/lib/jli/libjli.dylib',      # Java 9-11
+    'OS:MACOSX|Contents/Home/lib/libjli.dylib',          # Java 12+
+    #'OS:MACOSX|Contents/MacOS/libjli.dylib',             # some distros Java 8+
+    'OS:MACOSX|Contents/Libraries/libjli.jnilib',        # Apple Java 6
+    'OS:WINDOWS|bin/server/jvm.dll',                     # Java 9+
+    'OS:WINDOWS|bin/client/jvm.dll',                     # Java 9+
+    'OS:WINDOWS|jre/bin/server/jvm.dll',                 # Java 8
+    'OS:WINDOWS|jre/bin/client/jvm.dll',                 # Java 8
+    'OS:LINUX|lib/server/libjvm.so',                     # Java 9+
+    'OS:LINUX|jre/lib/amd64/server/libjvm.so',           # Java 8 (64-bit)
+    'OS:LINUX|jre/lib/i386/server/libjvm.so',            # Java 8 (32-bit)
+    'OS:LINUX|jbr/lib/server/libjvm.so',                 # jbrsdk_11.0.8_x64
 ]
 
 # TODO: Should we just call them "hints" rather than "modes" here?
@@ -177,36 +172,28 @@ libjvm-suffixes = [
 # by the presence of options. Most modes are false by default,
 # but there are some special ones that get enabled based on environment:
 # - Java:
-#   - `java8` - If Java 8 is selected.
-#   - `java9` - If Java 9 is selected.
+#   - `JAVA:8` - If Java 8 is selected.
+#   - `JAVA:8` - If Java 9 is selected.
 #   - etc.
-# - Windows:
-#   - `win64` - For 64-bit Windows OS.
-#   - `win32` - For 32-bit Windows OS.
-# - MacOS:
-#   - `macosx` - For x86_64 macOS.
-#   - `macosx-arm64` - For ARM (M1, M2, etc.) macOS.
-# - Linux:
-#   - `linux32` - For 32-bit Linux.
-#   - `linux64` - For 64-bit Linux.
-#
-# TODO: I don't like the "win32" et al. shorthands... but the question is:
-# are the os.name/OS_NAME + os.arch/OS_ARCH values consistent enough across
-# systems (e.g. amd64 vs x86_64 vs x86-64) to let us treat the architecture
-# simply as a reliable mode/hint? Or do we need to massage/standardize the
-# strings as above?
+# - Operating systems:
+#   - OS:UNKNOWN, OS:MACOSX, OS:IOS, OS:LINUX, OS:WINDOWS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS
+# - CPU architectures:
+#   - ARCH:UNKNOWN, ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64, ARCH:MIPS32, ARCH:MIPSEL32, ARCH:WASM32
 #
 # Options of the form `--foo` set a corresponding mode `--foo`.
 #
 # Options of the form `--foo=bar` set a corresponding mode `--foo`
 # and a variable `${foo}` with the value `bar` (see "Variables" below).
 # (Such options may alternately be written `--foo bar` as two arguments.)
-# 
+#
 # Modes are used as hints for activating arguments to the JVM and main class.
 modes = [
   "--dont-patch-ij1|ij1-mode",
+  "--dont-patch-ij1|no-ij1-patching",
+  "--update|no-ij1-patching",
   "--ij1|ij1-mode",
   "--ij2|!ij1-mode",
+  "--ij2|!no-ij1-patching",
 ]
 
 # TODO: How to know java version and vendor? We need to discern
@@ -242,6 +229,11 @@ directives = [
 
 # Arguments to pass to the JVM.
 jvm-args = [
+    '--info|-Dscijava.log.level=info',
+
+    '--debug|-Dij.debug=true',
+    '--debug|-Dscijava.log.level=debug',
+
     # In https://forum.image.sc/t/88620, acardona wrote:
     # > When running in a machine with many CPU cores (like 64, or 256) and lots
     # > of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
@@ -265,10 +257,13 @@ jvm-args = [
     '--memory|-Xmx${memory}',
 
     # Handle --dont-patch-ij1 option.
-    '--dont-patch-ij1|-Dpatch.ij1=false',
+    'no-ij1-patching|-Dpatch.ij1=false',
 
     # Handle ij1 mode.
     'ij1-mode|-Dsun.java.command=ImageJ',
+
+    # Enable SciJava logging in updater mode.
+    '--update|-Dscijava.log.level=info',
 
     # Supported since Jigsaw was introduced in Java 9.
     # Necessary for ij1-patcher to work properly with Java 17+.
@@ -276,7 +271,7 @@ jvm-args = [
     'java9+|--add-opens=java.base/java.util=ALL-UNNAMED',  # TODO: Why? What triggers this?
     'java9+|linux*|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # TODO: Why? Is this Linux-specific?
     'java9+|linux*|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # Linux only; TODO: what about Wayland?
-    'java9+|macos*|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
+    'java9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
 
     '-Dpython.cachedir.skip=true',  # Make Jython behave better.
     '-Dplugins.dir=${ijDirPath}',  # ImageJ cares about this property.
@@ -299,7 +294,11 @@ jvm-args = [
     '-Dpython.console.encoding=UTF-8',  # TODO: What is this for?
 ]
 
-main-class = 'net.imagej.launcher.ClassLauncher'
+main-class-candidates = [
+    '--main-class|${main-class}',
+    '--update|net.imagej.updater.CommandLine',
+    'net.imagej.launcher.ClassLauncher'
+]
 
 main-args = [
     '!ij1-mode|-ijjarpath', 'jars',
