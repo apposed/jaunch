@@ -24,6 +24,8 @@ fun main(args: Array<String>) {
         config += readConfig("${exeFile.withoutSuffix}.toml")
     }
 
+    val programName = config.programName ?: executable?.let(::File)?.withoutSuffix ?: "Jaunch"
+
     // Parse the configuration's declared Jaunch options.
     //
     // For each option, we have a string of the form:
@@ -133,6 +135,23 @@ fun main(args: Array<String>) {
         directives.add(directive)
     }
     val nativeDirective = if (directives.isEmpty()) "LAUNCH" else "CANCEL"
+
+    // Execute the help directive.
+    if ("help" in directives) {
+        // TODO: Glean Jaunch version and build hash somehow.
+        val jaunchVersion = "???"
+        val jaunchBuild = "???"
+        val exeName = executable ?: "jaunch"
+
+        printlnErr("Usage: $exeName [<Java options>.. --] [<main arguments>..]")
+        printlnErr()
+        printlnErr("$programName launcher (Jaunch v$jaunchVersion / build $jaunchBuild)")
+        printlnErr("Java options are passed to the Java Runtime,")
+        printlnErr("main arguments to the launched program ($programName).")
+        printlnErr()
+        printlnErr("In addition, the following options are supported:")
+        supportedOptions.values.forEach { printlnErr(it.help()) }
+    }
 
     // Discover Java.
     var libjvmPath: String? = null

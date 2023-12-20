@@ -5,6 +5,9 @@ import kotlinx.serialization.Serializable
 @Suppress("ArrayInDataClass")
 data class JaunchConfig (
 
+    /** Name of the program being launched by Jaunch. */
+    val programName: String? = null,
+
     /** Runtime classpath elements to pass to Java. */
     val classpath: Array<String> = emptyArray(),
 
