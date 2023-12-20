@@ -150,7 +150,8 @@ fun main(args: Array<String>) {
         printlnErr("main arguments to the launched program ($programName).")
         printlnErr()
         printlnErr("In addition, the following options are supported:")
-        supportedOptions.values.forEach { printlnErr(it.help()) }
+        val optionsUnique = linkedSetOf(*supportedOptions.values.toTypedArray())
+        optionsUnique.forEach { printlnErr(it.help()) }
     }
 
     // Discover Java.
@@ -183,11 +184,13 @@ fun main(args: Array<String>) {
         }
         if (libjvmPath != null) break
     }
-    if (libjvmPath == null) {
+    if (libjvmPath == null || jvmRootPath == null) {
         error("No Java installation found.")
     }
 
-    // TODO: print-java-home directive.
+    if ("print-java-home" in directives) {
+        printlnErr(jvmRootPath)
+    }
 
     // Calculate classpath.
     val classpath = mutableListOf<String>()
@@ -267,6 +270,16 @@ fun main(args: Array<String>) {
     for (mainArg in mainArgs) println(mainArg)
 }
 
+private fun readConfig(tomlPath: String): JaunchConfig {
+    val tomlFile = File(tomlPath)
+    if (!tomlFile.exists) return JaunchConfig()
+    return TomlFileReader(
+        inputConfig = TomlInputConfig(
+            ignoreUnknownNames = true,
+        )
+    ).decodeFromFile(serializer(), tomlPath)
+}
+
 private fun releaseInfo(rootDir: File): Map<String, String>? {
     // Discern the Java version and vendor. We need to extract them
     // from the Java installation as inexpensively as possibly.
@@ -309,16 +322,6 @@ private fun releaseInfo(rootDir: File): Map<String, String>? {
     return info
 }
 
-private fun readConfig(tomlPath: String): JaunchConfig {
-    val tomlFile = File(tomlPath)
-    if (!tomlFile.exists) return JaunchConfig()
-    return TomlFileReader(
-        inputConfig = TomlInputConfig(
-            ignoreUnknownNames = true,
-        )
-    ).decodeFromFile(serializer(), tomlPath)
-}
-
 private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
     val index = indexOf(delimiter)
     return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
@@ -326,6 +329,7 @@ private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
 
 private fun String.evaluate(hints: Set<String>, vars: Map<String, String>): String? {
     val tokens = split('|')
+    //assert(tokens.isNotEmpty())
     val rules = tokens.subList(0, tokens.lastIndex)
     val value = tokens.last()
 
@@ -340,27 +344,28 @@ private fun String.evaluate(hints: Set<String>, vars: Map<String, String>): Stri
     return value interpolate vars
 }
 
-/** Replaces ${var} expressions with values from a vars map. */
+/** Replaces `${var}` expressions with values from a vars map. */
 private infix fun String.interpolate(vars: Map<String, String>): String = buildString {
+    val s = this@interpolate
     var pos = 0
     while (true) {
         // Find the next variable expression.
-        val start = indexOf("\${", pos)
-        val end = if (start < 0) -1 else indexOf('}', start + 2)
+        val start = s.indexOf("\${", pos)
+        val end = if (start < 0) -1 else s.indexOf('}', start + 2)
         if (start < 0 || end < 0) {
             // No more variable expressions found; append remaining string.
-            append(substring(pos))
+            append(s.substring(pos))
             break
         }
 
         // Add the text before the expression.
-        append(substring(pos, start))
+        append(s.substring(pos, start))
 
         // Evaluate the expression and add it to the result.
         // If the variable name is missing from the map, check for an environment variable.
         // If no environment variable either, then just leave the expression alone.
-        val name = substring(start + 2, end)
-        append(vars[name] ?: getenv(name) ?: substring(start, end))
+        val name = s.substring(start + 2, end)
+        append(vars[name] ?: getenv(name) ?: s.substring(start, end + 1))
 
         // Advance the position beyond the variable expression.
         pos = end + 1
