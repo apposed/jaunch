@@ -21,6 +21,7 @@ classpath=$(find "$fijidir/jars" "$fijidir/plugins" -name "*.jar" | tr '\n' ':')
 kbMemAvailable=$(cat /proc/meminfo | grep 'MemAvailable' | head -n1 | sed 's/[^0-9]//g')
 mbToUse=$(echo "3 * $kbMemAvailable / 4 / 1024" | bc)
 
+echo LAUNCH
 echo "$libjvmPath"
 echo 5
 echo "-Xmx${mbToUse}m"
@@ -29,5 +30,5 @@ echo "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED"
 echo "-Djava.class.path=$classpath"
 echo "-DtestFooJVM=testBarJVM"
 echo "sc/fiji/Main"
-echo "1"
+echo 1
 echo "-DtestFooMain=testBarMain"

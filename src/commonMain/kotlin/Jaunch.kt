@@ -132,6 +132,7 @@ fun main(args: Array<String>) {
         val directive = directiveLine.evaluate(hints, vars) ?: continue
         directives.add(directive)
     }
+    val nativeDirective = if (directives.isEmpty()) "LAUNCH" else "CANCEL"
 
     // Discover Java.
     var libjvmPath: String? = null
@@ -224,6 +225,7 @@ fun main(args: Array<String>) {
     // TODO: dry-run directive.
 
     // Emit final configuration.
+    println(nativeDirective)
     println(libjvmPath)
     println(jvmArgs.size)
     for (jvmArg in jvmArgs) println(jvmArg)

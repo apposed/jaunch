@@ -28,11 +28,27 @@
 
 #include "jni.h"
 
+#define SUCCESS 0
 #define ERROR_DLOPEN 1
 #define ERROR_DLSYM 2
 #define ERROR_CREATE_JAVA_VM 3
 #define ERROR_FIND_CLASS 4
 #define ERROR_GET_STATIC_METHOD_ID 5
+#define ERROR_PIPE 6
+#define ERROR_FORK 7
+#define ERROR_EXECLP 8
+#define ERROR_MALLOC 9
+#define ERROR_REALLOC 10
+#define ERROR_WAITPID 11
+#define ERROR_REALLOC2 12
+#define ERROR_STRDUP 13
+#define ERROR_COMMAND_PATH 14
+#define ERROR_OUTPUT 15
+#define ERROR_JVM_ARGC_TOO_SMALL 16
+#define ERROR_JVM_ARGC_TOO_LARGE 17
+#define ERROR_MAIN_ARGC_TOO_SMALL 18
+#define ERROR_MAIN_ARGC_TOO_LARGE 19
+#define ERROR_UNKNOWN_DIRECTIVE 20
 
 void error(const char *fmt, ...)
 {
@@ -81,7 +97,7 @@ char *path(const char *argv0, const char *command) {
 	return result;
 }
 
-void run_command(const char *command,
+int run_command(const char *command,
 	const char *input[], size_t numInput,
 	char ***output, size_t *numOutput)
 {
@@ -93,7 +109,7 @@ void run_command(const char *command,
 
 	if (pipe(stdinPipe) == -1 || pipe(stdoutPipe) == -1) {
 		error("pipe");
-		exit(EXIT_FAILURE);
+		return ERROR_PIPE;
 	}
 
 	// Fork to create a child process
@@ -101,7 +117,7 @@ void run_command(const char *command,
 
 	if (pid == -1) {
 		error("fork");
-		exit(EXIT_FAILURE);
+		return ERROR_FORK;
 	}
 
 	if (pid == 0) { // Child process
@@ -122,7 +138,7 @@ void run_command(const char *command,
 
 		// If execlp fails
 		error("execlp");
-		exit(EXIT_FAILURE);
+		return ERROR_EXECLP;
 	}
 	else { // Parent process
 		// Close unused ends of the pipes
@@ -146,7 +162,7 @@ void run_command(const char *command,
 
 		if (outputBuffer == NULL) {
 			error("malloc");
-			exit(EXIT_FAILURE);
+			return ERROR_MALLOC;
 		}
 
 		while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
@@ -155,7 +171,7 @@ void run_command(const char *command,
 				outputBuffer = realloc(outputBuffer, bufferSize);
 				if (outputBuffer == NULL) {
 					error("realloc");
-					exit(EXIT_FAILURE);
+					return ERROR_REALLOC;
 				}
 			}
 			memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
@@ -168,7 +184,7 @@ void run_command(const char *command,
 		// Wait for the child process to finish
 		if (waitpid(pid, NULL, 0) == -1) {
 			error("waitpid");
-			exit(EXIT_FAILURE);
+			return ERROR_WAITPID;
 		}
 
 		// Return the output buffer and the number of lines
@@ -183,12 +199,12 @@ void run_command(const char *command,
 				*output = realloc(*output, (lineCount + 1) * sizeof(char *));
 				if (*output == NULL) {
 					error("realloc");
-					exit(EXIT_FAILURE);
+					return ERROR_REALLOC2;
 				}
 				(*output)[lineCount] = strdup(token);
 				if ((*output)[lineCount] == NULL) {
 					error("strdup");
-					exit(EXIT_FAILURE);
+					return ERROR_STRDUP;
 				}
 				lineCount++;
 				token = strtok(NULL, "\n");
@@ -198,6 +214,7 @@ void run_command(const char *command,
 			free(outputBuffer); // Free the temporary buffer
 		}
 	}
+	return SUCCESS;
 }
 
 int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
@@ -290,14 +307,14 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 	dlclose(jvm_library);
 	debug("GOODBYE");
 
-	return 0;
+	return SUCCESS;
 }
 
 int main(const int argc, const char *argv[]) {
 	const char *command = path(argc == 0 ? NULL : argv[0], "jaunch");
 	if (command == NULL) {
 		error("command path");
-		exit(EXIT_FAILURE);
+		return ERROR_COMMAND_PATH;
 	}
 	debug("jaunch command = %s", command);
 
@@ -305,62 +322,84 @@ int main(const int argc, const char *argv[]) {
 	size_t numOutput;
 
 	// Run external command to process the command line arguments.
-	run_command(command, argv, argc, &outputLines, &numOutput);
+
+	int run_result = run_command(command, argv, argc, &outputLines, &numOutput);
+	if (run_result != SUCCESS) return run_result;
 
 	debug("numOutput = %zu", numOutput);
 	for (size_t i = 0; i < numOutput; i++) {
 		debug("outputLines[%zu] = %s", i, outputLines[i]);
 	}
-
-	if (numOutput < 4) {
+	if (numOutput < 5) {
 		error("output");
-		exit(EXIT_FAILURE);
+		return ERROR_OUTPUT;
 	}
 
 	// Parse the command's output.
+
 	char **ptr = outputLines;
+	const char *directive = *ptr++;
+	debug("directive = %s", directive);
+
 	const char *libjvm_path = *ptr++;
 	debug("libjvm_path = %s", libjvm_path);
+
 	const int jvm_argc = atoi(*ptr++);
 	debug("jvm_argc = %d", jvm_argc);
 	if (jvm_argc < 0) {
-		error("jvmArgc");
-		exit(EXIT_FAILURE);
+		error("jvm_argc too small");
+		return ERROR_JVM_ARGC_TOO_SMALL;
 	}
-	if (numOutput < 4 + jvm_argc) {
-		error("output2");
-		exit(EXIT_FAILURE);
+	if (numOutput < 5 + jvm_argc) {
+		error("jvm_argc too large");
+		return ERROR_JVM_ARGC_TOO_LARGE;
 	}
+
 	const char **jvm_argv = (const char **)ptr;
 	ptr += jvm_argc;
 	for (size_t i = 0; i < jvm_argc; i++) {
 		debug("jvm_argv[%zu] = %s", i, jvm_argv[i]);
 	}
+
 	const char *main_class_name = *ptr++;
 	debug("main_class_name = %s", main_class_name);
+
 	const int main_argc = atoi(*ptr++);
 	debug("main_argc = %d", main_argc);
 	if (main_argc < 0) {
-		error("mainArgc");
-		exit(EXIT_FAILURE);
+		error("main_argc too small");
+		return ERROR_MAIN_ARGC_TOO_SMALL;
 	}
-	if (numOutput < 4 + jvm_argc + main_argc) {
-		error("output3");
-		exit(EXIT_FAILURE);
+	if (numOutput < 5 + jvm_argc + main_argc) {
+		error("main_argc too large");
+		return ERROR_MAIN_ARGC_TOO_LARGE;
 	}
+
 	const char **main_argv = (const char **)ptr;
 	ptr += main_argc;
 	for (size_t i = 0; i < main_argc; i++) {
 		debug("main_argv[%zu] = %s", i, main_argv[i]);
 	}
 
-	// Launch the JVM with the received arguments.
-	int result = launch_jvm(libjvm_path, jvm_argc, jvm_argv, main_class_name, main_argc, main_argv);
-	// Clean up.
-	for (size_t i = 0; i < numOutput; i++) {
-		free(outputLines[i]);
-	}
-	free(outputLines);
+	// Perform the indicated directive.
 
-	return result;
+	if (strcmp(directive, "LAUNCH") == 0) {
+		// Launch the JVM with the received arguments.
+		int launch_result = launch_jvm(
+			libjvm_path, jvm_argc, jvm_argv,
+			main_class_name, main_argc, main_argv
+		);
+		// Clean up.
+		for (size_t i = 0; i < numOutput; i++) {
+			free(outputLines[i]);
+		}
+		free(outputLines);
+
+		return launch_result;
+	}
+
+	if (strcmp(directive, "CANCEL") == 0) return SUCCESS;
+
+	error("Unknown directive: %s", directive);
+	return ERROR_UNKNOWN_DIRECTIVE;
 }
