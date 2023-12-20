@@ -209,7 +209,9 @@ fun main(args: Array<String>) {
         }
     }
 
-    // TODO: print-class-path directive.
+    if ("print-class-path" in directives) {
+        classpath.forEach { printlnErr(it) }
+    }
 
     // Calculate max heap.
     val maxHeap = config.maxHeap ?: "1g" // TODO
