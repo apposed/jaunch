@@ -126,13 +126,12 @@ fun main(args: Array<String>) {
         else hints.add(mode)
     }
 
-    // If a directive is active, do it instead of discovering and launching Java.
-    // TODO: config.directives
-    //  This needs further thought; it's not clear to me when each directive should
-    //  be applied. I don't actually think it's consistent. The dry-run directive for
-    //  example should fully parse everything and actually discover the Java, but not
-    //  actually launch it -- just emit the arguments that would be passed.
-    //  Whereas the help directive should emit the help immediately and exit.
+    // Discern directives to perform.
+    val directives = mutableSetOf<String>()
+    for (directiveLine in config.directives) {
+        val directive = directiveLine.evaluate(hints, vars) ?: continue
+        directives.add(directive)
+    }
 
     // Discover Java.
     var libjvmPath: String? = null
