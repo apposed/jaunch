@@ -89,19 +89,17 @@ data class JaunchConfig (
 ) {
     /** TODO */
     val mainClasses: Array<String>
-        get() {
-            return if (mainClass == null) mainClassCandidates else arrayOf(mainClass) + mainClassCandidates
-        }
+        get() = if (mainClass == null) mainClassCandidates else arrayOf(mainClass) + mainClassCandidates
 
     /** Return true iff the given argument is on the list of {@link #recognizedJvmArgs}. */
     fun recognizes(arg: String): Boolean {
         for (okArg in recognizedJvmArgs) {
-            if (okArg.endsWith("*")) {
+            if (okArg.endsWith('*')) {
                 val prefix = okArg.substring(0, okArg.length - 1)
                 if (arg.startsWith(prefix)) return true else continue
             }
             var trimmed = arg
-            for (symbol in listOf(":", "=")) {
+            for (symbol in listOf(':', '=')) {
                 val index = trimmed.indexOf(symbol)
                 if (index >= 0) trimmed = trimmed.substring(0, index)
             }
@@ -110,23 +108,21 @@ data class JaunchConfig (
         return false
     }
 
-    operator fun plus(config: JaunchConfig): JaunchConfig {
-        return JaunchConfig(
-            classpath = config.classpath + classpath,
-            maxHeap = config.maxHeap ?: maxHeap,
-            supportedOptions = config.supportedOptions + supportedOptions,
-            recognizedJvmArgs = config.recognizedJvmArgs + recognizedJvmArgs,
-            allowUnrecognizedJvmArgs = config.allowUnrecognizedJvmArgs ?: allowUnrecognizedJvmArgs,
-            versionMin = config.versionMin ?: versionMin,
-            versionMax = config.versionMax ?: versionMax,
-            rootPaths = config.rootPaths + rootPaths,
-            libjvmSuffixes = config.libjvmSuffixes + libjvmSuffixes,
-            modes = config.modes + modes,
-            directives = config.directives + directives,
-            jvmArgs = config.jvmArgs + jvmArgs,
-            mainClass = config.mainClass ?: mainClass,
-            mainClassCandidates = config.mainClassCandidates + mainClassCandidates,
-            mainArgs = config.mainArgs + mainArgs,
-        )
-    }
+    operator fun plus(config: JaunchConfig): JaunchConfig = JaunchConfig(
+        classpath = config.classpath + classpath,
+        maxHeap = config.maxHeap ?: maxHeap,
+        supportedOptions = config.supportedOptions + supportedOptions,
+        recognizedJvmArgs = config.recognizedJvmArgs + recognizedJvmArgs,
+        allowUnrecognizedJvmArgs = config.allowUnrecognizedJvmArgs ?: allowUnrecognizedJvmArgs,
+        versionMin = config.versionMin ?: versionMin,
+        versionMax = config.versionMax ?: versionMax,
+        rootPaths = config.rootPaths + rootPaths,
+        libjvmSuffixes = config.libjvmSuffixes + libjvmSuffixes,
+        modes = config.modes + modes,
+        directives = config.directives + directives,
+        jvmArgs = config.jvmArgs + jvmArgs,
+        mainClass = config.mainClass ?: mainClass,
+        mainClassCandidates = config.mainClassCandidates + mainClassCandidates,
+        mainArgs = config.mainArgs + mainArgs,
+    )
 }

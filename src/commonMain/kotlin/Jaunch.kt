@@ -3,6 +3,7 @@ import com.akuleshov7.ktoml.file.TomlFileReader
 import kotlinx.serialization.serializer
 import kotlin.experimental.ExperimentalNativeApi
 
+typealias JaunchOptions = Map<String, JaunchOption>
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
     val stdinArgs = stdinLines()
@@ -10,7 +11,7 @@ fun main(args: Array<String>) {
     val inputArgs = stdinArgs.slice(1..<stdinArgs.size) + args
 
     // Discern the directory containing this program.
-    val exeFile = if (executable == null) null else File(executable)
+    val exeFile = executable?.let(::File)
     val exeDir = exeFile?.directoryPath ?: "."
 
     // Load the configuration from the TOML files.
@@ -26,13 +27,14 @@ fun main(args: Array<String>) {
     //   --alpha,...,--omega=assignment|Description of what this option does.
     //
     // We need to parse out the help text, the actual flags list, and whether the flags expect an assignment value.
-    val supportedOptions = mutableMapOf<String, JaunchOption>()
-    for (optionLine in config.supportedOptions) {
-        val (optionString, help) = bisect(optionLine, "|")
-        val (flagsString, assignment) = bisect(optionString, "=")
-        val flags = flagsString.split(",")
-        val option = JaunchOption(flags.toTypedArray(), assignment, help)
-        for (flag in flags) supportedOptions[flag] = option
+    val supportedOptions: JaunchOptions = buildMap {
+        for (optionLine in config.supportedOptions) {
+            val (optionString, help) = optionLine bisect '|'
+            val (flagsString, assignment) = optionString bisect '='
+            val flags = flagsString.split(',')
+            val option = JaunchOption(flags.toTypedArray(), assignment, help)
+            for (flag in flags) this[flag] = option
+        }
     }
 
     // Declare a set of active hints, for activation of configuration elements.
@@ -41,10 +43,10 @@ fun main(args: Array<String>) {
     val hints = mutableSetOf(
         // Kotlin knows these operating systems:
         //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
-        "OS:${osName()}",
+        "OS:$osName",
         // Kotlin knows these CPU architectures:
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
-        "ARCH:${cpuArch()}"
+        "ARCH:$cpuArch"
     )
 
     // Declare a set to store option parameter values.
@@ -125,17 +127,17 @@ fun main(args: Array<String>) {
     // Discover Java.
     var libjvmPath: String? = null
     for (rootPathLine in config.rootPaths) {
-        val (rootPathRules, rawPath) = partition(rootPathLine)
-        if (!rulesApply(rootPathRules, hints)) continue
-        val path = interpolate(rawPath, vars)
+        val (rootPathRules, rawPath) = rootPathLine.partition()
+        if (!rootPathRules.utilize(hints)) continue
+        val path = rawPath interpolate vars
         val rootDir = File(path)
         if (!rootDir.isDirectory) continue
 
         // We found an actual directory. Now we check it for libjvm.
         for (libjvmSuffixLine in config.libjvmSuffixes) {
-            val (libjvmSuffixRules, rawSuffix) = partition(libjvmSuffixLine)
-            if (!rulesApply(libjvmSuffixRules, hints)) continue
-            val suffix = interpolate(rawSuffix, vars)
+            val (libjvmSuffixRules, rawSuffix) = libjvmSuffixLine.partition()
+            if (!libjvmSuffixRules.utilize(hints)) continue
+            val suffix = rawSuffix interpolate vars
             val libjvmFile = File("$path/$suffix")
             if (!libjvmFile.isFile) continue
 
@@ -163,9 +165,9 @@ fun main(args: Array<String>) {
     // Calculate classpath.
     val classpath = mutableListOf<String>()
     for (classpathLine in config.classpath) {
-        val (rules, rawValue) = partition(classpathLine)
-        if (!rulesApply(rules, hints)) continue
-        val value = interpolate(rawValue, vars)
+        val (rules, rawValue) = classpathLine.partition()
+        if (!rules.utilize(hints)) continue
+        val value = rawValue interpolate vars
         if (value.endsWith("/*")) {
             // Add all JAR files and directories to the classpath.
             val valueWithoutGlob = value.substring(0, value.length - 2)
@@ -185,10 +187,9 @@ fun main(args: Array<String>) {
 
     // Calculate JVM arguments.
     for (argLine in config.jvmArgs) {
-        val (rules, rawArg) = partition(argLine)
-        if (!rulesApply(rules, hints)) continue
-        val arg = interpolate(rawArg, vars)
-        jvmArgs += arg
+        val (rules, rawArg) = argLine.partition()
+        if (!rules.utilize(hints)) continue
+        jvmArgs += rawArg interpolate vars
     }
     // TODO: Consider the best ordering for these elements.
     //  Maybe they should be prepended, in case the user overrode them.
@@ -204,9 +205,9 @@ fun main(args: Array<String>) {
     // Calculate main class.
     var mainClassName: String? = null
     for (candidateLine in config.mainClassCandidates) {
-        val (rules, rawMainClass) = partition(candidateLine)
-        if (!rulesApply(rules, hints)) continue
-        mainClassName = interpolate(rawMainClass, vars)
+        val (rules, rawMainClass) = candidateLine.partition()
+        if (!rules.utilize(hints)) continue
+        mainClassName = rawMainClass interpolate vars
         break
     }
     if (mainClassName == null) {
@@ -215,10 +216,9 @@ fun main(args: Array<String>) {
 
     // Calculate main args.
     for (argLine in config.mainArgs) {
-        val (rules, rawArg) = partition(argLine)
-        if (!rulesApply(rules, hints)) continue
-        val arg = interpolate(rawArg, vars)
-        mainArgs += arg
+        val (rules, rawArg) = argLine.partition()
+        if (!rules.utilize(hints)) continue
+        mainArgs += rawArg interpolate vars
     }
 
     // TODO: dry-run directive.
@@ -284,19 +284,20 @@ private fun readConfig(tomlPath: String): JaunchConfig {
     ).decodeFromFile(serializer(), tomlPath)
 }
 
-private fun bisect(s: String, delimiter: String): Pair<String, String?> {
-    val index = s.indexOf(delimiter)
-    return if (index < 0) Pair(s, null) else Pair(s.substring(0, index), s.substring(index + 1))
+private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
+    val index = indexOf(delimiter)
+    return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
 }
 
-private fun partition(s: String): Pair<List<String>, String> {
-    val tokens = s.split("|")
-    return Pair(tokens.subList(0, tokens.size - 1), tokens.last())
+typealias Rules = List<String>
+private fun String.partition(): Pair<Rules, String> {
+    val tokens = split('|')
+    return Pair(tokens.subList(0, tokens.lastIndex), tokens.last())
 }
 
-private fun rulesApply(rules: List<String>, hints: Set<String>): Boolean {
-    for (rule in rules) {
-        val negation = rule.startsWith("!")
+private fun Rules.utilize(hints: Set<String>): Boolean {
+    for (rule in this) {
+        val negation = rule.startsWith('!')
         val hint = if (negation) rule.substring(1) else rule
         if (negation && hint in hints) return false
         if (!negation && hint !in hints) return false
@@ -305,41 +306,37 @@ private fun rulesApply(rules: List<String>, hints: Set<String>): Boolean {
 }
 
 /** Replaces ${var} expressions with values from a vars map. */
-private fun interpolate(s: String, vars: Map<String, String>): String {
-    val result = StringBuilder()
+private infix fun String.interpolate(vars: Map<String, String>): String = buildString {
     var pos = 0
     while (true) {
         // Find the next variable expression.
-        val start = s.indexOf("\${", pos)
-        val end = if (start < 0) -1 else s.indexOf("}", start + 2)
+        val start = indexOf("\${", pos)
+        val end = if (start < 0) -1 else indexOf('}', start + 2)
         if (start < 0 || end < 0) {
             // No more variable expressions found; append remaining string.
-            result.append(s.substring(pos))
+            append(substring(pos))
             break
         }
 
         // Add the text before the variable.
-        result.append(s.substring(pos, start))
+        append(substring(pos, start))
 
         // Evaluate the expression and add it to the result.
         // If the variable is missing from the map, check for an environment variable.
         // If no environment variable either, then just leave the expression alone.
-        val name = s.substring(start + 2, end)
-        val value = vars.getOrElse(name) { getenv(name) ?: s.substring(start, end) }
-        result.append(value)
+        val name = substring(start + 2, end)
+        val value = vars.getOrElse(name) { getenv(name) ?: substring(start, end) }
+        append(value)
 
         // Advance the position beyond the variable expression.
         pos = end + 1
     }
-    return result.toString()
 }
 
 @OptIn(ExperimentalNativeApi::class)
-private fun osName(): String {
-    return Platform.osFamily.name
-}
+private val osName: String
+    get() = Platform.osFamily.name
 
 @OptIn(ExperimentalNativeApi::class)
-private fun cpuArch(): String {
-    return Platform.cpuArchitecture.name
-}
+private val cpuArch: String
+    get() = Platform.cpuArchitecture.name

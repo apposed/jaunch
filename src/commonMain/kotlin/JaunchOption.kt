@@ -4,11 +4,9 @@ data class JaunchOption(
     val assignment: String?,
     val help: String?,
 ) {
-    fun help(): String {
-        val sb = StringBuilder()
-        sb.append(flags.joinToString(", "))
-        if (assignment != null) sb.append(" = $assignment")
-        if (help != null) sb.append("\n                    $help")
-        return sb.toString()
+    fun help(): String = buildString {
+        append(flags.joinToString(", "))
+        assignment?.let { append(" = $it") }
+        help?.let { append("\n                    $it") }
     }
 }
