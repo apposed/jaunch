@@ -7,6 +7,8 @@ typealias JaunchOptions = Map<String, JaunchOption>
 
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
+    // Normally, there will only be lines of stdin, not command line arguments,
+    // but it's perhaps convenient for testing to be able to pass args on the CLI, too.
     val stdinArgs = stdinLines()
     val executable = stdinArgs.getOrNull(0)
     val inputArgs = stdinArgs.slice(1..<stdinArgs.size) + args
