@@ -1,40 +1,38 @@
-# Runtime classpath elements to pass to Java.
-classpath = [
-    '--full-classpath|jars/*.jar',
-    '--full-classpath|jars/bio-formats/*.jar',
-    '--full-classpath|plugins/*.jar',
-    '!--full-classpath|jars/imagej-launcher*.jar',
-]
+# *** Welcome to the Jaunch configuration file! ***
+#
+# This jaunch.toml file contains useful general-purpose, non-application-specific
+# configuration that defines some sensible defaults for typical Java-based launchers.
+# You can of course edit it to customize Jaunch's behavior however you like!
+#
+# Each application will typically have its own extensions to the general configuration
+# defined in another TOML file named the same as its native launcher executable.
+# For example, if you have a native executable named fizzbuzz for launching your
+# FizzBuzz application, you would also write a fizzbuzz.toml companion file that
+# overrides or augments this configuration with fizzbuzz-specific settings.
+#
+# Minimally, such application-specific configuration will include the `program-name`
+# and `main-class` (or `main-class-candidates`) fields. But it may add application-
+# specific options as well via the `supported-options` field, as well as constraints
+# such as `version-min`/`version-max` to restrict which Javas to use with the app.
+#
+# Alternately, if you would like to keep all configuration together in one file
+# for simplicity, you can write a single TOML file with everything, and name it
+# either `jaunch.toml` or the same as your native launcher (e.g. `fizzbuzz.toml`).
+
+# Name your program here! This name will appear in the usage text.
+#program-name = 'Awesome-Sauce'
+
+# Runtime classpath elements (e.g. JAR files) to pass to Java.
+classpath = []
 
 # Maximum amount of memory for the Java heap to consume. Examples:
-# - For 1567 MB: "1567m"
-# - For 48 GB: "48g"
-# - For 75% of available RAM: "75%"
-# - For 3 GB less than available RAM: "-3g"
-# These will be translated into an appropriate "-Xmx..." argument.
+# - For 1567 MB: '1567m'
+# - For 48 GB: '48g'
+# - For 75% of available RAM: '75%'
+# - For 3 GB less than available RAM: '-3g'
+# These will be translated into an appropriate '-Xmx...' argument.
+#max-heap = '50%'
 
-max-heap = '75%'
-
-# IDEA: Layer the jaunch.toml with fiji.toml. The fiji.toml will be used when fiji.exe is used,
-# layered on top of the base jaunch.toml, which is always read with any launcher.
-# In this way, we can have a Fiji-agnostic jaunch.toml, which is rarely modified, and a more
-# frequently customized fiji.toml.
-# But... to make the updater happy, we may also need a fiji-default.toml, so that users can
-# edit their fiji.toml without the updater seeing it as locally modified, and so that fiji.toml
-# has a template to start from initially.
-#
-# Override scenarios:
-# - global settings
-# - specific OS family
-# - specific architecture and/or bitness
-# - specific Java version range -- e.g. GC flags that only work for some versions
-#   - JAVA:8 = Only Java 8
-#   - JAVA:9+ = Java 9 or later
-# - specific Java vendors?
-#   - zulu* =
-# - any/all of the above, for only a specific launcher (e.g. fiji)
-#   - in a separate .toml file named the same as the launcher
-#   - just layered/appended, no subtraction, no prepending
 # Order matters. So we cannot use separate sections unless we use arrays of tables,
 # which gets pretty complicated. Let's use a simpler syntax instead: hints before a bar (|) symbol.
 # So, for every string in the file, we split on bar and then filter by matching environments.
@@ -47,52 +45,28 @@ max-heap = '75%'
 # We can also support conditional flags.
 # Typically, each flag on the CLI takes some number of additional parameters after it, maybe 0.
 # - If it takes zero parameters, its value becomes a boolean.
-# - We can say "--foo bar" and we'll get "foo=bar" in the table.
-# - We can say "--foo=bar" and same.
-# - We can say "--foo fizz buzz" and we'll get "foo=[fizz, buzz]" in the table.
-# - We can say "--foo" and we'll get "foo=true".
+# - We can say `--foo bar` and we'll get `foo=bar` in the table.
+# - We can say `--foo=bar` and same.
+# - We can say `--foo fizz buzz` and we'll get `foo=[fizz, buzz]` in the table.
+# - We can say `--foo` and we'll get `foo=true`.
 # - We can say *nothing*, and when checking for the value 'foo' in the table, we'll be told `false`.
 # With this scheme, we have additive options, and can limitedly fake subtractive behavior based on falsy parameters.
 
 supported-options = [
-    # TODO: Some of these are still ImageJ/Fiji-specific. Sort them out.
     '--help,-h|show this help',
     '--dry-run|show the command line, but do not run anything',
     '--info|informational output',
     '--debug|verbose output',
     '--system|do not try to run bundled Java',
     '--java-home=<path>|specify JAVA_HOME explicitly',
-    "--print-java-home|print ImageJ's idea of JAVA_HOME",
-    '--print-ij-dir|print where ImageJ thinks it is located',
+    '--print-java-home|print path to the selected Java',
+    '--print-app-dir|print directory where the application is located',
     '--headless|run in text mode',
-    "--ij-dir=<path>|set the ImageJ directory to <path> (used to find\njars/, plugins/ and macros/)",
     "--heap,--mem,--memory=<amount>|set Java's heap size to <amount> (e.g. 512M)",
     '--class-path,--classpath,-classpath,--cp,-cp=<path>|append <path> to the class path',
     '--jar-path,--jarpath,-jarpath=<path>|append .jar files in <path> to the class path',
-    '--pass-classpath=<classpath>|pass -classpath <classpath> to the main() method',
-    '--full-classpath|call the main class with the full ImageJ class path',
-    "--ext=<path>|set Java's extension directory to <path>",  # TODO: This is no longer a thing in later versions of Java. And the current launcher crashes when this option is used. But it's simple to implement, probably.
-    "--default-gc|do not use advanced garbage collector settings by default\n(-XX:+G1GC)",
-    '--gc-g1|use the G1 garbage collector',
-    '--debug-gc|show debug info about the garbage collector on stderr',
-    "--debugger=<port>[,suspend]|start the JVM in a mode so an IDE's debugger can attach to it",
-    '--no-splash|suppress showing a splash screen upon startup',
-
-    # ImageJ/Fiji-specific
-    '--dont-patch-ij1|do not try to runtime-patch ImageJ1 (implies --ij1)',
-    '--ij2|start ImageJ2 instead of ImageJ1',
-    '--ij1|start ImageJ1',
-    '--allow-multiple|do not reuse existing ImageJ instance',
-    '--plugins=<dir>|use <dir> to discover plugins',
-    '--run <plugin> [<arg>]|run <plugin> in ImageJ, optionally with arguments',
-    '--compile-and-run <path-to-.java-file>|compile and run <plugin> in ImageJ',
-    '--edit [<file>...]|edit the given file in the script editor',
-
-    # Options to run programs other than ImageJ:
-    '--update|start the command-line version of the ImageJ updater',
-    "--main-class=<class name>|start the given class instead of ImageJ\n(this is the default when called with a file ending in .class)",
-# Nico: NEED: execute a script with parameters
-# ./ImageJ-linux64 --ij2 --headless --console --run hello.py 'name="Mr Kraken"'
+    "--ext=<path>|set Java's extension directory to <path>",
+    '--debugger=<port>[,suspend]|start the JVM in a mode so an IDE/debugger can attach to it',
 ]
 
 # These are used to guess, when the minus-minus divider is absent, whether each arg is a JVM one or a main one.
@@ -137,20 +111,20 @@ recognized-jvm-args = [
 allow-unrecognized-jvm-args = true
 
 # Acceptable range of Java versions to match.
-version-min = 8
+#version-min = 8
 #version-max = 21
 
 # Paths to check for Java installations.
 root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
-    '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific
-    '!--system|OS:LINUX|ARCH:X86|java/linux',              # TODO: Fiji-specific
-    '!--system|OS:LINUX|ARCH:X86|java/linux32',            # TODO: Fiji-specific
-    '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64',    # TODO: Fiji-specific
-    '!--system|OS:MACOSX|ARCH:X64|java/macosx',            # TODO: Fiji-specific
-    '!--system|OS:WINDOWS|ARCH:X64|java/win64',            # TODO: Fiji-specific
-    '!--system|OS:WINDOWS|ARCH:X86|java/win32',            # TODO: Fiji-specific
+    '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific?
+    '!--system|OS:LINUX|ARCH:X86|java/linux',              # TODO: Fiji-specific?
+    '!--system|OS:LINUX|ARCH:X86|java/linux32',            # TODO: Fiji-specific?
+    '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64',    # TODO: Fiji-specific?
+    '!--system|OS:MACOSX|ARCH:X64|java/macosx',            # TODO: Fiji-specific?
+    '!--system|OS:WINDOWS|ARCH:X64|java/win64',            # TODO: Fiji-specific?
+    '!--system|OS:WINDOWS|ARCH:X86|java/win32',            # TODO: Fiji-specific?
     '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',               # Conda (openjdk 9+)
     '${CONDA_PREFIX}/pkgs/openjdk*',                       # Conda (openjdk 8)
     'OS:LINUX|/usr/lib/jvm',                               # Linux distro package manager (e.g. apt)
@@ -225,112 +199,28 @@ libjvm-suffixes = [
 # (Such options may alternately be written `--foo bar` as two arguments.)
 #
 # Modes are used as hints for activating arguments to the JVM and main class.
-modes = [
-  "--dont-patch-ij1|ij1-mode",
-  "--dont-patch-ij1|no-ij1-patching",
-  "--update|no-ij1-patching",
-  "--ij1|ij1-mode",
-  "--ij2|!ij1-mode",
-  "--ij2|!no-ij1-patching",
-]
+modes = []
 
-# Options that override Jaunch's usual behavior of launching Java.
-# Each of these runs a different directive other than launch.
-# The previous launcher's behavior was that as soon as one of these directives
-# is encountered, it *happens immediately and other flags are ignored*.
-# Except for dry-run... that one does not short-circuit terminate arg parsing...
-# TODO: Finalize the architecture for handling these cases.
+# Commands that override Jaunch's usual behavior of launching Java.
+# Each one runs at a particular (hardcoded) time during configuration.
+# Directives unsupported by the configurator program are ignored.
 directives = [
-  "--help|help",
-  "-h|help",
-  "--dry-run|dry-run",
-  "--print-java-home|print-java-home",
-  "--print-app-dir|print-app-dir",  # ImageJ/Fiji-specific flavor.
-  "--print-ij-dir|print-app-dir",  # ImageJ/Fiji-specific flavor.
+  '--help|help',
+  '-h|help',
+  '--dry-run|dry-run',
+  '--print-java-home|print-java-home',
+  '--print-app-dir|print-app-dir',
 ]
 
 # Arguments to pass to the JVM.
 jvm-args = [
-    '--info|-Dscijava.log.level=info',
-
-    '--debug|-Dij.debug=true',
-    '--debug|-Dscijava.log.level=debug',
-
-    # In https://forum.image.sc/t/88620, acardona wrote:
-    # > When running in a machine with many CPU cores (like 64, or 256) and lots
-    # > of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
-    # > I find that the concurrent garbage collector (G1 GC) works *a lot better*.
-    '!--default-gc|-XX:+G1GC',
-
-    # TODO: How to handle actual JVM args given verbatim, like `-Dfoo=bar` and `-Xms111m`?
-
-    # Handle --gc-g1 option.
-    '--gc-g1|-XX:+UseCompressedOops',
-    '--gc-g1|-XX:+UnlockExperimentalVMOptions',
-    '--gc-g1|-XX:+UseG1GC',
-    '--gc-g1|-XX:NewRatio=5',
-
-    # Handle --headless option.
     '--headless|-Djava.awt.headless=true',
-
-    # Handle --heap / --mem / --memory option.
     '--heap|-Xmx${heap}',
-
-    # Handle --dont-patch-ij1 option.
-    'no-ij1-patching|-Dpatch.ij1=false',
-
-    # Handle ij1 mode.
-    'ij1-mode|-Dsun.java.command=ImageJ',
-
-    # Enable SciJava logging in updater mode.
-    '--update|-Dscijava.log.level=info',
-
-    # Supported since Jigsaw was introduced in Java 9.
-    # Necessary for ij1-patcher to work properly with Java 17+.
-    'java9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
-    'java9+|--add-opens=java.base/java.util=ALL-UNNAMED',  # TODO: Why? What triggers this?
-    'java9+|linux*|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # TODO: Why? Is this Linux-specific?
-    'java9+|linux*|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # Linux only; TODO: what about Wayland?
-    'java9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
-
-    '-Dpython.cachedir.skip=true',  # Make Jython behave better.
-    '-Dplugins.dir=${ijDirPath}',  # ImageJ cares about this property.
-    '!--no-splash|-Dimagej.splash=true',
-
-    # TODO: Make this work better with aliases.
-    # And consider using ${cwd} instead of ${app-dir} as the canonical name.
-    '-Dimagej.dir=${app-dir}',
-    '-Dij.dir=${app-dir}',
-    '-Dfiji.dir=${app-dir}',
-
-    # These will become `fiji.exe`, `fiji`, `Contents/MacOS/fiji`
-    '-Dapp.executable=${ijDirPath}/fiji-${systemType}.exe',
-    '-Dfiji.executable=${ijDirPath}/fiji-${systemType}.exe',
-    '-Dij.executable=${ijDirPath}/fiji-${systemType}.exe',
-
-    'OS:LINUX|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/linux64',
-    'OS:LINUX|ARCH:X86|-Djava.library.path=${ijDirPath}/lib/linux32',
-    'OS:MACOSX|ARCH:ARM64|-Djava.library.path=${ijDirPath}/lib/macosx-arm64',
-    'OS:MACOSX|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/macosx',
-    'OS:WINDOWS|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/win64',
-    'OS:WINDOWS|ARCH:X86|-Djava.library.path=${ijDirPath}/lib/win32',
-
-    '-Dscijava.context.strict=false',  # Make SciJava startup less brittle.
-    '-Dpython.console.encoding=UTF-8',  # TODO: What is this for?
+    '--ext|-Djava.ext.dirs=${ext}',
 ]
 
-main-class-candidates = [
-    '--main-class|${main-class}',
-    '--update|net.imagej.updater.CommandLine',
-    'net.imagej.launcher.ClassLauncher'
+# Runtime classpath elements to pass to the JVM.
+classpath = [
+    '--class-path|${class-path}',
+    '--jar-path|${jar-path}/*',
 ]
-
-main-args = [
-    '!ij1-mode|-ijjarpath', 'jars',
-    '!ij1-mode|-ijjarpath', 'plugins',
-    '!ij1-mode|net.imagej.Main',
-    'ij1-mode|-classpath',
-    'ij1-mode|jars/ij-*.jar',
-    'ij1-mode|ij.ImageJ',
-]
-
