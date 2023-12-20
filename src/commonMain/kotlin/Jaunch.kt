@@ -201,7 +201,7 @@ fun main(args: Array<String>) {
     //  skip appending the classpath? Or append to that same arg?
     //  Similar question for `-Xmx`: leave it off if it was already given?
     if (classpath.isNotEmpty()) {
-        jvmArgs += "-Djava.class.path=${classpath.joinToString(colon)}"
+        jvmArgs += "-Djava.class.path=${classpath.joinToString(COLON)}"
     }
     jvmArgs += "-Xmx${maxHeap}"
 
