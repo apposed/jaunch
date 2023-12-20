@@ -11,10 +11,10 @@ fun main(args: Array<String>) {
 
     // Discern the directory containing this program.
     val exeFile = if (executable == null) null else File(executable)
-    val dir = exeFile?.directoryPath ?: "."
+    val exeDir = exeFile?.directoryPath ?: "."
 
     // Load the configuration from the TOML files.
-    var config = readConfig("$dir/jaunch.toml")
+    var config = readConfig("$exeDir/jaunch.toml")
     if (exeFile != null) {
         // Parse and merge the app-specific TOML file as well.
         config += readConfig("${exeFile.withoutSuffix}.toml")
@@ -26,18 +26,18 @@ fun main(args: Array<String>) {
     //   --alpha,...,--omega=assignment|Description of what this option does.
     //
     // We need to parse out the help text, the actual flags list, and whether the flags expect an assignment value.
-
     val supportedOptions = mutableMapOf<String, JaunchOption>()
     for (optionLine in config.supportedOptions) {
-        val (optionString, help) = partition(optionLine, "|")
-        val (flagsString, assignment) = partition(optionString, "=")
+        val (optionString, help) = bisect(optionLine, "|")
+        val (flagsString, assignment) = bisect(optionString, "=")
         val flags = flagsString.split(",")
         val option = JaunchOption(flags.toTypedArray(), assignment, help)
         for (flag in flags) supportedOptions[flag] = option
     }
 
-    // The set of active hints, for activation of configuration elements.
-    // Initially populated with hints for the current operating system and CPU architecture.
+    // Declare a set of active hints, for activation of configuration elements.
+    // Initially populated with hints for the current operating system and CPU architecture,
+    // but it will grow over the course of the configuration process below.
     val hints = mutableSetOf(
         // Kotlin knows these operating systems:
         //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
@@ -47,20 +47,36 @@ fun main(args: Array<String>) {
         "ARCH:${cpuArch()}"
     )
 
-    val jvmArgs = mutableListOf<String>()
-    val mainArgs = mutableListOf<String>()
+    // Declare a set to store option parameter values.
+    // It will be populated at argument parsing time.
     val vars = mutableMapOf<String, String>()
 
-    // Parse the input arguments. Each input argument becomes an active hint.
+    // Declare the authoritative lists of JVM arguments and main arguments.
+    // At the end of the configuration process, we will emit these to stdout.
+    val jvmArgs = mutableListOf<String>()
+    val mainArgs = mutableListOf<String>()
+
+    // Parse the configurator's input arguments.
+    //
+    // An input argument matching one of Jaunch's supported options becomes an active hint.
+    // So e.g. `--foo` would be added to the hints set as `--foo`.
+    //
+    // Matching input arguments that take a parameter not only add the option as a hint,
+    // but also add the parameter value to the vars map.
+    // So e.g. `--sigmas=5` would add the `--sigma` hint, and add `"5"` as the value for the `sigma` variable.
+    // Variable values will be interpolated into argument strings later in the configuration process.
+    //
+    // Non-matching input arguments will be passed through directly,
+    // either to the JVM or to the main method on the Java side.
+    // The exact behavior will depend on whether the `--` separator was provided.
+    val divider = inputArgs.indexOf("--")
     var i = 0
-    var afterDivider = false
     while (i < inputArgs.size) {
         val arg = inputArgs[i++]
         if (arg == "--") {
-            if (afterDivider) error("Divider symbol (--) may only be given once")
-            afterDivider = true
+            if (i != divider) error("Divider symbol (--) may only be given once")
         }
-        if (arg in supportedOptions) {
+        else if (arg in supportedOptions) {
             // The argument is declared in Jaunch's configuration. Deal with it appropriately.
             val option: JaunchOption = supportedOptions[arg]!!
             if (option.assignment != null) {
@@ -75,11 +91,23 @@ fun main(args: Array<String>) {
         }
         else {
             // The argument is not a Jaunch one. Pass it through directly.
-            // TODO: There is a third case: no divider is ever declared through the input args.
-            //  In that case, we should make a best guess on a per-arg basis whether it's for JVM or main.
-            //  We can use config.recognizedJvmArgs (after stripping [:/=].*) and config.allowUnrecognizedJvmArgs.
-            if (afterDivider) mainArgs += arg
-            else jvmArgs += arg
+            if (divider < 0) {
+                // No dash-dash divider was given, so we need to guess: is this a JVM arg, or a main arg?
+                (if (config.recognizes(arg)) jvmArgs else mainArgs) += arg
+            }
+            else if (i < divider) {
+                // This argument is before the dash-dash divider, so must be treated as a JVM arg.
+                // But we only allow it through if it's a recognized JVM argument, or the
+                // allow-unrecognized-jvm-args configuration flag is set to true.
+                if (config.allowUnrecognizedJvmArgs != true && !config.recognizes(arg)) {
+                    error("Unrecognized JVM argument: $arg")
+                }
+                jvmArgs += arg
+            }
+            else {
+                // This argument is after the dash-dash divider, so we treat it as a main arg.
+                mainArgs += arg
+            }
         }
     }
 
@@ -95,49 +123,105 @@ fun main(args: Array<String>) {
     //  Whereas the help directive should emit the help immediately and exit.
 
     // Discover Java.
-    // TODO: config.rootPaths, config.libjvmSuffixes, config.versionMin, config.versionMax
-    val jdkDir = getenv("JAVA_HOME")
-    if (jdkDir == null || !File(jdkDir).isDirectory) {
+    var libjvmPath: String? = null
+    for (rootPathLine in config.rootPaths) {
+        val (rootPathRules, rawPath) = partition(rootPathLine)
+        if (!rulesApply(rootPathRules, hints)) continue
+        val path = interpolate(rawPath, vars)
+        val rootDir = File(path)
+        if (!rootDir.isDirectory) continue
+
+        // We found an actual directory. Now we check it for libjvm.
+        for (libjvmSuffixLine in config.libjvmSuffixes) {
+            val (libjvmSuffixRules, rawSuffix) = partition(libjvmSuffixLine)
+            if (!rulesApply(libjvmSuffixRules, hints)) continue
+            val suffix = interpolate(rawSuffix, vars)
+            val libjvmFile = File("$path/$suffix")
+            if (!libjvmFile.isFile) continue
+
+            // Found a libjvm. So now we validate the Java installation.
+            // It needs to conform to the configuration's version constraints.
+            val info = releaseInfo(rootDir) ?: continue
+            val vendor = info.getOrElse("IMPLEMENTOR") { null }
+            val version = info.getOrElse("JAVA_VERSION") { null }
+            // TODO: parse out majorVersion from version, then compare to versionMin/versionMax.
+            //  If not within the constraints, continue.
+            //  Add allowedVendors/blockedVendors lists to the TOML schema, and check it here.
+
+            // All constraints passed -- select this Java installation!
+            libjvmPath = libjvmFile.path
+            break
+        }
+        if (libjvmPath != null) break
+    }
+    if (libjvmPath == null) {
         error("No Java installation found.")
     }
-    val libjvmPath = "$jdkDir/lib/server/libjvm.so"
 
-    // TODO: print-java-home directive here.
+    // TODO: print-java-home directive.
 
     // Calculate classpath.
-    // TODO: config.classpath
-    val fijiDir = getenv("FIJI_HOME") ?: (getenv("HOME") + "/Applications/Fiji.app")
-    if (!File(fijiDir).isDirectory) {
-        error("No Fiji installation found.")
+    val classpath = mutableListOf<String>()
+    for (classpathLine in config.classpath) {
+        val (rules, rawValue) = partition(classpathLine)
+        if (!rulesApply(rules, hints)) continue
+        val value = interpolate(rawValue, vars)
+        if (value.endsWith("/*")) {
+            // Add all JAR files and directories to the classpath.
+            val valueWithoutGlob = value.substring(0, value.length - 2)
+            for (file in File(valueWithoutGlob).listFiles()) {
+                if (file.isDirectory || file.suffix == "jar") classpath += file.path
+            }
+        }
+        else {
+            classpath += value
+        }
     }
-    val classpath = findJarsAndPlugins(fijiDir)
+
+    // TODO: print-class-path directive.
+
+    // Calculate max heap.
+    val maxHeap: String = config.maxHeap ?: "1g" // TODO
 
     // Calculate JVM arguments.
-    // TODO: config.jvmArgs, config.maxHeap, config.splashImage
-    //  And mix in classpath elements from above, if any.
-    val kbMemAvailable = getMemAvailable()
-    val mbToUse = 3 * kbMemAvailable / 4 / 1024
-    jvmArgs += arrayOf(
-        "-Xmx${mbToUse}m",
-        "--add-opens=java.base/java.lang=ALL-UNNAMED",
-        "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED",
-        "-Djava.class.path=$classpath",
-        "-DtestFooJVM=testBarJVM",
-    )
+    for (argLine in config.jvmArgs) {
+        val (rules, rawArg) = partition(argLine)
+        if (!rulesApply(rules, hints)) continue
+        val arg = interpolate(rawArg, vars)
+        jvmArgs += arg
+    }
+    // TODO: Consider the best ordering for these elements.
+    //  Maybe they should be prepended, in case the user overrode them.
+    //  (With java arguments, later ones trump/replace earlier ones.)
+    // TODO: If jvmArgs already have a `-Djava.class.path`, should we
+    //  skip appending the classpath? Or append to that same arg?
+    //  Similar question for `-Xmx`: leave it off if it was already given?
+    if (classpath.isNotEmpty()) {
+        jvmArgs += "-Djava.class.path=${classpath.joinToString(colon)}"
+    }
+    jvmArgs += "-Xmx${maxHeap}"
 
     // Calculate main class.
-    // TODO: use config.mainClasses
-    val mainClassName = "sc.fiji.Main"
+    var mainClassName: String? = null
+    for (candidateLine in config.mainClassCandidates) {
+        val (rules, rawMainClass) = partition(candidateLine)
+        if (!rulesApply(rules, hints)) continue
+        mainClassName = interpolate(rawMainClass, vars)
+        break
+    }
+    if (mainClassName == null) {
+        error("No matching main class name")
+    }
 
     // Calculate main args.
     for (argLine in config.mainArgs) {
-        val tokens = argLine.split("|")
-        val rules = tokens.slice(0..<tokens.size-1)
-        val arg = tokens.last()
-        if (rulesApply(rules, hints)) {
-            mainArgs.add(interpolate(arg, vars))
-        }
+        val (rules, rawArg) = partition(argLine)
+        if (!rulesApply(rules, hints)) continue
+        val arg = interpolate(rawArg, vars)
+        mainArgs += arg
     }
+
+    // TODO: dry-run directive.
 
     // Emit final configuration.
     println(libjvmPath)
@@ -148,6 +232,48 @@ fun main(args: Array<String>) {
     for (mainArg in mainArgs) println(mainArg)
 }
 
+private fun releaseInfo(rootDir: File): Map<String, String>? {
+    // Discern the Java version and vendor. We need to extract them
+    // from the Java installation as inexpensively as possibly.
+    //
+    // Approaches:
+    // A) Parse the directory name.
+    //    - Fast but fragile.
+    // B) Look inside the <dir>/release file for IMPLEMENTOR and JAVA_VERSION.
+    //    - Some flavors (JBRSDK 8, Corretto 8) may be missing this file.
+    //    - Some flavors (JBRSDK 8, macOS Adopt 8, macOS Zulu 8) do not have IMPLEMENTOR.
+    //    - And some other flavors (JBRSDK 11, macOS Adopt 9) put "N/A" for IMPLEMENTOR.
+    //    - Can also look at OS_ARCH and OS_NAME if we want to glean those things.
+    //      All release files I possess appear to include these two OS lines.
+    // C) Call `java SysProps` to run a class to print System.getProperties() to stdout.
+    //    - Slow but reliable.
+    //    - Ideally would avoid doing this if we already know the os/arch is wrong.
+    //
+    // After succeeding at identifying a Java installation, we can cache the results.
+
+    val releaseFile = File("${rootDir.path}/release")
+    if (!releaseFile.isFile) return null
+    // TODO: Instead of failing immediately when the release file is missing, we should try a couple of
+    //  heuristics to glean the desired information of Java vendor/distro and version; see above comment.
+    val lines = releaseFile.readLines()
+    val info = mutableMapOf<String, String>()
+    for (line in lines) {
+        val equals = line.indexOf("=\"")
+        if (equals < 0 || !line.endsWith("\"")) {
+            // We are looking for lines of the form:
+            //   KEY="VALUE"
+            // and skipping (for now) lines not conforming to this pattern.
+            // These release files sometimes have lines in other forms, such as JSON-style map data structures.
+            // But we do not need to parse them, because we only care about two specific key/value string pairs.
+            continue
+        }
+        val key = line.substring(0, equals)
+        val value = line.substring(equals + 2)
+        info[key] = value
+    }
+    return info
+}
+
 private fun readConfig(tomlPath: String): JaunchConfig {
     val tomlFile = File(tomlPath)
     if (!tomlFile.exists) return JaunchConfig()
@@ -155,12 +281,17 @@ private fun readConfig(tomlPath: String): JaunchConfig {
         inputConfig = TomlInputConfig(
             ignoreUnknownNames = true,
         )
-    ).decodeFromFile<JaunchConfig>(serializer(), tomlPath)
+    ).decodeFromFile(serializer(), tomlPath)
 }
 
-private fun partition(s: String, delimiter: String): Pair<String, String?> {
+private fun bisect(s: String, delimiter: String): Pair<String, String?> {
     val index = s.indexOf(delimiter)
     return if (index < 0) Pair(s, null) else Pair(s.substring(0, index), s.substring(index + 1))
+}
+
+private fun partition(s: String): Pair<List<String>, String> {
+    val tokens = s.split("|")
+    return Pair(tokens.subList(0, tokens.size - 1), tokens.last())
 }
 
 private fun rulesApply(rules: List<String>, hints: Set<String>): Boolean {
@@ -191,9 +322,10 @@ private fun interpolate(s: String, vars: Map<String, String>): String {
         result.append(s.substring(pos, start))
 
         // Evaluate the expression and add it to the result.
-        // If the variable is missing from the map, just leave the expression alone.
+        // If the variable is missing from the map, check for an environment variable.
+        // If no environment variable either, then just leave the expression alone.
         val name = s.substring(start + 2, end)
-        val value = vars.getOrElse(name) { s.substring(start, end) }
+        val value = vars.getOrElse(name) { getenv(name) ?: s.substring(start, end) }
         result.append(value)
 
         // Advance the position beyond the variable expression.
@@ -210,30 +342,4 @@ private fun osName(): String {
 @OptIn(ExperimentalNativeApi::class)
 private fun cpuArch(): String {
     return Platform.cpuArchitecture.name
-}
-
-private fun findJarsAndPlugins(fijiDir: String): String {
-    val jarsDir = File("$fijiDir/jars")
-    val bioFormatsDir = File("$fijiDir/jars/bio-formats")
-    val pluginsDir = File("$fijiDir/plugins")
-
-    val jarFiles = jarsDir.listFiles() + bioFormatsDir.listFiles() + pluginsDir.listFiles()
-    return jarFiles.filter { it.isFile && it.absolutePath.endsWith(".jar") }.joinToString(":") { it.absolutePath }
-}
-
-private fun getMemAvailable(): Int {
-    val kbMemAvailable = 20454432
-    /*
-    try {
-        val memInfo = processFileToString("/proc/meminfo")
-        val kbMemAvailable = memInfo.lines().firstOrNull { it.startsWith("MemAvailable:") }
-            ?.substringAfter(":").trim()?.filter { it.isDigit() }?.toIntOrNull()
-
-        return kbMemAvailable ?: 0
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return 0
-    }
-    */
-    return kbMemAvailable
 }

@@ -4,7 +4,17 @@ import kotlinx.cinterop.*
 import platform.posix.*
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class File actual constructor(val path: String) {
+actual class File actual constructor(private val thePath: String) {
+
+    actual val path: String
+        get() {
+            return thePath
+        }
+
+    actual val absolutePath: String
+        get() {
+            return path // FIXME
+        }
 
     actual val exists: Boolean
         get() {
@@ -30,11 +40,6 @@ actual class File actual constructor(val path: String) {
         return (statResult.st_mode and modeBits.toUInt()) != 0u
     }
 
-    actual val absolutePath: String
-        get() {
-            return path // FIXME
-        }
-
     actual fun listFiles(): List<File> {
         if (!isDirectory) throw IllegalArgumentException("Not a directory")
 
@@ -54,6 +59,24 @@ actual class File actual constructor(val path: String) {
         }
 
         return files
+    }
+
+    actual fun readLines(): List<String> {
+        val lines = mutableListOf<String>()
+        memScoped {
+            val file = fopen(path, "r") ?: throw RuntimeException("Failed to open file")
+            try {
+                while (true) {
+                    val buffer = alloc<ByteVar>()
+                    val line = fgets(buffer.ptr, FILENAME_MAX, file)?.toKString() ?: break
+                    lines.add(line)
+                }
+            }
+            finally {
+                fclose(file)
+            }
+        }
+        return lines
     }
 
     override fun toString(): String {

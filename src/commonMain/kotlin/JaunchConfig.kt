@@ -93,6 +93,23 @@ data class JaunchConfig (
             return if (mainClass == null) mainClassCandidates else arrayOf(mainClass) + mainClassCandidates
         }
 
+    /** Return true iff the given argument is on the list of {@link #recognizedJvmArgs}. */
+    fun recognizes(arg: String): Boolean {
+        for (okArg in recognizedJvmArgs) {
+            if (okArg.endsWith("*")) {
+                val prefix = okArg.substring(0, okArg.length - 1)
+                if (arg.startsWith(prefix)) return true else continue
+            }
+            var trimmed = arg
+            for (symbol in listOf(":", "=")) {
+                val index = trimmed.indexOf(symbol)
+                if (index >= 0) trimmed = trimmed.substring(0, index)
+            }
+            if (trimmed == okArg) return true
+        }
+        return false
+    }
+
     operator fun plus(config: JaunchConfig): JaunchConfig {
         return JaunchConfig(
             classpath = config.classpath + classpath,

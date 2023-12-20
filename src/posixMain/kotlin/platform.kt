@@ -26,3 +26,6 @@ actual fun stdinLines(): Array<String> {
     }
     return lines
 }
+
+actual val slash = "/"
+actual val colon = ":"

@@ -143,28 +143,27 @@ version-min = 8
 # Paths to check for Java installations.
 root-paths = [
     '--java-home|${java-home}',
-    '$JAVA_HOME',
-    '!--system|OS:WINDOWS|ARCH:X64|java/win64',            # TODO: Fiji-specific
-    # TODO: Should we support 32-bit Windows or 32-bit Linux? Does Kotlin Native?
-    '!--system|OS:WINDOWS|ARCH:X86|java/win32',            # TODO: Fiji-specific
+    '${JAVA_HOME}',
+    '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific
+    '!--system|OS:LINUX|ARCH:X86|java/linux',              # TODO: Fiji-specific
+    '!--system|OS:LINUX|ARCH:X86|java/linux32',            # TODO: Fiji-specific
     '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64',    # TODO: Fiji-specific
     '!--system|OS:MACOSX|ARCH:X64|java/macosx',            # TODO: Fiji-specific
-    '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific
-    '!--system|OS:LINUX|ARCH:X86|java/linux32',            # TODO: Fiji-specific
-    '!--system|OS:LINUX|ARCH:X86|java/linux',              # TODO: Fiji-specific
-    'OS:WINDOWS|ARCH:X86|C:/Program Files (x86)/Java',
-    'OS:WINDOWS|ARCH:X64|C:/Program Files/Java',
-    '$CONDA_PREFIX/pkgs/openjdk*/lib/jvm',                 # Conda (openjdk 9+)
-    '$CONDA_PREFIX/pkgs/openjdk*',                         # Conda (openjdk 8)
-    'OS:WINDOWS|~/scoop/Apps/...',                         # TODO: Scoop
-    'OS:MACOSX|/Library/Java/JavaVirtualMachines',         # Java 8+
-    'OS:MACOSX|/usr/local/...',                            # TODO: Homebrew
+    '!--system|OS:WINDOWS|ARCH:X64|java/win64',            # TODO: Fiji-specific
+    '!--system|OS:WINDOWS|ARCH:X86|java/win32',            # TODO: Fiji-specific
+    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',               # Conda (openjdk 9+)
+    '${CONDA_PREFIX}/pkgs/openjdk*',                       # Conda (openjdk 8)
     'OS:LINUX|/usr/lib/jvm',                               # Linux distro package manager (e.g. apt)
     'OS:LINUX|/var/lib/flatpak/...',                       # TODO: Flatpak
     'OS:LINUX|~/.sdkman/candidates/java',                  # sdkman.io
     'OS:LINUX|~/.cache/cjdk/v*/jdks/*',                    # github.com/cachedjdk/cjdk
     'OS:LINUX|~/.jdk',                                     # github.com/jyksnw/install-jdk
     'OS:LINUX|~/.jre',                                     # github.com/jyksnw/install-jdk
+    'OS:MACOSX|/Library/Java/JavaVirtualMachines',         # Java 8+
+    'OS:MACOSX|/usr/local/...',                            # TODO: Homebrew
+    'OS:WINDOWS|ARCH:X64|C:/Program Files/Java',
+    'OS:WINDOWS|ARCH:X86|C:/Program Files (x86)/Java',
+    'OS:WINDOWS|~/scoop/Apps/...',                         # TODO: Scoop
 ]
 
 # And then there are programmatic ways to glean the Java installations,
@@ -191,6 +190,10 @@ root-paths = [
 # there's any difference in behavior based on which one gets linked.
 
 libjvm-suffixes = [
+    'OS:LINUX|lib/server/libjvm.so',                     # Java 9+
+    'OS:LINUX|jre/lib/amd64/server/libjvm.so',           # Java 8 (64-bit)
+    'OS:LINUX|jre/lib/i386/server/libjvm.so',            # Java 8 (32-bit)
+    'OS:LINUX|jbr/lib/server/libjvm.so',                 # jbrsdk_11.0.8_x64
     'OS:MACOSX|Contents/Home/jre/lib/jli/libjli.dylib',  # Java 8
     'OS:MACOSX|Contents/Home/lib/jli/libjli.dylib',      # Java 9-11
     'OS:MACOSX|Contents/Home/lib/libjli.dylib',          # Java 12+
@@ -200,10 +203,6 @@ libjvm-suffixes = [
     'OS:WINDOWS|bin/client/jvm.dll',                     # Java 9+
     'OS:WINDOWS|jre/bin/server/jvm.dll',                 # Java 8
     'OS:WINDOWS|jre/bin/client/jvm.dll',                 # Java 8
-    'OS:LINUX|lib/server/libjvm.so',                     # Java 9+
-    'OS:LINUX|jre/lib/amd64/server/libjvm.so',           # Java 8 (64-bit)
-    'OS:LINUX|jre/lib/i386/server/libjvm.so',            # Java 8 (32-bit)
-    'OS:LINUX|jbr/lib/server/libjvm.so',                 # jbrsdk_11.0.8_x64
 ]
 
 # TODO: Should we just call them "hints" rather than "modes" here?
@@ -234,22 +233,6 @@ modes = [
   "--ij2|!ij1-mode",
   "--ij2|!no-ij1-patching",
 ]
-
-# TODO: How to know java version and vendor? We need to discern
-# them from the Java installation as inexpensively as possibly.
-# Potential strategies:
-# - Parse the directory name.
-#   - Fast but fragile.
-# - Look inside the <dir>/release file for IMPLEMENTOR and JAVA_VERSION.
-#   - Some flavors (JBRSDK 8, Corretto 8) may be missing this file.
-#   - Some flavors (JBRSDK 8, macOS Adopt 8, macOS Zulu 8) do not have IMPLEMENTOR.
-#   - And some other flavors (JBRSDK 11, macOS Adopt 9) put "N/A" for IMPLEMENTOR.
-#   - Can also look at OS_ARCH and OS_NAME if we want to glean those things.
-#     All release files I possess appear to include these two lines.
-# - Call `java SysProps` to run a class to print System.getProperties() to stdout.
-#   - Slow but reliable.
-#   - Ideally would avoid doing this if we already know the os/arch is wrong.
-# - After succeeding at identifying a Java installation, we can cache the results.
 
 # Options that override Jaunch's usual behavior of launching Java.
 # Each of these runs a different directive other than launch.
@@ -325,7 +308,12 @@ jvm-args = [
     '-Dfiji.executable=${ijDirPath}/fiji-${systemType}.exe',
     '-Dij.executable=${ijDirPath}/fiji-${systemType}.exe',
 
-    '-Djava.library.path=${ijDirPath}/lib/$systemType;${ijDirPath}/mm/${systemType}',
+    'OS:LINUX|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/linux64',
+    'OS:LINUX|ARCH:X86|-Djava.library.path=${ijDirPath}/lib/linux32',
+    'OS:MACOSX|ARCH:ARM64|-Djava.library.path=${ijDirPath}/lib/macosx-arm64',
+    'OS:MACOSX|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/macosx',
+    'OS:WINDOWS|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/win64',
+    'OS:WINDOWS|ARCH:X86|-Djava.library.path=${ijDirPath}/lib/win32',
 
     '-Dscijava.context.strict=false',  # Make SciJava startup less brittle.
     '-Dpython.console.encoding=UTF-8',  # TODO: What is this for?
