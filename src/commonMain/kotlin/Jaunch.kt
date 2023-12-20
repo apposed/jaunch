@@ -5,13 +5,20 @@ import kotlin.experimental.ExperimentalNativeApi
 
 typealias JaunchOptions = Map<String, JaunchOption>
 
-private val DEBUG = getenv("DEBUG") !in listOf("", "0", "false", "FALSE")
+private val DEBUG = getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
 private fun debug(vararg args: Any) {
     if (!DEBUG) return
     printlnErr(buildString {
         append("[DEBUG] ")
         args.forEach { append(it) }
     })
+}
+
+private fun debugList(message: String, items: Collection<String>) {
+    debug()
+    debug(message)
+    if (items.isEmpty()) debug("<empty>")
+    items.forEach { debug("* $it") }
 }
 
 fun main(args: Array<String>) {
@@ -35,7 +42,7 @@ fun main(args: Array<String>) {
         config += readConfig("${exeFile.withoutSuffix}.toml")
     }
 
-    val programName = config.programName ?: executable?.let(::File)?.withoutSuffix ?: "Jaunch"
+    val programName = config.programName ?: executable?.let(::File)?.name?.let(::File)?.withoutSuffix ?: "Jaunch"
     debug("programName -> ", programName)
 
     // Parse the configuration's declared Jaunch options.
@@ -107,7 +114,16 @@ fun main(args: Array<String>) {
                 val value = inputArgs[i++]
                 // TODO: What if --arg=value is passed multiple times?
                 //  Should we save all values in a list? Or overwrite?
-                vars[arg] = value
+
+                // Normalize the argument to the primary flag on the comma-separated list.
+                // Then strip leading dashes: --class-path becomes class-path, -v becomes v, etc.
+                var varName = option.flags.first()
+                while (varName.startsWith("-")) varName = varName.substring(1)
+
+                // Store assignment value as a variable named after the normalized argument.
+                // E.g. if the matching supported option is `--heap,--mem=<max>|Maximum heap size`,
+                // and `--mem 52g` is given, it will store `"52g"` for the variable `heap`.
+                vars[varName] = value
             }
             hints += arg
         }
@@ -194,19 +210,21 @@ fun main(args: Array<String>) {
         val path = rootPathLine.evaluate(hints, vars) ?: continue
         val rootDir = File(path)
         if (!rootDir.isDirectory) continue
-        debug("Found ", rootDir)
+        debug("Examining candidate rootDir: ", rootDir)
 
         // We found an actual directory. Now we check it for libjvm.
         for (libjvmSuffixLine in config.libjvmSuffixes) {
             val suffix = libjvmSuffixLine.evaluate(hints, vars) ?: continue
             val libjvmFile = File("$path/$suffix")
             if (!libjvmFile.isFile) continue
+            debug("Examining candidate libjvm: ", libjvmFile)
 
             // Found a libjvm. So now we validate the Java installation.
             // It needs to conform to the configuration's version constraints.
-            val info = releaseInfo(rootDir) ?: continue
-            val vendor = info["IMPLEMENTOR"]
-            val version = info["JAVA_VERSION"]
+            // TODO: Fix the releaseInfo function not to crash.
+            //val info = releaseInfo(rootDir) ?: continue
+            //val vendor = info["IMPLEMENTOR"]
+            //val version = info["JAVA_VERSION"]
             // TODO: parse out majorVersion from version, then compare to versionMin/versionMax.
             //  If not within the constraints, continue.
             //  Add allowedVendors/blockedVendors lists to the TOML schema, and check it here.
@@ -214,9 +232,10 @@ fun main(args: Array<String>) {
             // All constraints passed -- select this Java installation!
             libjvmPath = libjvmFile.path
             jvmRootPath = path
+            debug("libjvmPath -> ", libjvmPath)
+            debug("jvmRootPath -> ", jvmRootPath)
             break
         }
-        debug("libjvmPath -> ", libjvmPath ?: "<null>")
         if (libjvmPath != null) break
     }
     if (libjvmPath == null || jvmRootPath == null) {
@@ -243,10 +262,7 @@ fun main(args: Array<String>) {
             classpath += value
         }
     }
-
-    debug()
-    debug("Classpath calculated:")
-    classpath.forEach { debug("* ", it) }
+    debugList("Classpath calculated:", classpath)
 
     if ("print-class-path" in directives) {
         classpath.forEach { printlnErr(it) }
@@ -254,7 +270,6 @@ fun main(args: Array<String>) {
 
     // Calculate max heap.
     val maxHeap = config.maxHeap ?: "1g" // TODO
-
     debug()
     debug("maxHeap -> $maxHeap")
 
@@ -273,34 +288,26 @@ fun main(args: Array<String>) {
         jvmArgs += "-Djava.class.path=${classpath.joinToString(COLON)}"
     }
     jvmArgs += "-Xmx${maxHeap}"
-
-    debug()
-    debug("JVM arguments calculated:")
-    jvmArgs.forEach { debug("* $it") }
+    debugList("JVM arguments calculated:", jvmArgs)
 
     // Calculate main class.
     var mainClassName: String? = null
-    for (candidateLine in config.mainClassCandidates) {
-        val candidate = candidateLine.evaluate(hints, vars) ?: continue
-        mainClassName = candidate
+    for (mainClassLine in config.mainClasses) {
+        mainClassName = mainClassLine.evaluate(hints, vars) ?: continue
         break
     }
+    debug()
+    debug("mainClassName -> ", mainClassName ?: "<null>")
     if (mainClassName == null) {
         error("No matching main class name")
     }
-
-    debug()
-    debug("mainClassName -> ", mainClassName)
 
     // Calculate main args.
     for (argLine in config.mainArgs) {
         val arg = argLine.evaluate(hints, vars) ?: continue
         mainArgs += arg
     }
-
-    debug()
-    debug("Main arguments calculated:")
-    mainArgs.forEach { debug("* $it") }
+    debugList("Main arguments calculated:", mainArgs)
 
     if ("dry-run" in directives) {
         val lib = libjvmPath.lastIndexOf("/lib/")

@@ -27,7 +27,7 @@ supported-options = [
     "--ij-dir=<path>|set the ImageJ directory to <path> (used to find\njars/, plugins/ and macros/)",
     '--pass-classpath=<classpath>|pass -classpath <classpath> to the main() method',
     '--full-classpath|call the main class with the full ImageJ class path',
-    "--default-gc|do not use advanced garbage collector settings by default\n(-XX:+G1GC)",
+    "--default-gc|do not use advanced garbage collector settings by default\n(-XX:+UseG1GC)",
     '--gc-g1|use the G1 garbage collector',
     '--debug-gc|show debug info about the garbage collector on stderr',
     '--no-splash|suppress showing a splash screen upon startup',
@@ -79,8 +79,7 @@ jvm-args = [
     # > When running in a machine with many CPU cores (like 64, or 256) and lots
     # > of RAM (e.g., more than 100 GB, like 500 GB of heap size as defined by -Xmx),
     # > I find that the concurrent garbage collector (G1 GC) works *a lot better*.
-    '!--default-gc|-XX:+G1GC',
-
+    '!--default-gc|-XX:+UseG1GC',
     # Handle --gc-g1 option.
     '--gc-g1|-XX:+UseCompressedOops',
     '--gc-g1|-XX:+UnlockExperimentalVMOptions',
@@ -150,4 +149,3 @@ main-args = [
     'ij1-mode|jars/ij-*.jar',
     'ij1-mode|ij.ImageJ',
 ]
-
