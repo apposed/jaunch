@@ -4,6 +4,7 @@ import kotlinx.serialization.serializer
 import kotlin.experimental.ExperimentalNativeApi
 
 typealias JaunchOptions = Map<String, JaunchOption>
+
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
     val stdinArgs = stdinLines()
@@ -127,25 +128,21 @@ fun main(args: Array<String>) {
     // Discover Java.
     var libjvmPath: String? = null
     for (rootPathLine in config.rootPaths) {
-        val (rootPathRules, rawPath) = rootPathLine.partition()
-        if (!rootPathRules.utilize(hints)) continue
-        val path = rawPath interpolate vars
+        val path = rootPathLine.evaluate(hints, vars) ?: continue
         val rootDir = File(path)
         if (!rootDir.isDirectory) continue
 
         // We found an actual directory. Now we check it for libjvm.
         for (libjvmSuffixLine in config.libjvmSuffixes) {
-            val (libjvmSuffixRules, rawSuffix) = libjvmSuffixLine.partition()
-            if (!libjvmSuffixRules.utilize(hints)) continue
-            val suffix = rawSuffix interpolate vars
+            val suffix = libjvmSuffixLine.evaluate(hints, vars) ?: continue
             val libjvmFile = File("$path/$suffix")
             if (!libjvmFile.isFile) continue
 
             // Found a libjvm. So now we validate the Java installation.
             // It needs to conform to the configuration's version constraints.
             val info = releaseInfo(rootDir) ?: continue
-            val vendor = info.getOrElse("IMPLEMENTOR") { null }
-            val version = info.getOrElse("JAVA_VERSION") { null }
+            val vendor = info["IMPLEMENTOR"]
+            val version = info["JAVA_VERSION"]
             // TODO: parse out majorVersion from version, then compare to versionMin/versionMax.
             //  If not within the constraints, continue.
             //  Add allowedVendors/blockedVendors lists to the TOML schema, and check it here.
@@ -165,9 +162,7 @@ fun main(args: Array<String>) {
     // Calculate classpath.
     val classpath = mutableListOf<String>()
     for (classpathLine in config.classpath) {
-        val (rules, rawValue) = classpathLine.partition()
-        if (!rules.utilize(hints)) continue
-        val value = rawValue interpolate vars
+        val value = classpathLine.evaluate(hints, vars) ?: continue
         if (value.endsWith("/*")) {
             // Add all JAR files and directories to the classpath.
             val valueWithoutGlob = value.substring(0, value.length - 2)
@@ -183,13 +178,12 @@ fun main(args: Array<String>) {
     // TODO: print-class-path directive.
 
     // Calculate max heap.
-    val maxHeap: String = config.maxHeap ?: "1g" // TODO
+    val maxHeap = config.maxHeap ?: "1g" // TODO
 
     // Calculate JVM arguments.
     for (argLine in config.jvmArgs) {
-        val (rules, rawArg) = argLine.partition()
-        if (!rules.utilize(hints)) continue
-        jvmArgs += rawArg interpolate vars
+        val arg = argLine.evaluate(hints, vars) ?: continue
+        jvmArgs += arg
     }
     // TODO: Consider the best ordering for these elements.
     //  Maybe they should be prepended, in case the user overrode them.
@@ -205,9 +199,8 @@ fun main(args: Array<String>) {
     // Calculate main class.
     var mainClassName: String? = null
     for (candidateLine in config.mainClassCandidates) {
-        val (rules, rawMainClass) = candidateLine.partition()
-        if (!rules.utilize(hints)) continue
-        mainClassName = rawMainClass interpolate vars
+        val candidate = candidateLine.evaluate(hints, vars) ?: continue
+        mainClassName = candidate
         break
     }
     if (mainClassName == null) {
@@ -216,9 +209,8 @@ fun main(args: Array<String>) {
 
     // Calculate main args.
     for (argLine in config.mainArgs) {
-        val (rules, rawArg) = argLine.partition()
-        if (!rules.utilize(hints)) continue
-        mainArgs += rawArg interpolate vars
+        val arg = argLine.evaluate(hints, vars) ?: continue
+        mainArgs += arg
     }
 
     // TODO: dry-run directive.
@@ -289,20 +281,20 @@ private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
     return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
 }
 
-typealias Rules = List<String>
-private fun String.partition(): Pair<Rules, String> {
+private fun String.evaluate(hints: Set<String>, vars: Map<String, String>): String? {
     val tokens = split('|')
-    return Pair(tokens.subList(0, tokens.lastIndex), tokens.last())
-}
+    val rules = tokens.subList(0, tokens.lastIndex)
+    val value = tokens.last()
 
-private fun Rules.utilize(hints: Set<String>): Boolean {
-    for (rule in this) {
+    // Check that all rules apply.
+    for (rule in rules) {
         val negation = rule.startsWith('!')
         val hint = if (negation) rule.substring(1) else rule
-        if (negation && hint in hints) return false
-        if (!negation && hint !in hints) return false
+        if (hint in hints == negation) return null
     }
-    return true
+
+    // Line matches all rules. Populate variable values and return the result.
+    return value interpolate vars
 }
 
 /** Replaces ${var} expressions with values from a vars map. */
@@ -318,15 +310,14 @@ private infix fun String.interpolate(vars: Map<String, String>): String = buildS
             break
         }
 
-        // Add the text before the variable.
+        // Add the text before the expression.
         append(substring(pos, start))
 
         // Evaluate the expression and add it to the result.
-        // If the variable is missing from the map, check for an environment variable.
+        // If the variable name is missing from the map, check for an environment variable.
         // If no environment variable either, then just leave the expression alone.
         val name = substring(start + 2, end)
-        val value = vars.getOrElse(name) { getenv(name) ?: substring(start, end) }
-        append(value)
+        append(vars[name] ?: getenv(name) ?: substring(start, end))
 
         // Advance the position beyond the variable expression.
         pos = end + 1
@@ -334,9 +325,7 @@ private infix fun String.interpolate(vars: Map<String, String>): String = buildS
 }
 
 @OptIn(ExperimentalNativeApi::class)
-private val osName: String
-    get() = Platform.osFamily.name
+private val osName = Platform.osFamily.name
 
 @OptIn(ExperimentalNativeApi::class)
-private val cpuArch: String
-    get() = Platform.cpuArchitecture.name
+private val cpuArch = Platform.cpuArchitecture.name
