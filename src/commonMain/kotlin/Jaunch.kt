@@ -117,7 +117,14 @@ fun main(args: Array<String>) {
     }
 
     // Apply mode hints.
-    // TODO: config.modes
+    for (modeLine in config.modes) {
+        val mode = modeLine.evaluate(hints, vars) ?: continue
+        if (mode.startsWith("!")) {
+            // Negated mode expression: remove the mode hint.
+            hints.remove(mode.substring(1))
+        }
+        else hints.add(mode)
+    }
 
     // If a directive is active, do it instead of discovering and launching Java.
     // TODO: config.directives
