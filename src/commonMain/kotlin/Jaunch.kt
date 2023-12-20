@@ -155,6 +155,7 @@ fun main(args: Array<String>) {
 
     // Discover Java.
     var libjvmPath: String? = null
+    var jvmRootPath: String? = null
     for (rootPathLine in config.rootPaths) {
         val path = rootPathLine.evaluate(hints, vars) ?: continue
         val rootDir = File(path)
@@ -177,6 +178,7 @@ fun main(args: Array<String>) {
 
             // All constraints passed -- select this Java installation!
             libjvmPath = libjvmFile.path
+            jvmRootPath = path
             break
         }
         if (libjvmPath != null) break
@@ -191,6 +193,7 @@ fun main(args: Array<String>) {
     val classpath = mutableListOf<String>()
     for (classpathLine in config.classpath) {
         val value = classpathLine.evaluate(hints, vars) ?: continue
+
         if (value.endsWith("/*")) {
             // Add all JAR files and directories to the classpath.
             val valueWithoutGlob = value.substring(0, value.length - 2)
@@ -241,7 +244,18 @@ fun main(args: Array<String>) {
         mainArgs += arg
     }
 
-    // TODO: dry-run directive.
+    if ("dry-run" in directives) {
+        val lib = libjvmPath.lastIndexOf("/lib/")
+        val dirPath = if (lib >= 0) libjvmPath.substring(0, lib) else jvmRootPath
+        val javaBinary = File("$dirPath/bin/java")
+        val javaCommand = if (javaBinary.isFile) javaBinary.path else "java"
+        printlnErr(buildString {
+            append(javaCommand)
+            jvmArgs.forEach { append(it) }
+            append(mainClassName)
+            mainArgs.forEach { append(it) }
+        })
+    }
 
     // Emit final configuration.
     println(nativeDirective)
