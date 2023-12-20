@@ -5,6 +5,15 @@ import kotlin.experimental.ExperimentalNativeApi
 
 typealias JaunchOptions = Map<String, JaunchOption>
 
+private val DEBUG = getenv("DEBUG") !in listOf("", "0", "false", "FALSE")
+private fun debug(vararg args: Any) {
+    if (!DEBUG) return
+    printlnErr(buildString {
+        append("[DEBUG] ")
+        args.forEach { append(it) }
+    })
+}
+
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
     // Normally, there will only be lines of stdin, not command line arguments,
@@ -12,10 +21,12 @@ fun main(args: Array<String>) {
     val stdinArgs = stdinLines()
     val executable = stdinArgs.getOrNull(0)
     val inputArgs = stdinArgs.slice(1..<stdinArgs.size) + args
+    debug("inputArgs -> ", inputArgs)
 
     // Discern the directory containing this program.
     val exeFile = executable?.let(::File)
     val exeDir = exeFile?.directoryPath ?: "."
+    debug("exeDir -> ", exeDir)
 
     // Load the configuration from the TOML files.
     var config = readConfig("$exeDir/jaunch.toml")
@@ -25,6 +36,7 @@ fun main(args: Array<String>) {
     }
 
     val programName = config.programName ?: executable?.let(::File)?.withoutSuffix ?: "Jaunch"
+    debug("programName -> ", programName)
 
     // Parse the configuration's declared Jaunch options.
     //
@@ -32,12 +44,15 @@ fun main(args: Array<String>) {
     //   --alpha,...,--omega=assignment|Description of what this option does.
     //
     // We need to parse out the help text, the actual flags list, and whether the flags expect an assignment value.
+    debug()
+    debug("Parsing supported options...")
     val supportedOptions: JaunchOptions = buildMap {
         for (optionLine in config.supportedOptions) {
             val (optionString, help) = optionLine bisect '|'
             val (flagsString, assignment) = optionString bisect '='
             val flags = flagsString.split(',')
             val option = JaunchOption(flags.toTypedArray(), assignment, help)
+            debug("* ", option)
             for (flag in flags) this[flag] = option
         }
     }
@@ -118,6 +133,13 @@ fun main(args: Array<String>) {
         }
     }
 
+    debug()
+    debug("Input arguments parsed:")
+    debug("* hints -> ", hints)
+    debug("* vars -> ", vars)
+    debug("* jvmArgs -> ", jvmArgs)
+    debug("* mainArgs -> ", mainArgs)
+
     // Apply mode hints.
     for (modeLine in config.modes) {
         val mode = modeLine.evaluate(hints, vars) ?: continue
@@ -128,6 +150,10 @@ fun main(args: Array<String>) {
         else hints.add(mode)
     }
 
+    debug()
+    debug("Modes applied:")
+    debug("* hints -> ", hints)
+
     // Discern directives to perform.
     val directives = mutableSetOf<String>()
     for (directiveLine in config.directives) {
@@ -135,6 +161,11 @@ fun main(args: Array<String>) {
         directives.add(directive)
     }
     val nativeDirective = if (directives.isEmpty()) "LAUNCH" else "CANCEL"
+
+    debug()
+    debug("Directives parsed:")
+    debug("* directives -> ", directives)
+    debug("* nativeDirective -> ", nativeDirective)
 
     // Execute the help directive.
     if ("help" in directives) {
@@ -157,10 +188,13 @@ fun main(args: Array<String>) {
     // Discover Java.
     var libjvmPath: String? = null
     var jvmRootPath: String? = null
+    debug()
+    debug("Discovering Java installations...")
     for (rootPathLine in config.rootPaths) {
         val path = rootPathLine.evaluate(hints, vars) ?: continue
         val rootDir = File(path)
         if (!rootDir.isDirectory) continue
+        debug("Found ", rootDir)
 
         // We found an actual directory. Now we check it for libjvm.
         for (libjvmSuffixLine in config.libjvmSuffixes) {
@@ -182,6 +216,7 @@ fun main(args: Array<String>) {
             jvmRootPath = path
             break
         }
+        debug("libjvmPath -> ", libjvmPath ?: "<null>")
         if (libjvmPath != null) break
     }
     if (libjvmPath == null || jvmRootPath == null) {
@@ -209,12 +244,19 @@ fun main(args: Array<String>) {
         }
     }
 
+    debug()
+    debug("Classpath calculated:")
+    classpath.forEach { debug("* ", it) }
+
     if ("print-class-path" in directives) {
         classpath.forEach { printlnErr(it) }
     }
 
     // Calculate max heap.
     val maxHeap = config.maxHeap ?: "1g" // TODO
+
+    debug()
+    debug("maxHeap -> $maxHeap")
 
     // Calculate JVM arguments.
     for (argLine in config.jvmArgs) {
@@ -232,6 +274,10 @@ fun main(args: Array<String>) {
     }
     jvmArgs += "-Xmx${maxHeap}"
 
+    debug()
+    debug("JVM arguments calculated:")
+    jvmArgs.forEach { debug("* $it") }
+
     // Calculate main class.
     var mainClassName: String? = null
     for (candidateLine in config.mainClassCandidates) {
@@ -243,11 +289,18 @@ fun main(args: Array<String>) {
         error("No matching main class name")
     }
 
+    debug()
+    debug("mainClassName -> ", mainClassName)
+
     // Calculate main args.
     for (argLine in config.mainArgs) {
         val arg = argLine.evaluate(hints, vars) ?: continue
         mainArgs += arg
     }
+
+    debug()
+    debug("Main arguments calculated:")
+    mainArgs.forEach { debug("* $it") }
 
     if ("dry-run" in directives) {
         val lib = libjvmPath.lastIndexOf("/lib/")
@@ -261,6 +314,8 @@ fun main(args: Array<String>) {
             mainArgs.forEach { append(it) }
         })
     }
+
+    debug("Emitting final configuration to stdout...")
 
     // Emit final configuration.
     println(nativeDirective)
