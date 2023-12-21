@@ -31,15 +31,17 @@ fun readReleaseInfo(rootDir: File): Map<String, String>? {
     //
     // After succeeding at identifying a Java installation, we can cache the results.
 
-    val releaseFile = File("${rootDir.path}/release")
+    val releaseFile = File("$rootDir/release")
     if (!releaseFile.isFile) return null
     // TODO: Instead of failing immediately when the release file is missing, we should try a couple of
     //  heuristics to glean the desired information of Java vendor/distro and version; see above comment.
     val lines = releaseFile.readLines()
+
     val info = mutableMapOf<String, String>()
     for (line in lines) {
-        val equals = line.indexOf("=\"")
-        if (equals < 0 || !line.endsWith("\"")) {
+        val trimmed = line.trim()
+        val equals = trimmed.indexOf("=\"")
+        if (equals < 0 || !trimmed.endsWith("\"")) {
             // We are looking for lines of the form:
             //   KEY="VALUE"
             // and skipping (for now) lines not conforming to this pattern.
@@ -47,8 +49,8 @@ fun readReleaseInfo(rootDir: File): Map<String, String>? {
             // But we do not need to parse them, because we only care about two specific key/value string pairs.
             continue
         }
-        val key = line.substring(0, equals)
-        val value = line.substring(equals + 2)
+        val key = trimmed.substring(0, equals)
+        val value = trimmed.substring(equals + 2, trimmed.lastIndex)
         info[key] = value
     }
     return info

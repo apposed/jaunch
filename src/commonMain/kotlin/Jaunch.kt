@@ -208,10 +208,11 @@ fun main(args: Array<String>) {
 
             // Found a libjvm. So now we validate the Java installation.
             // It needs to conform to the configuration's version constraints.
-            // TODO: Fix the readReleaseInfo function not to crash.
-            //val info = readReleaseInfo(rootDir) ?: continue
-            //val vendor = info["IMPLEMENTOR"]
-            //val version = info["JAVA_VERSION"]
+            val info = readReleaseInfo(rootDir) ?: continue
+            val vendor = info["IMPLEMENTOR"]
+            val version = info["JAVA_VERSION"]
+            debug("Java vendor -> ", vendor ?: "<null>")
+            debug("Java version -> ", version ?: "<null>")
             // TODO: parse out majorVersion from version, then compare to versionMin/versionMax.
             //  If not within the constraints, continue.
             //  Add allowedVendors/blockedVendors lists to the TOML schema, and check it here.
