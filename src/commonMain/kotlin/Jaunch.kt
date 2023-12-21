@@ -410,17 +410,27 @@ private fun calculateMaxHeap(maxHeap: String?): String? {
     // Compute percentage of total available memory.
     val percent = maxHeap.substring(0, maxHeap.lastIndex).toDoubleOrNull() // Double or nothing! XD
     if (percent == null || percent <= 0) {
-        warn("Ignoring invalid max-heap value \"", maxHeap, "\"")
+        warn("Ignoring invalid max-heap value '", maxHeap, "'")
         return null
     }
     val memInfo = memInfo()
     if (memInfo.total == null) {
-        warn("Cannot determine total memory -- ignoring max-heap value \"", maxHeap, "\"")
+        warn("Cannot determine total memory -- ignoring max-heap value '", maxHeap, "'")
         return null
     }
     val kbValue = (percent * memInfo.total!! / 100).toInt()
-    debug("Calculated maxHeap of ", kbValue, " KB")
-    return "${kbValue}k"
+    if (kbValue <= 9999) {
+        debug("Calculated maxHeap of ", kbValue, " KB")
+        return "${kbValue}k"
+    }
+    val mbValue = kbValue / 1024
+    if (mbValue <= 9999) {
+        debug("Calculated maxHeap of ", mbValue, " MB")
+        return "${mbValue}m"
+    }
+    val gbValue = mbValue / 1024
+    debug("Calculated maxHeap of ", gbValue, " GB")
+    return "${gbValue}g"
 }
 
 private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
