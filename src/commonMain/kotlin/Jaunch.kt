@@ -196,13 +196,88 @@ fun main(args: Array<String>) {
     for (rootPathLine in config.rootPaths) {
         val path = rootPathLine.evaluate(hints, vars) ?: continue
         val rootDir = File(path)
-        if (!rootDir.isDirectory) continue
         debug("Examining candidate rootDir: ", rootDir)
+        if (!rootDir.isDirectory) {
+            debug("Not a directory")
+            continue
+        }
 
-        // We found an actual directory. Now we check it for libjvm.
+        // ~~~~~~~~~ 👯 REGEX TIME 👯 ~~~~~~~~~
+        val sep = "(-|_|\\.|)"
+        val versionPattern = "((8u)?([0-9]+)([\\.+_][0-9]+)*(-b[0-9]+|-ca)?)?"
+        val prefixes = listOf("jdk", "java", "openjdk", "").joinToString("|")
+        val flavors = listOf(
+            "adopt",
+            "amazon-corretto",
+            "graalvm-ce",
+            "graalvm-community-openjdk",
+            "graalvm-jdk",
+            "jbrsdk",
+            "oracle",
+            "zulu",
+            ""
+        ).joinToString("|")
+
+        val featuresPattern = listOf("-crac", "-jdk", "-jre", "-fx", "-java").joinToString("|")
+        val oses = listOf("linux", "macosx", "").joinToString("|")
+        val variants = listOf("musl", "openjdk", "").joinToString("|")
+        val arches = listOf("amd64", "x64", "x86", "").joinToString("|")
+        val suffixes = listOf("-jre", "-lite", "").joinToString("|")
+        val pattern =
+            "($prefixes)$sep" +
+            "($flavors)$sep" +
+            versionPattern +
+            "(($featuresPattern)*)" +
+            versionPattern + sep +
+            "($oses)$sep" +
+            "($variants)$sep" +
+            "($arches)" +
+            versionPattern +
+            "($suffixes)"
+
+        debug("pattern = ", pattern)
+
+        val matchGroups = Regex(pattern).matchEntire(rootDir.name)?.groupValues
+        val missing = "<null>"
+        val entire   = matchGroups?.get( 0) ?: missing
+        val prefix   = matchGroups?.get( 1) ?: missing
+        val sep1     = matchGroups?.get( 2) ?: missing
+        val flavor   = matchGroups?.get( 3) ?: missing
+        val sep2     = matchGroups?.get( 4) ?: missing
+        val v1       = matchGroups?.get( 5) ?: missing // and 6, 7, 8, 9
+        val features = matchGroups?.get(10) ?: missing // and 11
+        val v2       = matchGroups?.get(12) ?: missing // and 13, 14, 15, 16
+        val sep3     = matchGroups?.get(17) ?: missing
+        val os       = matchGroups?.get(18) ?: missing
+        val sep4     = matchGroups?.get(19) ?: missing
+        val variant  = matchGroups?.get(20) ?: missing
+        val sep5     = matchGroups?.get(21) ?: missing
+        val arch     = matchGroups?.get(22) ?: missing
+        val v3       = matchGroups?.get(23) ?: missing // and 24, 25, 26, 27
+        val suffix   = matchGroups?.get(28) ?: missing
+
+        debug()
+        debug("entire   = ", entire)
+        debug("prefix   = ", prefix)
+        debug("sep1     = ", sep1)
+        debug("flavor   = ", flavor)
+        debug("sep2     = ", sep2)
+        debug("v1       = ", v1)
+        debug("features = ", features)
+        debug("v2       = ", v2)
+        debug("sep3     = ", sep3)
+        debug("os       = ", os)
+        debug("sep4     = ", sep4)
+        debug("variant  = ", variant)
+        debug("sep5     = ", sep5)
+        debug("arch     = ", arch)
+        debug("v3       = ", v3)
+        debug("suffix   = ", suffix)
+
+        // Root directory is looking good so far! Now let's check it for libjvm.
         for (libjvmSuffixLine in config.libjvmSuffixes) {
-            val suffix = libjvmSuffixLine.evaluate(hints, vars) ?: continue
-            val libjvmFile = File("$path/$suffix")
+            val libjvmSuffix = libjvmSuffixLine.evaluate(hints, vars) ?: continue
+            val libjvmFile = File("$path/$libjvmSuffix")
             if (!libjvmFile.isFile) continue
             debug("Examining candidate libjvm: ", libjvmFile)
 
