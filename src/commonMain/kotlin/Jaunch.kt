@@ -310,9 +310,9 @@ fun main(args: Array<String>) {
         val javaCommand = if (javaBinary.isFile) javaBinary.path else "java"
         printlnErr(buildString {
             append(javaCommand)
-            jvmArgs.forEach { append(it) }
-            append(mainClassName)
-            mainArgs.forEach { append(it) }
+            jvmArgs.forEach { append(" $it") }
+            append(" $mainClassName")
+            mainArgs.forEach { append(" $it") }
         })
     }
 
