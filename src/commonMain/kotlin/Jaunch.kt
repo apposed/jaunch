@@ -1,25 +1,12 @@
-import com.akuleshov7.ktoml.TomlInputConfig
-import com.akuleshov7.ktoml.file.TomlFileReader
-import kotlinx.serialization.serializer
 import kotlin.experimental.ExperimentalNativeApi
 
 typealias JaunchOptions = Map<String, JaunchOption>
 
-private val DEBUG = getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
-private fun debug(vararg args: Any) {
-    if (!DEBUG) return
-    printlnErr(buildString {
-        append("[DEBUG] ")
-        args.forEach { append(it) }
-    })
-}
+@OptIn(ExperimentalNativeApi::class)
+private val osName = Platform.osFamily.name
 
-private fun debugList(message: String, items: Collection<String>) {
-    debug()
-    debug(message)
-    if (items.isEmpty()) debug("<empty>")
-    items.forEach { debug("* $it") }
-}
+@OptIn(ExperimentalNativeApi::class)
+private val cpuArch = Platform.cpuArchitecture.name
 
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
@@ -221,8 +208,8 @@ fun main(args: Array<String>) {
 
             // Found a libjvm. So now we validate the Java installation.
             // It needs to conform to the configuration's version constraints.
-            // TODO: Fix the releaseInfo function not to crash.
-            //val info = releaseInfo(rootDir) ?: continue
+            // TODO: Fix the readReleaseInfo function not to crash.
+            //val info = readReleaseInfo(rootDir) ?: continue
             //val vendor = info["IMPLEMENTOR"]
             //val version = info["JAVA_VERSION"]
             // TODO: parse out majorVersion from version, then compare to versionMin/versionMax.
@@ -334,58 +321,6 @@ fun main(args: Array<String>) {
     for (mainArg in mainArgs) println(mainArg)
 }
 
-private fun readConfig(tomlPath: String): JaunchConfig {
-    val tomlFile = File(tomlPath)
-    if (!tomlFile.exists) return JaunchConfig()
-    return TomlFileReader(
-        inputConfig = TomlInputConfig(
-            ignoreUnknownNames = true,
-        )
-    ).decodeFromFile(serializer(), tomlPath)
-}
-
-private fun releaseInfo(rootDir: File): Map<String, String>? {
-    // Discern the Java version and vendor. We need to extract them
-    // from the Java installation as inexpensively as possibly.
-    //
-    // Approaches:
-    // A) Parse the directory name.
-    //    - Fast but fragile.
-    // B) Look inside the <dir>/release file for IMPLEMENTOR and JAVA_VERSION.
-    //    - Some flavors (JBRSDK 8, Corretto 8) may be missing this file.
-    //    - Some flavors (JBRSDK 8, macOS Adopt 8, macOS Zulu 8) do not have IMPLEMENTOR.
-    //    - And some other flavors (JBRSDK 11, macOS Adopt 9) put "N/A" for IMPLEMENTOR.
-    //    - Can also look at OS_ARCH and OS_NAME if we want to glean those things.
-    //      All release files I possess appear to include these two OS lines.
-    // C) Call `java SysProps` to run a class to print System.getProperties() to stdout.
-    //    - Slow but reliable.
-    //    - Ideally would avoid doing this if we already know the os/arch is wrong.
-    //
-    // After succeeding at identifying a Java installation, we can cache the results.
-
-    val releaseFile = File("${rootDir.path}/release")
-    if (!releaseFile.isFile) return null
-    // TODO: Instead of failing immediately when the release file is missing, we should try a couple of
-    //  heuristics to glean the desired information of Java vendor/distro and version; see above comment.
-    val lines = releaseFile.readLines()
-    val info = mutableMapOf<String, String>()
-    for (line in lines) {
-        val equals = line.indexOf("=\"")
-        if (equals < 0 || !line.endsWith("\"")) {
-            // We are looking for lines of the form:
-            //   KEY="VALUE"
-            // and skipping (for now) lines not conforming to this pattern.
-            // These release files sometimes have lines in other forms, such as JSON-style map data structures.
-            // But we do not need to parse them, because we only care about two specific key/value string pairs.
-            continue
-        }
-        val key = line.substring(0, equals)
-        val value = line.substring(equals + 2)
-        info[key] = value
-    }
-    return info
-}
-
 private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
     val index = indexOf(delimiter)
     return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
@@ -435,9 +370,3 @@ private infix fun String.interpolate(vars: Map<String, String>): String = buildS
         pos = end + 1
     }
 }
-
-@OptIn(ExperimentalNativeApi::class)
-private val osName = Platform.osFamily.name
-
-@OptIn(ExperimentalNativeApi::class)
-private val cpuArch = Platform.cpuArchitecture.name
