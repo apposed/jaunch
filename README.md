@@ -25,8 +25,7 @@ Support for launching *your* JVM-based application.
 - The native launcher (built from jaunch.c) should be named whatever you want. E.g. fiji.exe.
 - fiji.toml is the configuration that jaunch.exe uses to decide how to behave.
   - When fiji.exe invokes jaunch.exe, it passes `fiji` (can I do this from cross-platform C?) to jaunch.exe.
-- In this way, there can be multiple different launchers that all lean on the same jaunch.exe.
-  - (Or, if this turns out to be "hard", we can just have jaunch.toml.)
+- In this way, there can be multiple different launchers in the same directory that all lean on the same jaunch.exe.
 
 Discover available Javas from:
 - Subfolders of the application (i.e. bundled Java).
@@ -41,10 +40,7 @@ Discover available Javas from:
   - conda (base only?)
   - brew
   - scoop
-    This can be done in general by having a hardcoded list of directories in the default CFG content.
-- Q: Should the directory list be platform-specific?
-  - A: Probably want to have common dirs list, plus additions per platform.
-    Can make each platform its own section with the same schema as the base one.
+  This can be done in general by having a hardcoded list of directories in the default CFG content, which can be extended by specific applications as desired.
 
 .. more to come ...
 
@@ -52,7 +48,7 @@ Discover available Javas from:
 
 ```shell
 ./compile.sh
-./jaunch
+./runme
 ```
 
 Linux only for the moment, but targeting Windows and macOS is also a near-term goal.
