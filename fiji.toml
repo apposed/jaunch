@@ -8,6 +8,11 @@
 #
 # See that jaunch.toml file for more details about Jaunch configuration.
 
+# The version of Jaunch with which this configuration file is intended to work.
+# Leave this value be, unless you are upgrading from an older version of Jaunch.
+jaunch-version = 1
+
+# Name your program here! This name will appear in the usage text.
 program-name = "Fiji"
 
 # Runtime classpath elements (e.g. JAR files) to pass to Fiji.
