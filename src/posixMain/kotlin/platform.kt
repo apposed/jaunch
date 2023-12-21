@@ -31,5 +31,32 @@ actual fun stdinLines(): Array<String> {
     return lines
 }
 
+actual fun memInfo(): MemoryInfo {
+    val memInfo = MemoryInfo()
+    memScoped {
+        val stat = alloc<stat>()
+        if (stat("/proc/meminfo", stat.ptr) != 0) return memInfo
+
+        val buffer = ByteArray(1024)
+        val file = fopen("/proc/meminfo", "r")
+        val bytesRead = fread(buffer.refTo(0), 1u, buffer.size.toULong(), file)
+        fclose(file)
+        if (bytesRead == 0uL) return memInfo
+
+        val content = buffer.toKString()
+        val lines = content.lines()
+
+        memInfo.total = lines.firstOrNull { it.startsWith("MemTotal:") }?.extractMemoryValue()
+        memInfo.free = lines.firstOrNull { it.startsWith("MemFree:") }?.extractMemoryValue()
+    }
+    return memInfo
+}
+
+private fun String.extractMemoryValue(): Long? {
+    val regex = Regex("(\\d+) kB")
+    val match = regex.find(this)
+    return match?.groupValues?.getOrNull(1)?.toLongOrNull()
+}
+
 actual val SLASH = "/"
 actual val COLON = ":"

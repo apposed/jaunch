@@ -255,27 +255,36 @@ fun main(args: Array<String>) {
         classpath.forEach { printlnErr(it) }
     }
 
-    // Calculate max heap.
-    val maxHeap = config.maxHeap ?: "1g" // TODO
-    debug()
-    debug("maxHeap -> $maxHeap")
-
     // Calculate JVM arguments.
     for (argLine in config.jvmArgs) {
         val arg = argLine.evaluate(hints, vars) ?: continue
         jvmArgs += arg
     }
-    // TODO: Consider the best ordering for these elements.
-    //  Maybe they should be prepended, in case the user overrode them.
-    //  (With java arguments, later ones trump/replace earlier ones.)
-    // TODO: If jvmArgs already have a `-Djava.class.path`, should we
-    //  skip appending the classpath? Or append to that same arg?
-    //  Similar question for `-Xmx`: leave it off if it was already given?
-    if (classpath.isNotEmpty()) {
-        jvmArgs += "-Djava.class.path=${classpath.joinToString(COLON)}"
-    }
-    jvmArgs += "-Xmx${maxHeap}"
     debugList("JVM arguments calculated:", jvmArgs)
+
+    // Append or amend argument declaring classpath elements.
+    if (classpath.isNotEmpty()) {
+        val classpathString = classpath.joinToString(COLON)
+        val cpIndex = jvmArgs.indexOfFirst { it.startsWith("-Djava.class.path=") }
+        if (cpIndex >= 0) {
+            // Append to existing `-Djava.class.path` argument.
+            jvmArgs[cpIndex] += "$COLON$classpathString"
+            debug("Extended classpath arg: ${jvmArgs[cpIndex]}")
+        }
+        else {
+            // No `-Djava.class.path` argument, so we add one.
+            jvmArgs += "-Djava.class.path=$classpathString"
+            debug("Added classpath arg: ${jvmArgs.last()}")
+        }
+    }
+
+    // If not already declared, calculate and declare the max heap size.
+    val mxIndex = jvmArgs.indexOfFirst { it.startsWith("-Xmx") }
+    if (mxIndex < 0) {
+        val maxHeap = calculateMaxHeap(config.maxHeap)
+        jvmArgs += "-Xmx${maxHeap}"
+        debug("Added maxHeap arg: ${jvmArgs.last()}")
+    }
 
     // Calculate main class.
     var mainClassName: String? = null
@@ -283,7 +292,6 @@ fun main(args: Array<String>) {
         mainClassName = mainClassLine.evaluate(hints, vars) ?: continue
         break
     }
-    debug()
     debug("mainClassName -> ", mainClassName ?: "<null>")
     if (mainClassName == null) {
         error("No matching main class name")
@@ -291,8 +299,7 @@ fun main(args: Array<String>) {
 
     // Calculate main args.
     for (argLine in config.mainArgs) {
-        val arg = argLine.evaluate(hints, vars) ?: continue
-        mainArgs += arg
+        mainArgs += argLine.evaluate(hints, vars) ?: continue
     }
     debugList("Main arguments calculated:", mainArgs)
 
@@ -319,6 +326,25 @@ fun main(args: Array<String>) {
     println(mainClassName.replace(".", "/"))
     println(mainArgs.size)
     for (mainArg in mainArgs) println(mainArg)
+}
+
+private fun calculateMaxHeap(maxHeap: String?): String? {
+    if (maxHeap?.endsWith("%") != true) return maxHeap
+
+    // Compute percentage of total available memory.
+    val percent = maxHeap.substring(0, maxHeap.lastIndex).toDoubleOrNull() // Double or nothing! XD
+    if (percent == null || percent <= 0) {
+        warn("Ignoring invalid max-heap value \"", maxHeap, "\"")
+        return null
+    }
+    val memInfo = memInfo()
+    if (memInfo.total == null) {
+        warn("Cannot determine total memory -- ignoring max-heap value \"", maxHeap, "\"")
+        return null
+    }
+    val kbValue = (percent * memInfo.total!! / 100).toInt()
+    debug("Calculated maxHeap of ", kbValue, " KB")
+    return "${kbValue}k"
 }
 
 private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
