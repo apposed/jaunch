@@ -1,4 +1,6 @@
+# ==============================================================================
 # *** Welcome to the Jaunch configuration file! ***
+# ==============================================================================
 #
 # This jaunch.toml file contains useful general-purpose, non-application-specific
 # configuration that defines some sensible defaults for typical Java-based launchers.
@@ -11,51 +13,105 @@
 # overrides or augments this configuration with fizzbuzz-specific settings.
 #
 # Minimally, such application-specific configuration will include the `program-name`
-# and `main-class` (or `main-class-candidates`) fields. But it may add application-
-# specific options as well via the `supported-options` field, as well as constraints
-# such as `version-min`/`version-max` to restrict which Javas to use with the app.
+# and `main-class` (or `main-class-candidates`) fields, and typically a `classpath`
+# for needed JAR files. But it may also add application-specific options via the
+# `supported-options` field, as well as constraints such as `version-min` and
+# `version-max` to restrict which Javas are compatible with the application.
 #
 # Alternately, if you would like to keep all configuration together in one file
 # for simplicity, you can write a single TOML file with everything, and name it
 # either `jaunch.toml` or the same as your native launcher (e.g. `fizzbuzz.toml`).
+#
+# Without further ado, let's get started with the configuration!
 
+# ==============================================================================
 # The version of Jaunch with which this configuration file is intended to work.
 # Leave this value be, unless you are upgrading from an older version of Jaunch.
 jaunch-version = 1
 
+# ==============================================================================
 # Name your program here! This name will appear in the usage text.
 #program-name = 'Awesome-Sauce'
 
+# ==============================================================================
 # Runtime classpath elements (e.g. JAR files) to pass to Java.
-classpath = []
+#
+# These are typically relative paths beneath the application root directory,
+# which is the same directory where the Jaunch launchers and config files reside.
+#
+# The asterisk wildcard symbol (*) is allowed, if you want to match all JAR files,
+# or even all JARs and directories, within a particular directory.
+#
+# The double-asterisk (**) for recursive matching is not yet implemented,
+# but could be done if there is user demand (PRs welcome ;-).
+classpath = [
+    '--class-path|${class-path}',
+    '--jar-path|${jar-path}/*',
+]
 
-# Maximum amount of memory for the Java heap to consume. Examples:
+# ==============================================================================
+# Maximum amount of memory for the Java heap to consume.
+#
+# In addition to the usual k, m, and g suffixes supported by Java itself for KB,
+# MB, and GB respectively, Jaunch also supports a % suffix.
+#
+# Examples:
 # - For 1567 MB: '1567m'
 # - For 48 GB: '48g'
 # - For 75% of available RAM: '75%'
 # - For 3 GB less than available RAM: '-3g'
-# These will be translated into an appropriate '-Xmx...' argument.
+#
+# These will be translated into an appropriate '-Xmx...' argument under the hood.
+#
+# If unset, Java's default will be used (i.e. no -Xmx argument will be injected).
 #max-heap = '50%'
 
-# Order matters. So we cannot use separate sections unless we use arrays of tables,
-# which gets pretty complicated. Let's use a simpler syntax instead: hints before a bar (|) symbol.
-# So, for every string in the file, we split on bar and then filter by matching environments.
-# Let's hope Jaunch never needs to support literal bar symbols!
+# ==============================================================================
+# The list of command line options supported by Jaunch out of the box.
 #
-# We can also allow the negation of any criterion by prepending with ! symbol.
-# - !JAVA:8 = Every Java version except 8
-# - !DISTRO:Zulu = Every Java distribution flavor except Zulu
+# These are flags that Jaunch will interpret, transforming them in various ways into
+# arguments to the Java Virtual Machine (JVM) and/or main class that gets launched.
 #
-# We can also support conditional flags.
-# Typically, each flag on the CLI takes some number of additional parameters after it, maybe 0.
-# - If it takes zero parameters, its value becomes a boolean.
-# - We can say `--foo bar` and we'll get `foo=bar` in the table.
-# - We can say `--foo=bar` and same.
-# - We can say `--foo fizz buzz` and we'll get `foo=[fizz, buzz]` in the table.
-# - We can say `--foo` and we'll get `foo=true`.
-# - We can say *nothing*, and when checking for the value 'foo' in the table, we'll be told `false`.
-# With this scheme, we have additive options, and can limitedly fake subtractive behavior based on falsy parameters.
-
+# Two quick examples from the below list:
+#
+# 1. The --headless option configures Jaunch to pass the flag -Djava.awt.headless=true
+#    to the JVM. This makes it friendlier for CLI users to launch your application in
+#    headless mode, without knowing anything about the Java platform specifically.
+#
+# 2. Similarly, --heap=1234m (aliased also to --mem and --memory) will be transformed
+#    into a -Xmx1234m argument to the JVM, so that users have an easier-to-remember
+#    option for setting the max heap size, without memorizing Java's -Xmx terminology.
+#
+# The syntax here is hopefully self-explanatory by reading through the list.
+# But here are the technical details anyway just in case:
+#
+# * The pipe symbol (|) divides the declaration of the option itself from its help text.
+#   The help text is not required, but recommended, and will be shown when Jaunch's help
+#   directive is invoked (which happens out of the box when the --help option is given).
+#
+# * Options may be standalone (like --headless), or may take a parameter (like --heap).
+#
+# * To declare an option as requiring a parameter, simply write an equals sign (=) after
+#   the option flag (see e.g. the --heap option below). What you write after the equals
+#   sign does not matter, except that it will be shown that way in the help text.
+#
+# * Jaunch parses parameters given as either a single argument --heap=789m with an
+#   equals sign (=), or as two arguments (--heap 789m) separated by a space.
+#
+# * The parameter value given by the user will be stored into Jaunch's variables using
+#   the canonical name of the option in question. So for example, --heap=789m will store
+#   the value "789m" into the variable called heap. (If the user passed --mem=789m, the
+#   exact same thing would happen, storing the value into the heap variable, because
+#   --heap is the first and therefore canonical name of that option.) We will see later
+#   in the configuration file how to use these captured parameter values.
+#
+# * Options may have any number of aliases, separated by commas. See e.g. --heap below.
+#
+# * If you need to use an actual bar symbol (|) as part of your option or help text, you
+#   can't, sorry! It's not a good idea anyway, because that symbol is used by shells to
+#   indicate I/O piping between processes. So making it part of an option would be super
+#   tricky and confusing. That's why we are using it as Jaunch's separator symbol:
+#   because it is very unlikely to be needed as an actual character anywhere.
 supported-options = [
     '--help,-h|show this help',
     '--dry-run|show the command line, but do not run anything',
@@ -70,10 +126,36 @@ supported-options = [
     '--class-path,--classpath,-classpath,--cp,-cp=<path>|append <path> to the class path',
     '--jar-path,--jarpath,-jarpath=<path>|append .jar files in <path> to the class path',
     "--ext=<path>|set Java's extension directory to <path>",
-    '--debugger=<port>[,suspend]|start the JVM in a mode so an IDE/debugger can attach to it',
+    '--debugger=<port>[,suspend]|start Java in a mode so an IDE/debugger can attach to it',
 ]
 
-# These are used to guess, when the minus-minus divider is absent, whether each arg is a JVM one or a main one.
+# ==============================================================================
+# The list of arguments that Jaunch will recognize as belonging to the JVM,
+# rather than your application's main method.
+#
+# These are used to guess, when the minus-minus divider (--) is absent, whether each arg
+# is a JVM one or a main one. Note that as with the classpath field, the asterisk symbol
+# (*) is a wildcard. All values on this list are assumed to be given with at least one
+# dash symbol prepended, maybe two. (Heck, go nuts and put three or four if you want!
+# Java won't like it, though.)
+#
+# About main method arguments: Jaunch's philosophy is to remain agnostic of the options
+# your application supports, rather than trying to constrain them in its configuration
+# and checking them itself. As such, it is your application's responsibility to emit
+# error messages as appropriate if it encounters displeasing arguments.
+#
+# For example, suppose the user invokes:
+#
+#     ./fizzbuzz 1 2 3 4 5 -Xms1g 
+#
+# Because 'X' is on the recognized-jvm-args list out of the box, Jaunch will translate
+# this invocation to:
+#
+#     java -Xms1g org.fizzbuzz.FizzBuzz 1 2 3 4 5
+#
+# Even though the Java argument appears after the main class arguments. Your users can
+# mix and match to their hearts' content, being as sloppy as they want, and Jaunch will
+# sort out the mess! As long as the JVM args are on the list here, of course.
 recognized-jvm-args = [
     '?',
     'D*',
@@ -103,22 +185,139 @@ recognized-jvm-args = [
     'version',
 ]
 
-# When the minus-minus divider is absent, the only args that end up as JVM args will be ones from the list above.
-# But if the minus-minus divider *is* given, it becomes possible to force a particular argument to be construed
-# as a JVM argument, even when it does not appear on the list. Depending on your application, it might not be
+# ==============================================================================
+# Whether to allow unrecognized arguments to be passed to the JVM.
+#
+# When the minus-minus divider is absent, the only args that end up as JVM args will be
+# ones from the list above. But if the minus-minus divider *is* given, it becomes
+# possible to force a particular argument to be construed as a JVM argument, even when
+# it does not appear on the list. Depending on your application, it might not be
 # desirable for such unrecognized JVM args to be allowed through to the Java launch.
 #
-# If you want to allow all user-specified JVM args through to the Java launch, set this value to true.
+# If you want to allow all user-specified JVM args through to the Java launch, set this
+# value to true.
 #
-# If you want full control over what arguments the user can pass to the JVM, set this value to false,
-# and edit the recognized-jvm-args list above according to your needs.
-allow-unrecognized-jvm-args = true
+# If you want full control over what arguments the user can pass to the JVM, set this
+# value to false, and edit the recognized-jvm-args list above according to your needs.
+# Then Jaunch will fail fast when told to pass an unrecognized option to Java.
+#
+# For example, suppose the user invokes:
+#
+#     ./fizzbuzz -ZZ:SuperSecretOption -- 1 2 3 4 5
+#
+# Jaunch would translate this into something like:
+#
+#     java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
+#
+# You and I both know that Java will barf when confronted with an argument like
+# -ZZ:SuperSecretOption! But maybe you are using a custom build of OpenJDK produced by
+# your organization's new superintelligent AI, which actually *does* have this option!
+# Who is Jaunch to judge? (In that case, I would argue you should really just add
+# '-ZZ:*' to your list of recognized JVM args above, but then I would be judging!)
+# Or maybe you just want to trust your users as OpenJDK evolves, rather than dealing
+# with the bureaucracy of updating the TOML file every time OpenJDK changes its
+# supported options. In such cases, this option is here for you!
+allow-unrecognized-jvm-args = false
 
+# ==============================================================================
 # Acceptable range of Java versions to match.
-#version-min = 8
-#version-max = 21
+#
+# These two options let you constrain the minimum and maximum Java versions respectively
+# that your application supports. This information will be used when searching the
+# system for appropriate JVM installations. If a JVM is successfully discovered, but
+# then found to be outside these constraints, it is discarded and the search continues.
+#
+# The most common use of these fields is to specify major versions alone (e.g.
+# "java-version-min = 11"), but Jaunch does make a best effort to compare version
+# strings digit by digit in a Semantic-Versioning-like way. YMMV, though.
+#java-version-min = 8
+#java-version-max = 21
 
+# ==============================================================================
+# Acceptable and unacceptable vendors/flavors of Java to use when launching.
+#
+# These two options let you constrain which Java distros are OK to use and which are
+# not, respectively. For distros matching neither neither the allowlist nor blocklist,
+# what happens next will depend on the allow-weird-jvms boolean setting below.
+#
+# As of this writing, we have seen the following vendor/flavors of Java in the wild:
+#
+# IMPLEMENTOR              | IMPLEMENTOR_VERSION  | archive slug | root folder slug
+# -------------------------|----------------------|--------------|-----------------
+# AdoptOpenJDK             | AdoptOpenJDK         | adopt        | adopt
+# Amazon.com Inc.*         | Corretto*            | corretto     | corretto or amazon-corretto
+# Azul Systems, Inc.*      | Zulu*                | zulu         | zulu
+# BellSoft                 | <missing>            | bellsoft     | <none>
+# Eclipse Adoptium         | Temurin              | OpenJDK      | <none>
+# GraalVM Community        | <missing>            | graalvm-ce   | graalvm-ce or graalvm-community-openjdk
+# N/A or JetBrains s.r.o.* | JBRSDK*              | jbrsdk       | jbrsdk or <none>
+# Oracle Corporation       | <empty-prefix>*      | oracle       | oracle
+# Oracle Corporation       | <missing>            | graalvm-jdk  | graalvm-jdk
+#
+# An asterisk (*) means we have observed at least one instance of that distro's release
+# file being missing and/or that metadata field being missing from the release file.
+#
+# It is often, but far from always, the case that archives and/or root folders begin
+# with the prefix 'jdk_', so Jaunch strips any such prefix when calculating slugs.
+#
+# TODO -- decide exactly how/whether Jaunch should standardize vendors/flavors,
+# document it here, and implement it.
+#java-distros-allowed = []
+#java-distros-blocked = []
+
+# ==============================================================================
+# Whether to attempt to launch with mysterious flavors of the JVM.
+#
+# When Jaunch discovers a Java installation on the user's system, it tries very hard to
+# understand the details of that installation, including Java version, vendor/flavor
+# (Azul/Zulu, Amazon/Corretto, Eclipse/Temurin, etc.), operating system, and CPU
+# architecture, so that it can respect your constraints defined in this config file.
+#
+# However, the variability across JVM distributions is actually quite a lot:
+#
+# * The vast majority of distros include a file named 'release' with important metadata
+#   fields inside. But a few distros are missing that file (e.g. Corretto 1.8.0_265-b01
+#   for x64 Linux), and a few others are missing needed metadata fields (e.g. Liberica
+#   1.8.0_392 for x64 Linux, which is missing IMPLEMENTOR), or they might put something
+#   stupid as a value (e.g. JBRSDK 11.0.6 for x64 Linux, which has IMPLEMENTOR="N/A").
+#
+# * For that reason, Jaunch also parses the directory name of the installation, trying
+#   to extract this information. But the naming schemes across distro are also very
+#   diverse and sometimes uninformative (e.g. JBRSDK 11 for x64 Linux, which has the
+#   vague folder name of "jbrsdk" with no version, or JBRSDK 8 for Linux, which has no
+#   directory prefix at all), and of course users and packaging scripts can rename the
+#   distro root directory to anything, corrupting this information in the process.
+#
+# * As of this writing, Jaunch does not actually go so far as to scan Java binaries for
+#   human-readable strings (a la the strings *nix utility), nor does it actually invoke
+#   bin/java on a Java program that prints System.getProperty("java.version") and
+#   related fields. It could! But doing that would slow down launch, and it starts to
+#   get ridiculous because such weird distros are in the small minority.
+#
+# Therefore, it is possible for all of Jaunch's efforts to be in vain, and to end up
+# trying to decide whether to launch with some mystery-flavored JVM. In such scenarios,
+# the allow-weird-jvms flag comes to the rescue, telling Jaunch whether to allow it
+# (true), or give up and complain (false). Hopefully, your users will never know the
+# difference, as long as they have well-behaved distros, and/or you ship a good distro
+# with your application. But just in case, give a think to how you want this to behave.
+allow-weird-jvms = true
+
+# ==============================================================================
+# Developer aside: Right now, Jaunch only filters Java installations by vendor,
+# version, OS, and CPU arch. But there are further criteria it could support:
+#
+# * Java Development Kit (JDK) vs. only Java Runtime Environment (JRE).
+# * Availability of optional features such as CRaC or JavaFX/OpenJFX.
+# * Minimum and/or maximum versions of operating systems (Windows 11+).
+# * More complex version filtering rules, e.g. multiple version exclusion ranges.
+#
+# Implementing such additional criteria will be done according to user demand.
+# Pull requests are welcome: https://github.com/scijava/jaunch
+
+# ==============================================================================
 # Paths to check for Java installations.
+#
+# TODO Write documentation here.
 root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
@@ -144,15 +343,20 @@ root-paths = [
     'OS:WINDOWS|~/scoop/Apps/...',                         # TODO: Scoop
 ]
 
-# And then there are programmatic ways to glean the Java installations,
-# depending on operating system:
+# ==============================================================================
+# Developer aside: Right now, Jaunch does not invoke any other OS-specific
+# programmatic ways to discover Java installations. But it could! In particular:
 #
 # - Windows: look for registry keys
 # - macOS: /usr/libexec/java_home -V
 # - Linux: /usr/sbin/update-java-alternatives -l
 #
-# TODO: Invent schema elements to toggle use of programmatic detection approaches.
+# We could invent schema elements to toggle use of programmatic detection approaches.
+# For but for now
 
+# ==============================================================================
+# TODO: libjvm-suffixes documentation
+#
 # Any of the following can be bare, or nested in another JDK root folder.
 # No assumption is made about the naming scheme of such a JDK root folder,
 # because not all distros are predictably named. Examples:
@@ -160,13 +364,12 @@ root-paths = [
 # macosx  JBRSDK 8u252          : jdk/Contents/Home/jre/lib/jli/libjli.dylib
 # linux64 JBRSDK 11.0.6-b520.66 : jbrsdk/lib/server/libjvm.so
 # linux64 JBRSDK 11.0.8         : jbrsdk_11.0.8_x64/jbr/lib/server/libjvm.so
-
+#
 # The nested jre/ is only present for OpenJDK 8, nothing after.
 # But one wrinkle: on macOS, some distros *also* have a libjli.dylib
 # in Contents/MacOS in addition to its other location. And the two
 # are *not* binary identical. Testing is needed to determine if
 # there's any difference in behavior based on which one gets linked.
-
 libjvm-suffixes = [
     'OS:LINUX|lib/server/libjvm.so',                     # Java 9+
     'OS:LINUX|jre/lib/amd64/server/libjvm.so',           # Java 8 (64-bit)
@@ -183,6 +386,9 @@ libjvm-suffixes = [
     'OS:WINDOWS|jre/bin/client/jvm.dll',                 # Java 8
 ]
 
+# ==============================================================================
+# TODO: modes documentation
+#
 # TODO: Should we just call them "hints" rather than "modes" here?
 # A mode is an activation criterion that gets manually enabled
 # by the presence of options. Most modes are false by default,
@@ -205,9 +411,13 @@ libjvm-suffixes = [
 # Modes are used as hints for activating arguments to the JVM and main class.
 modes = []
 
+# ==============================================================================
 # Commands that override Jaunch's usual behavior of launching Java.
+#
 # Each one runs at a particular (hardcoded) time during configuration.
 # Directives unsupported by the configurator program are ignored.
+#
+# TODO: write more documentation here.
 directives = [
   '--help|help',
   '-h|help',
@@ -216,15 +426,34 @@ directives = [
   '--print-app-dir|print-app-dir',
 ]
 
+# ==============================================================================
 # Arguments to pass to the JVM.
+#
+# TODO: write more documentation here.
 jvm-args = [
     '--headless|-Djava.awt.headless=true',
     '--heap|-Xmx${heap}',
     '--ext|-Djava.ext.dirs=${ext}',
 ]
 
-# Runtime classpath elements to pass to the JVM.
-classpath = [
-    '--class-path|${class-path}',
-    '--jar-path|${jar-path}/*',
-]
+# ==============================================================================
+# TODO: main-class
+#
+#main-class = org.fizzbuzz.FizzBuzz
+
+# ==============================================================================
+# TODO: main-class-candidates
+#
+#main-class-candidates = [
+#    '--fizzbuzz|org.fizzbuzz.FizzBuzz'
+#    '--main-class|${main-class}',
+#    'org.fizzbuzz.Main', # default behavior
+#]
+
+# ==============================================================================
+# TODO: main-args
+#
+#main-args = [
+#    '--fizz|-Dfizzbuzz.mode=fizz',
+#    '--buzz|-Dfizzbuzz.mode=buzz',
+#]
