@@ -37,12 +37,24 @@ data class JaunchConfig (
     val allowUnrecognizedJvmArgs: Boolean? = null,
 
     /** Minimum acceptable Java version to match. */
-    @SerialName("version-min")
-    val versionMin: Long? = null,
+    @SerialName("java-version-min")
+    val javaVersionMin: Long? = null,
 
     /** Maximum acceptable Java version to match. */
-    @SerialName("version-max")
-    val versionMax: Long? = null,
+    @SerialName("java-version-max")
+    val javaVersionMax: Long? = null,
+
+    /** TODO */
+    @SerialName("java-distros-allowed")
+    val javaDistrosAllowed: Array<String> = emptyArray(),
+
+    /** TODO */
+    @SerialName("java-distros-blocked")
+    val javaDistrosBlocked: Array<String> = emptyArray(),
+
+    /** TODO */
+    @SerialName("allow-weird-jvms")
+    val allowWeirdJvms: Boolean? = null,
 
     /** Paths to check on all systems. */
     @SerialName("root-paths")
@@ -121,8 +133,11 @@ data class JaunchConfig (
         supportedOptions = config.supportedOptions + supportedOptions,
         recognizedJvmArgs = config.recognizedJvmArgs + recognizedJvmArgs,
         allowUnrecognizedJvmArgs = config.allowUnrecognizedJvmArgs ?: allowUnrecognizedJvmArgs,
-        versionMin = config.versionMin ?: versionMin,
-        versionMax = config.versionMax ?: versionMax,
+        javaVersionMin = config.javaVersionMin ?: javaVersionMin,
+        javaVersionMax = config.javaVersionMax ?: javaVersionMax,
+        javaDistrosAllowed = config.javaDistrosAllowed + javaDistrosAllowed,
+        javaDistrosBlocked = config.javaDistrosBlocked + javaDistrosBlocked,
+        allowWeirdJvms = config.allowWeirdJvms ?: allowWeirdJvms,
         rootPaths = config.rootPaths + rootPaths,
         libjvmSuffixes = config.libjvmSuffixes + libjvmSuffixes,
         modes = config.modes + modes,

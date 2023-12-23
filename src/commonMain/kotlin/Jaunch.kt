@@ -148,9 +148,9 @@ fun main(args: Array<String>) {
         val mode = modeLine.evaluate(hints, vars) ?: continue
         if (mode.startsWith("!")) {
             // Negated mode expression: remove the mode hint.
-            hints.remove(mode.substring(1))
+            hints -= mode.substring(1)
         }
-        else hints.add(mode)
+        else hints += mode
     }
 
     debug()
@@ -329,15 +329,19 @@ private fun validateRootDir(rootDir: File): Boolean {
     val sep = "(-|_|\\.|)"
     val versionPattern = "((8u)?([0-9]+)([\\.+_][0-9]+)*(-b[0-9]+|-ca)?)?"
     val prefixes = listOf("jdk", "java", "openjdk", "").joinToString("|")
-    val flavors = listOf(
+    // TODO: Can we somehow un-hardcode the distros portion of the regex?
+    val distros = listOf(
         "adopt",
-        "amazon-corretto",
-        "graalvm-ce",
-        "graalvm-community-openjdk",
-        "graalvm-jdk",
-        "jbrsdk",
-        "oracle",
+        "dragonwell",
+        "corretto", "amazon-corretto",
         "zulu",
+        "jbrsdk",
+        "openlogic-openjdk",
+        "graalvm-ce", "graalvm-community-openjdk",
+        "graalvm-jdk",
+        "oracle",
+        "sapmachine-jdk",
+        "TencentKona",
         ""
     ).joinToString("|")
 
@@ -348,7 +352,7 @@ private fun validateRootDir(rootDir: File): Boolean {
     val suffixes = listOf("-jre", "-lite", "").joinToString("|")
     val pattern =
         "($prefixes)$sep" +
-                "($flavors)$sep" +
+                "($distros)$sep" +
                 versionPattern +
                 "(($featuresPattern)*)" +
                 versionPattern + sep +
@@ -363,7 +367,7 @@ private fun validateRootDir(rootDir: File): Boolean {
     val entire   = matchGroups?.get( 0) ?: missing
     val prefix   = matchGroups?.get( 1) ?: missing
     val sep1     = matchGroups?.get( 2) ?: missing
-    val flavor   = matchGroups?.get( 3) ?: missing
+    val distro   = matchGroups?.get( 3) ?: missing
     val sep2     = matchGroups?.get( 4) ?: missing
     val v1       = matchGroups?.get( 5) ?: missing // and 6, 7, 8, 9
     val features = matchGroups?.get(10) ?: missing // and 11
@@ -381,7 +385,7 @@ private fun validateRootDir(rootDir: File): Boolean {
     debug("entire   = ", entire)
     debug("prefix   = ", prefix)
     debug("sep1     = ", sep1)
-    debug("flavor   = ", flavor)
+    debug("distro   = ", distro)
     debug("sep2     = ", sep2)
     debug("v1       = ", v1)
     debug("features = ", features)
@@ -396,10 +400,12 @@ private fun validateRootDir(rootDir: File): Boolean {
     debug("suffix   = ", suffix)
 
     val info = readReleaseInfo(rootDir)
-    val vendor = info?.get("IMPLEMENTOR")
-    val version = info?.get("JAVA_VERSION")
-    debug("Java vendor -> ", vendor ?: "<null>")
-    debug("Java version -> ", version ?: "<null>")
+    val implementor = info?.get("IMPLEMENTOR")
+    val implementorVersion = info?.get("IMPLEMENTOR_VERSION")
+    val javaVersion = info?.get("JAVA_VERSION")
+    debug("IMPLEMENTOR -> ", implementor ?: "<null>")
+    debug("IMPLEMENTOR_VERSION -> ", implementorVersion ?: "<null>")
+    debug("JAVA_VERSION -> ", javaVersion ?: "<null>")
 
     // TODO: parse out majorVersion from version, then compare to versionMin/versionMax.
     //  If not within the constraints, continue.

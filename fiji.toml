@@ -108,11 +108,11 @@ jvm-args = [
 
     # Supported since Jigsaw was introduced in Java 9.
     # Necessary for ij1-patcher to work properly with Java 17+.
-    'java9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
-    'java9+|--add-opens=java.base/java.util=ALL-UNNAMED',  # TODO: Why? What triggers this?
-    'java9+|linux*|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # TODO: Why? Is this Linux-specific?
-    'java9+|linux*|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # Linux only; TODO: what about Wayland?
-    'java9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
+    'JAVA:9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
+    'JAVA:9+|--add-opens=java.base/java.util=ALL-UNNAMED',  # TODO: Why? What triggers this?
+    'JAVA:9+|linux*|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # TODO: Why? Is this Linux-specific?
+    'JAVA:9+|linux*|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # Linux only; TODO: what about Wayland?
+    'JAVA:9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',  # macOS only
 
     '-Dpython.cachedir.skip=true',  # Make Jython behave better.
     '-Dplugins.dir=${ijDirPath}',  # ImageJ cares about this property.
