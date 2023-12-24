@@ -1,0 +1,7 @@
+archive="jdk_adopt_8u265_x64.tar.gz"
+dir_prefix="jdk_adopt_8u265_x64"
+JAVA_VERSION="1.8.0_265"
+OS_NAME="Linux"
+OS_VERSION="2.6"
+OS_ARCH="amd64"
+SOURCE=""

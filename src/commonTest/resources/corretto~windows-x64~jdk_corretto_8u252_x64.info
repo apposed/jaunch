@@ -1,0 +1,7 @@
+archive="jdk_corretto_8u252_x64.tar.gz"
+dir_prefix="jdk_corretto_8u252_x64"
+JAVA_VERSION="1.8.0_252"
+OS_NAME="Windows"
+OS_VERSION="5.2"
+OS_ARCH="amd64"
+SOURCE=""

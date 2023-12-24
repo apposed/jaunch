@@ -1,0 +1,7 @@
+archive="jbrsdk_8u252_x86.tar.gz"
+dir_prefix="jbrsdk_8u252_x86"
+JAVA_VERSION="1.8.0_252"
+OS_NAME="Windows"
+OS_VERSION="5.1"
+OS_ARCH="i586"
+SOURCE=""
