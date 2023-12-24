@@ -11,7 +11,7 @@ private val cpuArch = Platform.cpuArchitecture.name
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
     // Normally, there will only be lines of stdin, not command line arguments,
-    // but it's perhaps convenient for testing to be able to pass args on the CLI, too.
+    // but it's convenient for testing to be able to pass args to main, too.
     val stdinArgs = stdinLines()
     val executable = stdinArgs.getOrNull(0)
     val inputArgs = stdinArgs.slice(1..<stdinArgs.size) + args
@@ -189,37 +189,52 @@ fun main(args: Array<String>) {
     }
 
     // Discover Java.
-    var libjvmPath: String? = null
-    var jvmRootPath: String? = null
     debug()
     debug("Discovering Java installations...")
-    for (rootPathLine in config.rootPaths) {
-        val path = rootPathLine.evaluate(hints, vars) ?: continue
-        val rootDir = File(path)
+
+    // Calculate all the places to search.
+    val rootPaths = mutableListOf<String>()
+    for (rootPathLine in config.rootPaths)
+        rootPaths += rootPathLine.evaluate(hints, vars) ?: continue
+    debug("root paths to search:")
+    rootPaths.forEach { debug("* ", it) }
+
+    val libjvmSuffixes = mutableListOf<String>()
+    for (libjvmSuffixLine in config.libjvmSuffixes)
+        libjvmSuffixes += libjvmSuffixLine.evaluate(hints, vars) ?: continue
+    debug("libjvm suffixes to check:")
+    libjvmSuffixes.forEach { debug("* ", it) }
+
+    val javaAnalyzer = JavaAnalyzer(libjvmSuffixes)
+
+    var javaInfo: JavaInfo? = null
+    for (rootPath in rootPaths) {
+        debug("Analyzing candidate root directory: '", rootPath, "'")
+        val info = javaAnalyzer.javaInfo(rootPath) ?: continue
 
         // Validate the Java installation. It needs to meet the configuration constraints.
-        validateRootDir(rootDir) || continue
-
-        // Root directory is looking good! Now let's find the libjvm.
-        for (libjvmSuffixLine in config.libjvmSuffixes) {
-            val libjvmSuffix = libjvmSuffixLine.evaluate(hints, vars) ?: continue
-            val libjvmFile = File("$path/$libjvmSuffix")
-            if (!libjvmFile.isFile) continue
-            libjvmPath = libjvmFile.path
-            jvmRootPath = path
-            debug("libjvmPath -> ", libjvmPath)
-            debug("jvmRootPath -> ", jvmRootPath)
-            break
+        // TODO: sift through parsed javaInfo more thoroughly to make a decision.
+        if (info.libjvmPath == null) {
+            debug("No JVM library found; continuing.")
+            continue
         }
-        if (libjvmPath != null) break
-        debug("...but no JVM library was found in this root directory.")
+
+        // Root directory looks good! Moving on.
+        javaInfo = info
+        debug("jvmRootPath -> ", info.rootPath)
+        debug("libjvmPath -> ", info.libjvmPath)
+        break
     }
-    if (libjvmPath == null || jvmRootPath == null) {
+    if (javaInfo == null) {
         error("No Java installation found.")
     }
 
     if ("print-java-home" in directives) {
-        printlnErr(jvmRootPath)
+        printlnErr(javaInfo.rootPath)
+    }
+
+    if ("print-java-info" in directives) {
+        printlnErr(javaInfo.toString())
     }
 
     // Calculate classpath.
@@ -293,8 +308,8 @@ fun main(args: Array<String>) {
     debugList("Main arguments calculated:", mainArgs)
 
     if ("dry-run" in directives) {
-        val lib = libjvmPath.lastIndexOf("/lib/")
-        val dirPath = if (lib >= 0) libjvmPath.substring(0, lib) else jvmRootPath
+        val lib = javaInfo.libjvmPath!!.lastIndexOf("/lib/")
+        val dirPath = if (lib >= 0) javaInfo.libjvmPath!!.substring(0, lib) else javaInfo.rootPath
         val javaBinary = File("$dirPath/bin/java")
         val javaCommand = if (javaBinary.isFile) javaBinary.path else "java"
         printlnErr(buildString {
@@ -309,109 +324,12 @@ fun main(args: Array<String>) {
 
     // Emit final configuration.
     println(nativeDirective)
-    println(libjvmPath)
+    println(javaInfo.libjvmPath!!)
     println(jvmArgs.size)
     for (jvmArg in jvmArgs) println(jvmArg)
     println(mainClassName.replace(".", "/"))
     println(mainArgs.size)
     for (mainArg in mainArgs) println(mainArg)
-}
-
-private fun validateRootDir(rootDir: File): Boolean {
-    debug("Examining candidate rootDir: ", rootDir)
-    if (!rootDir.isDirectory) {
-        debug("Not a directory")
-        return false
-    }
-
-    // ~~~~~~~~~ 👯 REGEX TIME 👯 ~~~~~~~~~
-
-    val sep = "(-|_|\\.|)"
-    val versionPattern = "((8u)?([0-9]+)([\\.+_][0-9]+)*(-b[0-9]+|-ca)?)?"
-    val prefixes = listOf("jdk", "java", "openjdk", "").joinToString("|")
-    // TODO: Can we somehow un-hardcode the distros portion of the regex?
-    val distros = listOf(
-        "adopt",
-        "dragonwell",
-        "corretto", "amazon-corretto",
-        "zulu",
-        "jbrsdk",
-        "openlogic-openjdk",
-        "graalvm-ce", "graalvm-community-openjdk",
-        "graalvm-jdk",
-        "oracle",
-        "sapmachine-jdk",
-        "TencentKona",
-        ""
-    ).joinToString("|")
-
-    val featuresPattern = listOf("-crac", "-jdk", "-jre", "-fx", "-java").joinToString("|")
-    val oses = listOf("linux", "macosx", "").joinToString("|")
-    val variants = listOf("musl", "openjdk", "").joinToString("|")
-    val arches = listOf("amd64", "x64", "x86", "").joinToString("|")
-    val suffixes = listOf("-jre", "-lite", "").joinToString("|")
-    val pattern =
-        "($prefixes)$sep" +
-                "($distros)$sep" +
-                versionPattern +
-                "(($featuresPattern)*)" +
-                versionPattern + sep +
-                "($oses)$sep" +
-                "($variants)$sep" +
-                "($arches)" +
-                versionPattern +
-                "($suffixes)"
-
-    val matchGroups = Regex(pattern).matchEntire(rootDir.name)?.groupValues
-    val missing = "<null>"
-    val entire   = matchGroups?.get( 0) ?: missing
-    val prefix   = matchGroups?.get( 1) ?: missing
-    val sep1     = matchGroups?.get( 2) ?: missing
-    val distro   = matchGroups?.get( 3) ?: missing
-    val sep2     = matchGroups?.get( 4) ?: missing
-    val v1       = matchGroups?.get( 5) ?: missing // and 6, 7, 8, 9
-    val features = matchGroups?.get(10) ?: missing // and 11
-    val v2       = matchGroups?.get(12) ?: missing // and 13, 14, 15, 16
-    val sep3     = matchGroups?.get(17) ?: missing
-    val os       = matchGroups?.get(18) ?: missing
-    val sep4     = matchGroups?.get(19) ?: missing
-    val variant  = matchGroups?.get(20) ?: missing
-    val sep5     = matchGroups?.get(21) ?: missing
-    val arch     = matchGroups?.get(22) ?: missing
-    val v3       = matchGroups?.get(23) ?: missing // and 24, 25, 26, 27
-    val suffix   = matchGroups?.get(28) ?: missing
-
-    debug("Directory name parsed:")
-    debug("entire   = ", entire)
-    debug("prefix   = ", prefix)
-    debug("sep1     = ", sep1)
-    debug("distro   = ", distro)
-    debug("sep2     = ", sep2)
-    debug("v1       = ", v1)
-    debug("features = ", features)
-    debug("v2       = ", v2)
-    debug("sep3     = ", sep3)
-    debug("os       = ", os)
-    debug("sep4     = ", sep4)
-    debug("variant  = ", variant)
-    debug("sep5     = ", sep5)
-    debug("arch     = ", arch)
-    debug("v3       = ", v3)
-    debug("suffix   = ", suffix)
-
-    val info = readReleaseInfo(rootDir)
-    val implementor = info?.get("IMPLEMENTOR")
-    val implementorVersion = info?.get("IMPLEMENTOR_VERSION")
-    val javaVersion = info?.get("JAVA_VERSION")
-    debug("IMPLEMENTOR -> ", implementor ?: "<null>")
-    debug("IMPLEMENTOR_VERSION -> ", implementorVersion ?: "<null>")
-    debug("JAVA_VERSION -> ", javaVersion ?: "<null>")
-
-    // TODO: parse out majorVersion from version, then compare to versionMin/versionMax.
-    //  If not within the constraints, continue.
-    //  Add allowedVendors/blockedVendors lists to the TOML schema, and check it here.
-
-    return true
 }
 
 private fun calculateMaxHeap(maxHeap: String?): String? {

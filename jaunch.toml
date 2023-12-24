@@ -90,6 +90,7 @@ supported-options = [
     '--system|do not try to run bundled Java',
     '--java-home=<path>|specify JAVA_HOME explicitly',
     '--print-java-home|print path to the selected Java',
+    '--print-java-info|print information about the selected Java',
     '--print-app-dir|print directory where the application is located',
     '--headless|run in text mode',
     "--heap,--mem,--memory=<amount>|set Java's heap size to <amount> (e.g. 512M)",
@@ -478,6 +479,7 @@ directives = [
   '-h|help',
   '--dry-run|dry-run',
   '--print-java-home|print-java-home',
+  '--print-java-info|print-java-info',
   '--print-app-dir|print-app-dir',
 ]
 
