@@ -5,24 +5,11 @@ import kotlinx.serialization.Serializable
 @Suppress("ArrayInDataClass")
 data class JaunchConfig (
 
+    /** Jaunch configuration schema version. */
+    val jaunchVersion: String? = null,
+
     /** Name of the program being launched by Jaunch. */
     val programName: String? = null,
-
-    /** Runtime classpath elements to pass to Java. */
-    val classpath: Array<String> = emptyArray(),
-
-    /**
-     * Maximum amount of memory for the Java heap to consume. Examples:
-     *
-     * * For 1567 MB: `1567m`
-     * * For 48 GB: `48g`
-     * * For 75% of available RAM: `75%`
-     * * For 3 GB less than available RAM: `-3g`
-     *
-     * These will be translated into an appropriate `-Xmx` argument.
-     */
-    @SerialName("max-heap")
-    val maxHeap: String? = null,
 
     /** TODO */
     @SerialName("supported-options")
@@ -35,6 +22,10 @@ data class JaunchConfig (
     /** TODO */
     @SerialName("allow-unrecognized-jvm-args")
     val allowUnrecognizedJvmArgs: Boolean? = null,
+
+    /** TODO */
+    @SerialName("allow-weird-jvms")
+    val allowWeirdJvms: Boolean? = null,
 
     /** Minimum acceptable Java version to match. */
     @SerialName("java-version-min")
@@ -51,10 +42,6 @@ data class JaunchConfig (
     /** TODO */
     @SerialName("java-distros-blocked")
     val javaDistrosBlocked: Array<String> = emptyArray(),
-
-    /** TODO */
-    @SerialName("allow-weird-jvms")
-    val allowWeirdJvms: Boolean? = null,
 
     /** Paths to check on all systems. */
     @SerialName("root-paths")
@@ -88,6 +75,22 @@ data class JaunchConfig (
 
     /** TODO */
     val directives: Array<String> = emptyArray(),
+
+    /** Runtime classpath elements to pass to Java. */
+    val classpath: Array<String> = emptyArray(),
+
+    /**
+     * Maximum amount of memory for the Java heap to consume. Examples:
+     *
+     * * For 1567 MB: `1567m`
+     * * For 48 GB: `48g`
+     * * For 75% of available RAM: `75%`
+     * * For 3 GB less than available RAM: `-3g`
+     *
+     * These will be translated into an appropriate `-Xmx` argument.
+     */
+    @SerialName("max-heap")
+    val maxHeap: String? = null,
 
     /** Additional flags to pass to the JVM at launch. */
     @SerialName("jvm-args")

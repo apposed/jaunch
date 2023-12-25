@@ -191,20 +191,6 @@ recognized-jvm-args = [
 allow-unrecognized-jvm-args = false
 
 # ==============================================================================
-# Acceptable range of Java versions to match.
-#
-# These two options let you constrain the minimum and maximum Java versions respectively
-# that your application supports. This information will be used when searching the
-# system for appropriate JVM installations. If a JVM is successfully discovered, but
-# then found to be outside these constraints, it is discarded and the search continues.
-#
-# The most common use of these fields is to specify major versions alone (e.g.
-# "java-version-min = 11"), but Jaunch does make a best effort to compare version
-# strings digit by digit in a Semantic-Versioning-like way. YMMV, though.
-#java-version-min = 8
-#java-version-max = 21
-
-# ==============================================================================
 # Whether to attempt to launch with mysterious flavors of the JVM.
 #
 # When Jaunch discovers a Java installation on the user's system, it tries very hard
@@ -242,11 +228,102 @@ allow-unrecognized-jvm-args = false
 allow-weird-jvms = true
 
 # ==============================================================================
+# Acceptable range of Java versions to match.
+#
+# These two fields let you constrain the minimum and maximum Java versions respectively
+# that your application supports. This information will be used when searching the
+# system for appropriate JVM installations. If a JVM is successfully discovered, but
+# then found to be outside these constraints, it is discarded and the search continues.
+# For installations whose version cannot be determined, what Jaunch does will depend on
+# the allow-weird-jvms boolean setting above.
+#
+# The most common use of these fields is to specify major versions alone (e.g.
+# "java-version-min = 11"), but Jaunch does make a best effort to compare version
+# strings digit by digit in a Semantic-Versioning-like way, so you could try
+# "java-version-min = 1.8.0.101" if you like to live dangerously. YMMV, though.
+#
+# "But what syntax exactly should I use to specify these versions?" you might wonder.
+# Excellent question! To answer that, let's have some background:
+#
+# As Ralph Waldo Emerson wrote, a foolish consistency is the hobgoblin of little minds.
+# Never has that belief been put into action more fervently than it has with the Java
+# versioning scheme, which has a fraught and confusing history:
+#
+# * The first stable release of Java, 1.0.2, was also called Java 1.
+#
+# * The 1.2 release was marketed as the Java 2 Platform, Standard Edition (J2SE).
+#
+# * The 1.5 release was marketed as Java SE 5, with a "developer version" of 1.5
+#   and a "product version" of 5.0.
+#
+# * This dual versioning scheme continued through versions 1.6, 1.7, and 1.8,
+#   which were also known as 6, 7 and 8 respectively -- although the '1.' prefix
+#   (at least in my anecdotal experience) decreased in prominence over time.
+#
+# * There is also a baffling convention that Java 8 specifically uses where
+#   version 1.8.0_XYZ -- which is also written as 8.0_XYZ or 8.0.XYZ -- is
+#   frequently expressed as 8uXYZ.
+#
+# * With the release of Java 9, the '1.' prefix was officially dropped (finally!).
+#
+# * Still, for backwards compatibility with old assumptions, you might still see a
+#   '1.' or two in certain places, such as the /usr/lib/jvm folder on Debian/Ubuntu.
+#
+# You can read more details at https://en.wikipedia.org/wiki/Java_version_history.
+#
+# Check out this exciting table of Google search results (excluding Minecraft):
+#
+#   x | "Java 1.x" |   "Java x" | Ratio | Comments
+# :--:|-----------:|-----------:|-------|---------
+#   0 |     78,400 |    229,000 |     2 |
+#   1 |    119,000 |  3,510,000 |    29 |
+#   2 |     71,000 |  2,870,000 |    40 | "Java 2 SE" term skews results?
+#   3 |     62,800 |  1,130,000 |    17 |
+#   4 |    155,000 |    752,000 |     4 |
+#   5 |    328,000 |  1,080,000 |     3 |
+#   6 |    264,000 |  1,330,000 |     5 |
+#   7 |    223,000 |  1,810,000 |     8 |
+#   8 |    798,000 | 24,200,000 |    30 | LTS release
+#   9 |     11,200 |  1,250,000 |   111 | 1.x scheme discontinued
+#  10 |      4,790 |    604,000 |   126 |
+#  11 |      9,390 |  1,860,000 |   198 | LTS release
+#  12 |         10 |    360,000 | 36000 | 10? Really?
+#  13 |      2,140 |    315,000 |   147 |
+#  14 |      2,330 |    356,000 |   152 |
+#  15 |      2,010 |    294,000 |   146 |
+#  16 |      3,630 |    382,000 |   105 |
+#  17 |      3,000 |  1,110,000 |   370 | LTS release
+#  18 |      1,790 |    282,000 |   157 |
+#  19 |      9,360 |    332,000 |    35 |
+#  20 |     14,700 |    329,000 |    22 |
+#  21 |        820 |  1,050,000 |  1280 | LTS release
+#
+# Who knows what (if anything) this table proves, but it's probably Numberwang!
+#
+# So back to the key question: what numbers should you write for the min and max?
+# Use the so-called "developer version" in all cases, with dots only as separators:
+#
+# * For Java 8 and earlier, prepend the '1.' portion.
+# * For Java 9 and later, don't.
+#
+# So if you want 1.8.0_101 (a.k.a. 8u101), write '1.8.0.101', not '8.0.101'.
+# If you want 11.0.8, write '11.0.8', not '1.11.0.8'.
+#
+# As a kindness, when Jaunch sees a major version digit less than 9, it prepends the
+# '1.' prefix on your behalf. So you can write e.g. "java-version-min = '8'" if you
+# really want to. Jaunch also strips the '1.' leading digit when the subsequent minor
+# version digit is 9 or more. So write '1.11.0.8' if you must! But know that in doing
+# so, you stand opposed to the hallowed official versioning scheme, a heretic in the
+# eyes of Java developers everywhere. You have been warned!
+#java-version-min = '8' # hobgoblin!
+#java-version-max = '21'
+
+# ==============================================================================
 # Acceptable and unacceptable distributions/vendors/flavors of Java to match.
 #
-# These two options let you constrain which Java distributions are OK to use and which
-# are not, respectively. For distros matching neither the allowlist nor blocklist, what
-# Jaunch does will depend on the allow-weird-jvms boolean setting above.
+# These two fields let you constrain which Java distributions are OK to use and which
+# are not, respectively. For distros matching neither the allowlist nor blocklist,
+# what Jaunch does will depend on the allow-weird-jvms boolean setting above.
 #
 # As of this writing, the following Java distributions have been tested:
 #
@@ -254,7 +331,7 @@ allow-weird-jvms = true
 # -------------------| -------------------------|----------------------------------------|-----------------
 # AdoptOpenJDK       | AdoptOpenJDK             | AdoptOpenJDK                           | adopt
 # Alibaba Dragonwell | Alibaba                  | (Alibaba Dragonwell Extended Edition)* | dragonwell
-# Amazon Corretto    | Amazon.com Inc.*         | Corretto*                              | corretto or amazon-corretto
+# Amazon Corretto    | Amazon.com Inc.*         | Corretto*                              | corretto or amazon-corretto*
 # Azul Zulu          | Azul Systems, Inc.*      | Zulu*                                  | zulu
 # BellSoft Liberica  | BellSoft                 | <none>                                 | <none>
 # Eclipse Temurin    | Eclipse Adoptium         | Temurin                                | <none>
@@ -270,35 +347,63 @@ allow-weird-jvms = true
 # Tencent KonaJDK    | Tencent*                 | TencentKonaJDK*                        | TencentKona
 # Ubuntu OpenJDK     | Ubuntu or Private Build  | <none>                                 | <none>
 #
-# An asterisk (*) means that that metadata field, and/or the entire release file, is
-# missing -- or for slugs, that there is no slug -- for some versions of that distro.
+# An asterisk (*) means that that metadata field, and/or the release file itself, is
+# missing (or for the root folder, that there is no telltale slug) for some versions.
 # Generally speaking, metadata and naming have improved as Java has evolved; often it
 # is Java 8 versions of these distributions that have the most metadata/naming issues.
 #
-# It is quite often (but far from always) the case that root folders begin with the
-# prefix 'jdk_', so Jaunch strips any such prefix before inferring root folder slugs.
-#
 # As the table above shows, every observed distro has some telltale signs, with the
 # release file being more likely to provide useful information, but there are many
-# exceptions, so Jaunch uses all available sources when scrutinizing installations. 
-# Fields are downcased, then checked for substrings matching any of the tokens below.
+# exceptions, so Jaunch uses all available sources when scrutinizing installations.
+#
+# For each line below, the initial part before the colon names the distro, and comma-
+# separated elements afterward define tokens used to detect that distro from extracted
+# metadata fields. Fields are downcased, then checked for substrings matching a token.
+#
+# Examples:
+#
+# * A root directory named 'jdk_corretto_8.x64' with no release file will be identified
+#   as Amazon Corretto, because the token 'corretto' appears in the root folder name.
+#
+# * A root directory named 'best-openjdk-ever' with a release file containing lines:
+#
+#       IMPLEMENTOR="Azul Systems, Inc."
+#       IMPLEMENTOR_VERSION="Zulu21.30+19-CRaC-CA"
+#
+#   will be identified as Azul Zulu, because the token 'azul' matches the IMPLEMENTOR.
+#
+# * A root directory named 'i-forgot-where-this-came-from' with a minimal release file
+#   missing the IMPLEMENTOR and IMPLEMENTOR_VERSION entries, and a jre/lib/rt.jar
+#   whose META-INF/MANIFEST.MF contains the lines:
+#
+#       Manifest-Version: 1.0
+#       Implementation-Title: Java Runtime Environment
+#       Implementation-Version: 1.8.0_392
+#       Specification-Vendor: Oracle Corporation
+#       Specification-Title: Java Platform API Specification
+#       Specification-Version: 1.8
+#       Created-By: 1.8.0_252 (Tencent)
+#       Implementation-Vendor: Tencent
+#
+#   will be identified as TencentKona, because the token 'tencent' matches the
+#   Implementation-Vendor.
 java-distros-allowed = [
-    'adoptopenjdk',                   # AdoptOpenJDK
-    'alibaba', 'dragonwell',          # Alibaba Dragonwell
-    'amazon', 'corretto',             # Amazon Corretto
-    'azul', 'zulu',                   # Azul Zulu
-    'bellsoft', 'liberica',           # Bellsoft Liberica
-    'eclipse', 'adoptium', 'temurin', # Eclipse Temurin
-    'ibm', 'semuru',                  # IBM Semuru
-    'jetbrains', 'jbrsdk',            # JetBrains JBRSDK
-    'microsoft',                      # Microsoft OpenJDK
-    'openlogic',                      # OpenLogic OpenJDK
-    'graalvm-c',                      # GraalVM Community
-    'graalvm-jdk',                    # GraalVM Enterprise
-    'oracle',                         # Oracle Java SE, Oracle OpenJDK
-    'sapmachine',                     # SAP SapMachine
-    'tencent', 'kona',                # TencentKona
-    'ubuntu',                         # Ubuntu OpenJDK
+    'Alibaba Dragonwell:alibaba,dragonwell',
+    'Amazon Corretto:amazon,corretto',
+    'Azul Zulu:azul,zulu',
+    'Bellsoft Liberica:bellsoft,liberica',
+    'Eclipse Temurin:eclipse,adoptium,temurin',
+    'AdoptOpenJDK:adopt', # NB: Must follow Temurin, since adopt is a substring of adoptium.
+    'IBM Semuru:ibm,semuru',
+    'JetBrains JBRSDK:jetbrains,jbrsdk',
+    'Microsoft OpenJDK:microsoft',
+    'OpenLogic OpenJDK:openlogic',
+    'GraalVM Community:graalvm-c',
+    'GraalVM Enterprise:graalvm-jdk',
+    'Oracle Java SE / OpenJDK:oracle', # NB: Must follow GraalVM Enterprise, since 'oracle' appears there as well.
+    'SAP SapMachine:sapmachine',
+    'TencentKona:tencent,kona',
+    'Ubuntu OpenJDK:ubuntu',
 ]
 java-distros-blocked = []
 
@@ -414,7 +519,7 @@ root-paths = [
 # library. If found, we have a winning Java installation!
 #
 # Perusing the list below, you may notice several entries beginning with jre/.
-# This nested jre/ folder is only present for OpenJDK 8, nothing after.
+# This nested jre/ folder is only present up to Java 8, nothing after.
 #
 # One other point of note: on macOS, some distros have *two* libjli.dylib files:
 # the first in one of the usual spots under Contents/Home, and the second oddly
@@ -473,7 +578,30 @@ modes = []
 # Each one runs at a particular (hardcoded) time during configuration.
 # Directives unsupported by the configurator program are ignored.
 #
-# TODO: write directives documentation here.
+# This may seem confusingly abstract, but the basic idea is this: maybe you
+# want Jaunch *not* to launch Java this time, but rather to do something else!
+#
+# What sorts of other things? you might ask. And how can we possibly define
+# such open-ended behavior in a mere TOML configuration file? Well, the short
+# answer is: we can't. The configurator program that ships with Jaunch has some
+# built-in directives, and that's it. As of this writing, those are:
+#
+# * help            - Display the usage text, built from the supported-options above.
+# * dry-run         - Display the final java command with JVM args and main args.
+#                     Useful to see what would happen, without it actually happening.
+# * print-java-home - Print out the path to the chosen Java installation.
+# * print-java-info - Print out all the details of the chosen Java installation,
+#                     including not only its path, but also the distro, version,
+#                     operating system, CPU architecture, and other metadata fields.
+# * print-app-dir   - Print out the path to the application. Typically, this will be
+#                     the folder containing the launcher.
+#
+# When a directive gets activated, Jaunch's default launching behavior is disabled.
+# So when you run e.g. ./fizz-buzz --help, you'll see the usage text printed out,
+# but no Java will be launched.
+#
+# If you need to support other directives besides those above, you'll have to hack the
+# configurator source code to include them, and also write rules here in the TOML.
 directives = [
   '--help|help',
   '-h|help',
@@ -519,7 +647,8 @@ classpath = [
 # ==============================================================================
 # Arguments to pass to the JVM.
 #
-# TODO: write jvm-args documentation here.
+# This is the magic sauce where Jaunch options and other criteria get translated
+# into JVM arguments. See the 'root-paths' section above for a thorough explanation.
 jvm-args = [
     '--headless|-Djava.awt.headless=true',
     '--heap|-Xmx${heap}',
@@ -527,13 +656,19 @@ jvm-args = [
 ]
 
 # ==============================================================================
-# TODO: main-class
+# The main class to launch.
 #
+# Use this field when your application has a single main class to launch.
 #main-class = org.fizzbuzz.FizzBuzz
 
 # ==============================================================================
-# TODO: main-class-candidates
+# A list of candidate main classes, one of which will get launched.
 #
+# Jaunch evaluates the rules attached to each candidate main class. The first
+# line with matching rules becomes the main class, with subsequent lines ignored.
+#
+# This field is useful if you want to launch a different main class depending on
+# criteria such as OS, CPU architecture, or which Jaunch options are given on the CLI.
 #main-class-candidates = [
 #    '--fizzbuzz|org.fizzbuzz.FizzBuzz'
 #    '--main-class|${main-class}',
@@ -541,8 +676,11 @@ jvm-args = [
 #]
 
 # ==============================================================================
-# TODO: main-args
+# Arguments to pass to the main class on the Java side.
 #
+# This is the other half of the magic sauce, along with jvm-args above:
+# Jaunch options and other criteria get translated into main arguments here.
+# See the 'root-paths' section above for a thorough explanation.
 #main-args = [
 #    '--fizz|-Dfizzbuzz.mode=fizz',
 #    '--buzz|-Dfizzbuzz.mode=buzz',
