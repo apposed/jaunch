@@ -110,7 +110,7 @@ data class JaunchConfig (
 ) {
     /** TODO */
     val mainClasses: Array<String>
-        get() = if (mainClass == null) mainClassCandidates else arrayOf(mainClass) + mainClassCandidates
+        get() = if (mainClass == null) mainClassCandidates else mainClassCandidates + mainClass
 
     /** Return true iff the given argument is on the list of [recognizedJvmArgs]. */
     fun recognizes(arg: String): Boolean {
