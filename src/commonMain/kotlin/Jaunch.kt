@@ -144,25 +144,19 @@ fun main(args: Array<String>) {
     debug("* mainArgs -> ", mainArgs)
 
     // Apply mode hints.
-    for (modeLine in config.modes) {
-        val mode = modeLine.evaluate(hints, vars) ?: continue
+    for (mode in calculate(config.modes, hints, vars)) {
         if (mode.startsWith("!")) {
             // Negated mode expression: remove the mode hint.
             hints -= mode.substring(1)
         }
         else hints += mode
     }
-
     debug()
     debug("Modes applied:")
     debug("* hints -> ", hints)
 
     // Discern directives to perform.
-    val directives = mutableSetOf<String>()
-    for (directiveLine in config.directives) {
-        val directive = directiveLine.evaluate(hints, vars) ?: continue
-        directives.add(directive)
-    }
+    val directives = calculate(config.directives, hints, vars).toSet()
     val nativeDirective = if (directives.isEmpty()) "LAUNCH" else "CANCEL"
 
     debug()
@@ -171,99 +165,63 @@ fun main(args: Array<String>) {
     debug("* nativeDirective -> ", nativeDirective)
 
     // Execute the help directive.
-    if ("help" in directives) {
-        // TODO: Glean Jaunch version and build hash somehow.
-        val jaunchVersion = "???"
-        val jaunchBuild = "???"
-        val exeName = executable ?: "jaunch"
+    if ("help" in directives) help(executable, programName, supportedOptions)
 
-        printlnErr("Usage: $exeName [<Java options>.. --] [<main arguments>..]")
-        printlnErr()
-        printlnErr("$programName launcher (Jaunch v$jaunchVersion / build $jaunchBuild)")
-        printlnErr("Java options are passed to the Java Runtime,")
-        printlnErr("main arguments to the launched program ($programName).")
-        printlnErr()
-        printlnErr("In addition, the following options are supported:")
-        val optionsUnique = linkedSetOf(*supportedOptions.values.toTypedArray())
-        optionsUnique.forEach { printlnErr(it.help()) }
-    }
+    // Calculate all the places to search for Java.
+    val rootPaths = calculate(config.rootPaths, hints, vars)
+    debug()
+    debug("Root paths to search for Java:")
+    rootPaths.forEach { debug("* ", it) }
+
+    // Calculate all the places to look for the JVM library.
+    val libjvmSuffixes = calculate(config.libjvmSuffixes, hints, vars)
+    debug()
+    debug("Suffixes to check for libjvm:")
+    libjvmSuffixes.forEach { debug("* ", it) }
+
+    // Calculate distro and version constraints.
+    val versionMin = config.javaVersionMin
+    val versionMax = config.javaVersionMax
+    val distrosAllowed = calculate(config.javaDistrosAllowed, hints, vars)
+    val distrosBlocked = calculate(config.javaDistrosBlocked, hints, vars)
 
     // Discover Java.
     debug()
     debug("Discovering Java installations...")
-
-    // Calculate all the places to search.
-    val rootPaths = mutableListOf<String>()
-    for (rootPathLine in config.rootPaths)
-        rootPaths += rootPathLine.evaluate(hints, vars) ?: continue
-    debug("root paths to search:")
-    rootPaths.forEach { debug("* ", it) }
-
-    val libjvmSuffixes = mutableListOf<String>()
-    for (libjvmSuffixLine in config.libjvmSuffixes)
-        libjvmSuffixes += libjvmSuffixLine.evaluate(hints, vars) ?: continue
-    debug("libjvm suffixes to check:")
-    libjvmSuffixes.forEach { debug("* ", it) }
-
     val javaAnalyzer = JavaAnalyzer(libjvmSuffixes)
-
     var javaInfo: JavaInfo? = null
+    // CTR START HERE: Rename JavaAnalyzer / JavaInfo to JavaInstallation?
+    // Make the constraints above into a single Constraints data structure?
     for (rootPath in rootPaths) {
         debug("Analyzing candidate root directory: '", rootPath, "'")
-        val info = javaAnalyzer.javaInfo(rootPath) ?: continue
+        val info = javaAnalyzer.info(rootPath)
 
         // Validate the Java installation. It needs to meet the configuration constraints.
-        // TODO: sift through parsed javaInfo more thoroughly to make a decision.
-        if (info.libjvmPath == null) {
-            debug("No JVM library found; continuing.")
-            continue
-        }
+        if (!info.fits(versionMin, versionMax, distrosAllowed, distrosBlocked)) continue
 
         // Root directory looks good! Moving on.
         javaInfo = info
         debug("jvmRootPath -> ", info.rootPath)
-        debug("libjvmPath -> ", info.libjvmPath)
+        debug("libjvmPath -> ", info.libjvmPath ?: "<null>")
         break
     }
     if (javaInfo == null) {
         error("No Java installation found.")
     }
 
-    if ("print-java-home" in directives) {
-        printlnErr(javaInfo.rootPath)
-    }
-
-    if ("print-java-info" in directives) {
-        printlnErr(javaInfo.toString())
-    }
+    // Execute the print-java-home and/or print-java-info directive.
+    if ("print-java-home" in directives) printlnErr(javaInfo.rootPath)
+    if ("print-java-info" in directives) printlnErr(javaInfo.toString())
 
     // Calculate classpath.
-    val classpath = mutableListOf<String>()
-    for (classpathLine in config.classpath) {
-        val value = classpathLine.evaluate(hints, vars) ?: continue
-
-        if (value.endsWith("/*")) {
-            // Add all JAR files and directories to the classpath.
-            val valueWithoutGlob = value.substring(0, value.length - 2)
-            for (file in File(valueWithoutGlob).listFiles()) {
-                if (file.isDirectory || file.suffix == "jar") classpath += file.path
-            }
-        }
-        else {
-            classpath += value
-        }
-    }
+    val classpath = calculate(config.classpath, hints, vars).flatMap { glob(it) }
     debugList("Classpath calculated:", classpath)
 
-    if ("print-class-path" in directives) {
-        classpath.forEach { printlnErr(it) }
-    }
+    // Execute the print-class-path directive.
+    if ("print-class-path" in directives) classpath.forEach { printlnErr(it) }
 
     // Calculate JVM arguments.
-    for (argLine in config.jvmArgs) {
-        val arg = argLine.evaluate(hints, vars) ?: continue
-        jvmArgs += arg
-    }
+    jvmArgs += calculate(config.jvmArgs, hints, vars)
     debugList("JVM arguments calculated:", jvmArgs)
 
     // Append or amend argument declaring classpath elements.
@@ -291,38 +249,21 @@ fun main(args: Array<String>) {
     }
 
     // Calculate main class.
-    var mainClassName: String? = null
-    for (mainClassLine in config.mainClasses) {
-        mainClassName = mainClassLine.evaluate(hints, vars) ?: continue
-        break
-    }
+    val mainClassNames = calculate(config.mainClasses, hints, vars)
+    val mainClassName = if (mainClassNames.isEmpty()) null else mainClassNames.first()
     debug("mainClassName -> ", mainClassName ?: "<null>")
-    if (mainClassName == null) {
+    if (mainClassName == null)
         error("No matching main class name")
-    }
 
     // Calculate main args.
-    for (argLine in config.mainArgs) {
-        mainArgs += argLine.evaluate(hints, vars) ?: continue
-    }
+    mainArgs += calculate(config.mainArgs, hints, vars)
     debugList("Main arguments calculated:", mainArgs)
 
-    if ("dry-run" in directives) {
-        val lib = javaInfo.libjvmPath!!.lastIndexOf("/lib/")
-        val dirPath = if (lib >= 0) javaInfo.libjvmPath!!.substring(0, lib) else javaInfo.rootPath
-        val javaBinary = File("$dirPath/bin/java")
-        val javaCommand = if (javaBinary.isFile) javaBinary.path else "java"
-        printlnErr(buildString {
-            append(javaCommand)
-            jvmArgs.forEach { append(" $it") }
-            append(" $mainClassName")
-            mainArgs.forEach { append(" $it") }
-        })
-    }
-
-    debug("Emitting final configuration to stdout...")
+    // Execute the dry-run directive.
+    if ("dry-run" in directives) dryRun(javaInfo, jvmArgs, mainClassName, mainArgs)
 
     // Emit final configuration.
+    debug("Emitting final configuration to stdout...")
     println(nativeDirective)
     println(javaInfo.libjvmPath!!)
     println(jvmArgs.size)
@@ -331,6 +272,8 @@ fun main(args: Array<String>) {
     println(mainArgs.size)
     for (mainArg in mainArgs) println(mainArg)
 }
+
+// -- Helper functions --
 
 private fun calculateMaxHeap(maxHeap: String?): String? {
     if (maxHeap?.endsWith("%") != true) return maxHeap
@@ -361,10 +304,11 @@ private fun calculateMaxHeap(maxHeap: String?): String? {
     return "${gbValue}g"
 }
 
-private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
-    val index = indexOf(delimiter)
-    return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
+private fun calculate(items: Array<String>, hints: Set<String>, vars: Map<String, String>): List<String> {
+    return items.mapNotNull { it.evaluate(hints, vars) }
 }
+
+// -- String extensions --
 
 private fun String.evaluate(hints: Set<String>, vars: Map<String, String>): String? {
     val tokens = split('|')
@@ -381,6 +325,11 @@ private fun String.evaluate(hints: Set<String>, vars: Map<String, String>): Stri
 
     // Line matches all rules. Populate variable values and return the result.
     return value interpolate vars
+}
+
+private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
+    val index = indexOf(delimiter)
+    return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
 }
 
 /** Replaces `${var}` expressions with values from a vars map. */
@@ -409,4 +358,41 @@ private infix fun String.interpolate(vars: Map<String, String>): String = buildS
         // Advance the position beyond the variable expression.
         pos = end + 1
     }
+}
+
+// -- Directives --
+
+private fun help(executable: String?, programName: String, supportedOptions: JaunchOptions) {
+    // TODO: Glean Jaunch version and build hash somehow.
+    val jaunchVersion = "???"
+    val jaunchBuild = "???"
+    val exeName = executable ?: "jaunch"
+
+    printlnErr("Usage: $exeName [<Java options>.. --] [<main arguments>..]")
+    printlnErr()
+    printlnErr("$programName launcher (Jaunch v$jaunchVersion / build $jaunchBuild)")
+    printlnErr("Java options are passed to the Java Runtime,")
+    printlnErr("main arguments to the launched program ($programName).")
+    printlnErr()
+    printlnErr("In addition, the following options are supported:")
+    val optionsUnique = linkedSetOf(*supportedOptions.values.toTypedArray())
+    optionsUnique.forEach { printlnErr(it.help()) }
+}
+
+private fun dryRun(
+    javaInfo: JavaInfo,
+    jvmArgs: MutableList<String>,
+    mainClassName: String?,
+    mainArgs: MutableList<String>
+) {
+    val lib = javaInfo.libjvmPath?.lastIndexOf("/lib/") ?: -1
+    val dirPath = if (lib >= 0) javaInfo.libjvmPath!!.substring(0, lib) else javaInfo.rootPath
+    val javaBinary = File("$dirPath/bin/java")
+    val javaCommand = if (javaBinary.isFile) javaBinary.path else "java"
+    printlnErr(buildString {
+        append(javaCommand)
+        jvmArgs.forEach { append(" $it") }
+        append(" $mainClassName")
+        mainArgs.forEach { append(" $it") }
+    })
 }

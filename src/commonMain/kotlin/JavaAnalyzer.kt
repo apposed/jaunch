@@ -6,10 +6,7 @@ class JavaAnalyzer(
      *
      * Returns null if the directory does not look like the root of a Java installation.
      */
-    fun javaInfo(rootPath: String): JavaInfo? {
-        val rootDir = File(rootPath)
-        if (!rootDir.isDirectory) return null
-
+    fun info(rootPath: String): JavaInfo {
         // Find the libjvm.
         var libjvmPath: String? = null
         for (libjvmSuffix in libjvmSuffixes) {
@@ -62,6 +59,7 @@ class JavaAnalyzer(
             versionPattern +
             "($suffixes)"
 
+        val rootDir = File(rootPath)
         val matchGroups = Regex(pattern).matchEntire(rootDir.name)?.groupValues
         val missing = "<null>"
         val entire   = matchGroups?.get( 0)
@@ -107,6 +105,9 @@ class JavaAnalyzer(
         debug("IMPLEMENTOR_VERSION -> ", implementorVersion ?: "<null>")
         debug("JAVA_VERSION -> ", javaVersion ?: "<null>")
 
+        // TODO: Squeeze more metadata out of rt.jar's META-INF/MANIFEST, if present.
+        // unzip -p .../jre/lib/rt.jar META-INF/MANIFEST.MF
+
         return JavaInfo(
             rootPath,
             libjvmPath,
@@ -135,4 +136,14 @@ data class JavaInfo(
     val arch: String?,
     val suffix: String?,
     val javaVersion: String?,
-)
+) {
+    fun fits(versionMin: Long?, versionMax: Long?, distrosAllowed: List<String>, distrosBlocked: List<String>): Boolean {
+        if (libjvmPath == null) {
+            debug("No JVM library found.")
+            return false
+        }
+
+        // TODO: Actually check things.
+        return true
+    }
+}

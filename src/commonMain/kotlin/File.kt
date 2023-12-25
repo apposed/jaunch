@@ -36,3 +36,18 @@ val File.withoutSuffix: String
         val dot = path.lastIndexOf('.', slash + 1)
         return if (dot < slash || dot < 0) path else path.substring(0, dot)
     }
+
+// -- File-related utility functions --
+
+fun glob(path: String): List<String> {
+    val file = File(path)
+    if (file.name.contains("*")) {
+        // Glob pattern detected: calculate matching files in the same directory.
+        val regex = Regex(file.name.replace(".", "\\.").replace("*", ".*"))
+        val dir = File(file.directoryPath)
+        if (!dir.isDirectory) return emptyList()
+        return dir.listFiles().filter { regex.matches(it.name) }.map { it.path }
+    }
+    // It's a regular old file path, not a glob pattern.
+    return listOf(path)
+}

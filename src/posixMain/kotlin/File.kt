@@ -41,7 +41,7 @@ actual class File actual constructor(private val thePath: String) {
     }
 
     actual fun listFiles(): List<File> {
-        if (!isDirectory) throw IllegalArgumentException("Not a directory")
+        if (!isDirectory) throw IllegalArgumentException("Not a directory: $path")
 
         val directory = opendir(path) ?: throw IllegalArgumentException("Cannot open directory")
         val files = mutableListOf<File>()
