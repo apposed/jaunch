@@ -104,11 +104,14 @@ supported-options = [
 # The list of arguments that Jaunch will recognize as belonging to the JVM,
 # rather than your application's main method.
 #
-# These are used to guess, when the minus-minus divider (--) is absent, whether each arg
-# is a JVM one or a main one. Note that as with the classpath field, the asterisk symbol
-# (*) is a wildcard. All values on this list are assumed to be given with at least one
-# dash symbol prepended, maybe two. (Heck, go nuts and put three or four if you want.
-# Java won't like it, though.)
+# These are used to guess, when the minus-minus divider (--) is absent,
+# whether each arg is a JVM one or a main one.
+#
+# The asterisk wildcard symbol (*) is allowed as a suffix,
+# if you want to match all arguments with a particular prefix.
+#
+# All values on this list are assumed to be given with at least one dash symbol
+# prepended, maybe two. (Heck, go nuts and put three or four! But Java won't like it.)
 #
 # About main method arguments: Jaunch's philosophy is to remain agnostic of the options
 # your application supports, rather than trying to constrain them in its configuration
@@ -213,13 +216,12 @@ allow-unrecognized-jvm-args = false
 #   directory prefix at all), and of course users and packaging scripts can rename the
 #   distro root directory to anything, corrupting this information in the process.
 #
-# * As of this writing, Jaunch does not actually go so far as to scan Java binaries for
-#   human-readable strings (a la the strings *nix utility), nor does it actually invoke
-#   bin/java on a Java program that prints System.getProperty("java.version") and
-#   related fields. It could! But doing that would slow down launch, and it starts to
-#   get ridiculous because such weird distros are in the small minority.
+# * As a final measure, when needed, Jaunch invokes the Java installation's bin/java on
+#   a small Java program that prints out all key=value pairs of System.getProperties(),
+#   paying particular attention to java.version, java.vendor, and java.vendor.version.
+#   This is the slowest but most reliable way to gather metadata about an installation.
 #
-# Therefore, it is possible for all of Jaunch's efforts to be in vain, and to end up
+# Nonetheless, it is possible for all of Jaunch's efforts to be in vain, and to end up
 # trying to decide whether to launch with some mystery-flavored JVM. In such scenarios,
 # the allow-weird-jvms flag comes to the rescue, telling Jaunch whether to allow it
 # (true), or give up and complain (false). Hopefully, your users will never know the
@@ -239,8 +241,8 @@ allow-weird-jvms = true
 #
 # The most common use of these fields is to specify major versions alone (e.g.
 # "java-version-min = 11"), but Jaunch does make a best effort to compare version
-# strings digit by digit in a Semantic-Versioning-like way, so you could try
-# "java-version-min = 1.8.0.101" if you like to live dangerously. YMMV, though.
+# strings digit by digit, so you could try "java-version-min = 1.8.0.101" if you
+# like to live dangerously. YMMV, though.
 #
 # "But what syntax exactly should I use to specify these versions?" you might wonder.
 # Excellent question! To answer that, let's have some background:
@@ -266,8 +268,8 @@ allow-weird-jvms = true
 #
 # * With the release of Java 9, the '1.' prefix was officially dropped (finally!).
 #
-# * Still, for backwards compatibility with old assumptions, you might still see a
-#   '1.' or two in certain places, such as the /usr/lib/jvm folder on Debian/Ubuntu.
+# * Still, for backwards compatibility with old assumptions, you might still see
+#   a '1.' here or there, such as the /usr/lib/jvm folder on Debian/Ubuntu.
 #
 # You can read more details at https://en.wikipedia.org/wiki/Java_version_history.
 #
@@ -385,8 +387,8 @@ allow-weird-jvms = true
 #       Created-By: 1.8.0_252 (Tencent)
 #       Implementation-Vendor: Tencent
 #
-#   will be identified as TencentKona, because the token 'tencent' matches the
-#   Implementation-Vendor.
+#   will be identified as TencentKona, because Jaunch will invoke bin/java and
+#   see that the token 'tencent' matches the `java.vendor` system property.
 java-distros-allowed = [
     'Alibaba Dragonwell:alibaba,dragonwell',
     'Amazon Corretto:amazon,corretto',
@@ -422,8 +424,8 @@ os-aliases = [
 arch-aliases = [
     "ARM32:aarch32,arm32",
     "ARM64:aarch64,arm64",
-    "X86:i386,i486,i586,i686,x86,x86-32,x86_32",
-    "X64:amd64,x64,x86_64",
+    "X86:i386,i486,i586,i686,x86-32,x86_32,x86",
+    "X64:amd64,x86-64,x86_64,x64",
 ]
 
 # ==============================================================================

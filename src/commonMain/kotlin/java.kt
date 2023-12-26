@@ -60,17 +60,14 @@ class JavaInstallation(
     }
 
     private fun guessJavaVersion(): String? {
-        // Try to extract version string from the root path.
-        val re = Regex("\\(8u\\)?\\d+\\([-+_.]\\d+\\)")
-        val versions = re.findAll(File(rootPath).name).map { it.value }.toList()
-        // TODO: be smarter about selecting the version string. Beware GraalVM!
-        //  And fix up "8u"-style matches to be not stupid.
-        if (versions.isNotEmpty()) return versions[0]
-
-        return releaseInfo?.get("JAVA_VERSION") ?: sysProps?.get("java.version")
+        debug("Guessing Java version...")
+        return extractJavaVersion(File(rootPath).name) ?:
+            releaseInfo?.get("JAVA_VERSION") ?: sysProps?.get("java.version")
     }
 
     private fun guessDistribution(): String? {
+        debug("Guessing Java distribution...")
+
         val distroMap = aliasMap(constraints.distrosAllowed + constraints.distrosBlocked)
         return guessDistro(distroMap, File(rootPath).name) ?:
             guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR_VERSION")) ?:
@@ -81,15 +78,19 @@ class JavaInstallation(
     }
 
     private fun guessOperatingSystemName(): String? {
+        debug("Guessing OS name...")
         return guessField(constraints.osAliases, "OS_NAME", "os.name")
     }
 
     private fun guessCpuArchitecture(): String? {
+        debug("Guessing CPU architecture...")
         return guessField(constraints.archAliases, "OS_ARCH", "os.arch")
     }
 
     /** Reads metadata from the `release` file. */
     private fun readReleaseInfo(): Map<String, String>? {
+        debug("Reading release file...")
+
         val releaseFile = File("$rootPath/release")
         if (!releaseFile.exists) return null
         return linesToMap(releaseFile.readLines(), stripQuotes=true)
@@ -97,6 +98,8 @@ class JavaInstallation(
 
     /** Calls `bin/java Props` to harvest system properties from the horse's mouth. */
     private fun askJavaForSystemProperties(): Map<String, String>? {
+        debug("Invoking `bin/java Props`...")
+
         val binJava = File("$rootPath/bin/java")
         if (!binJava.exists) return null
         val stdout = execute("$binJava Props") ?: return null
@@ -140,23 +143,7 @@ class JavaInstallation(
         return true
     }
 
-    // -- Helper functions --
-
-    private fun versionOutOfBounds(version: String, min: String?, max: String?): Boolean {
-        return compareVersions(version, min) >= 0 && compareVersions(version, max) <= 0
-    }
-
-    private fun compareVersions(v1: String, v2: String?): Int {
-        if (v2 == null) return 0 // Hacky but effective.
-
-        // Extract the list of digits for each version.
-        val re = Regex("\\d+")
-        val digits1 = re.findAll(v1).map { it.value.toLong() }.toList()
-        val digits2 = re.findAll(v2).map { it.value.toLong() }.toList()
-
-        // Compare digit by digit.
-        return digits1.zip(digits2).map { (e1, e2) -> e1.compareTo(e2) }.firstOrNull { it != 0 } ?: 0
-    }
+    // -- Helper methods --
 
     private fun guessDistro(distroMap: Map<String, List<String>>, s: String?): String? {
         if (s == null) return null
@@ -194,4 +181,72 @@ class JavaInstallation(
     }
 
     private fun fail(vararg args: Any): Boolean { debug(*args); return false }
+}
+
+fun extractJavaVersion(root: String): String? {
+    // Many CPU architecture tokens are hard to distinguish from version digits.
+    // So first, do some preprocessing to remove such tokens from the root path string.
+    val confusingPatterns = arrayOf(
+        "aarch(32|64)",
+        "amd(32|64)",
+        "i[3456]86",
+        "x86[-_](32|64)",
+        "x(64|86)",
+    )
+    val confusingStuff = Regex("(${confusingPatterns.joinToString("|")})")
+    val rootString = root.replace(confusingStuff, "")
+    debug("* rootString -> ", rootString)
+
+    // Now, extract version strings from the preprocessed root path string.
+    val versionPattern = "\\d+([-+_.]\\d+)*"
+
+    // First, find the most obvious '8u' syntax, which needs to take precedence.
+    val versions8u = extractMatches("8u\\d+", rootString).
+        map { it.replace("8u", "1.8.0_") }
+    debug("* versions8u -> ", versions8u)
+    if (versions8u.isNotEmpty()) return versions8u[0]
+
+    // Next, look for version strings with a telltale prefix like "java" or "jdk".
+    //
+    // Why is "hotspot" on the list, you might wonder?
+    // It's Eclipse Temurin's fault, because it uses root folders like
+    // 'OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12', and we don't want the
+    // 'OpenJDK21U' part to take precedence over the later '21.0.1_12'.
+    val prefixPattern = "(java|jdk|hotspot)[-_]?"
+    val versionsPrefixed = extractMatches("$prefixPattern$versionPattern", rootString).
+        map { it.replace(Regex("^$prefixPattern"), "") }.map(::cleanupVersion)
+    debug("* versionsPrefixed -> ", versionsPrefixed)
+    if (versionsPrefixed.isNotEmpty()) return versionsPrefixed[0]
+
+    // Finally, look for unprefixed version strings.
+    val versionsBare = extractMatches(versionPattern, rootString).map(::cleanupVersion)
+    debug("* versionsBare -> ", versionsBare)
+    if (versionsBare.isNotEmpty()) return versionsBare[0]
+
+    return null
+}
+
+fun extractMatches(pattern: String, s: String): List<String> {
+    return Regex(pattern).findAll(s).map { it.value }.toList()
+}
+
+fun cleanupVersion(v: String): String {
+    // Prepend `1.` as appropriate.
+    return v.replace(Regex("^[2345678](\\D|$)"), "1.$0")
+}
+
+fun versionOutOfBounds(version: String, min: String?, max: String?): Boolean {
+    return compareVersions(version, min) >= 0 && compareVersions(version, max) <= 0
+}
+
+fun compareVersions(v1: String, v2: String?): Int {
+    if (v2 == null) return 0 // Hacky but effective.
+
+    // Extract the list of digits for each version.
+    val re = Regex("\\d+")
+    val digits1 = re.findAll(v1).map { it.value.toLong() }.toList()
+    val digits2 = re.findAll(v2).map { it.value.toLong() }.toList()
+
+    // Compare digit by digit.
+    return digits1.zip(digits2).map { (e1, e2) -> e1.compareTo(e2) }.firstOrNull { it != 0 } ?: 0
 }
