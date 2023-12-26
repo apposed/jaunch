@@ -50,7 +50,8 @@ actual fun memInfo(): MemoryInfo {
         val stat = alloc<stat>()
         if (stat("/proc/meminfo", stat.ptr) != 0) return memInfo
 
-        val buffer = ByteArray(1024)
+        // TODO: Handle lines longer than 1M correctly instead of crashing.
+        val buffer = ByteArray(1024 * 1024)
         val file = fopen("/proc/meminfo", "r")
         val bytesRead = fread(buffer.refTo(0), 1u, buffer.size.toULong(), file)
         fclose(file)
@@ -74,3 +75,4 @@ private fun String.extractMemoryValue(): Long? {
 actual val USER_HOME = getenv("HOME")
 actual val SLASH = "/"
 actual val COLON = ":"
+actual val NL = "\n"

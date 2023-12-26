@@ -53,6 +53,19 @@ class JavaInstallation(
     val sysProps: Map<String, String>? by lazy { askJavaForSystemProperties() }
     val conforms: Boolean by lazy { checkConstraints() }
 
+    override fun toString(): String {
+        return listOf(
+            "root: $rootPath",
+            "libjvm: $libjvmPath",
+            "version: $version",
+            "distro: $distro",
+            "OS name: $osName",
+            "CPU arch: $cpuArch",
+            "release file:${bulletList(releaseInfo)}",
+            "system properties:${bulletList(sysProps)}",
+        ).joinToString(NL)
+    }
+
     // -- Lazy evaluation functions --
 
     private fun findLibjvm(): String? {
@@ -93,17 +106,17 @@ class JavaInstallation(
 
         val releaseFile = File("$rootPath/release")
         if (!releaseFile.exists) return null
-        return linesToMap(releaseFile.readLines(), stripQuotes=true)
+        return linesToMap(releaseFile.readLines(), "=", stripQuotes=true)
     }
 
     /** Calls `bin/java Props` to harvest system properties from the horse's mouth. */
     private fun askJavaForSystemProperties(): Map<String, String>? {
-        debug("Invoking `bin/java Props`...")
+        debug("Invoking `\"", rootPath, SLASH, "bin", SLASH, "java\" Props`...")
 
         val binJava = File("$rootPath/bin/java")
         if (!binJava.exists) return null
         val stdout = execute("$binJava Props") ?: return null
-        return linesToMap(stdout)
+        return linesToMap(stdout, "=")
     }
 
     private fun checkConstraints(): Boolean {
@@ -145,6 +158,14 @@ class JavaInstallation(
 
     // -- Helper methods --
 
+    private fun bulletList(map: Map<String, String>?, bullet: String = "* "): String {
+        return when {
+            map == null -> " <none>"
+            map.isEmpty() -> " <empty>"
+            else -> "$NL$bullet" + map.entries.joinToString("$NL$bullet")
+        }
+    }
+
     private fun guessDistro(distroMap: Map<String, List<String>>, s: String?): String? {
         if (s == null) return null
         val slow = s.lowercase()
@@ -167,9 +188,9 @@ class JavaInstallation(
         return aliasMap.entries.firstOrNull { (_, aliases) -> aliases.contains(alias) }?.key ?: alias
     }
 
-    private fun linesToMap(lines: Iterable<String>, stripQuotes: Boolean = false): Map<String, String> {
-        return lines.map { it.trim() }.filter { it.indexOf("=") < 0 }.associate {
-            var (k, v) = it.split("=", limit=2)
+    private fun linesToMap(lines: Iterable<String>, delimiter: String, stripQuotes: Boolean = false): Map<String, String> {
+        return lines.map { it.trim() }.filter { it.indexOf(delimiter) >= 0 }.associate {
+            var (k, v) = it.split(delimiter, limit=2)
             if (stripQuotes && v.startsWith("\"") && v.endsWith("\""))
                 v = v.substring(1, v.lastIndex)
             Pair(k, v)
@@ -177,7 +198,7 @@ class JavaInstallation(
     }
 
     private fun aliasMap(aliasLines: Iterable<String>): Map<String, List<String>> {
-        return linesToMap(aliasLines).map { (k, v) -> Pair(k, v.split(",")) }.toMap()
+        return linesToMap(aliasLines, ":").map { (k, v) -> Pair(k, v.split(",")) }.toMap()
     }
 
     private fun fail(vararg args: Any): Boolean { debug(*args); return false }
@@ -194,7 +215,7 @@ fun extractJavaVersion(root: String): String? {
         "x(64|86)",
     )
     val confusingStuff = Regex("(${confusingPatterns.joinToString("|")})")
-    val rootString = root.replace(confusingStuff, "")
+    val rootString = root.replace(confusingStuff, "").lowercase()
     debug("* rootString -> ", rootString)
 
     // Now, extract version strings from the preprocessed root path string.
@@ -233,6 +254,7 @@ fun extractMatches(pattern: String, s: String): List<String> {
 fun cleanupVersion(v: String): String {
     // Prepend `1.` as appropriate.
     return v.replace(Regex("^[2345678](\\D|$)"), "1.$0")
+    // TODO: Should also remove `1.` from strings like `1.11.0`...
 }
 
 fun versionOutOfBounds(version: String, min: String?, max: String?): Boolean {

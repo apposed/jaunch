@@ -15,6 +15,7 @@ expect fun memInfo(): MemoryInfo
 expect val USER_HOME: String?
 expect val SLASH: String
 expect val COLON: String
+expect val NL: String
 
 @OptIn(ExperimentalNativeApi::class)
 val OS_NAME = Platform.osFamily.name
