@@ -4,8 +4,21 @@ import kotlinx.cinterop.*
 import platform.posix.*
 import platform.posix.getenv as pGetEnv
 
-actual fun executeCommand(command: String): Int {
-    return system(command)
+actual fun execute(command: String): List<String>? {
+    val stdout = mutableListOf<String>()
+
+    val process = popen(command, "r") ?: return null
+    memScoped {
+        val bufferLength = 1 shl 20  // 1 MB
+        val buffer = allocArray<ByteVar>(bufferLength)
+        while (true) {
+            val line = fgets(buffer, bufferLength, process) ?: break
+            stdout += line.toKString()
+        }
+    }
+    pclose(process)
+
+    return stdout
 }
 
 actual fun getenv(name: String): String? {

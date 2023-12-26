@@ -408,6 +408,25 @@ java-distros-allowed = [
 java-distros-blocked = []
 
 # ==============================================================================
+# Aliases for operating system names. Used when analyzing root directory names.
+os-aliases = [
+    "LINUX:linux",
+    "MACOSX:darwin,macos,macosx",
+    "WINDOWS:win,windows",
+    "IOS:ios",
+    "ANDROID:android",
+]
+
+# ==============================================================================
+# Aliases for CPU architectures. Used when analyzing root directory names.
+arch-aliases = [
+    "ARM32:aarch32,arm32",
+    "ARM64:aarch64,arm64",
+    "X86:i386,i486,i586,i686,x86,x86-32,x86_32",
+    "X64:amd64,x64,x86_64",
+]
+
+# ==============================================================================
 # Developer aside: Right now, Jaunch only filters Java installations by distro,
 # version, OS, and CPU arch. But there are further criteria it could support:
 #
@@ -430,7 +449,7 @@ java-distros-blocked = []
 # Each segment is a *hint* for Jaunch regarding a flag that must be set for that
 # particular line to be considered. Jaunch sets hint flags based on a few sources:
 #
-# * Active operating system: OS:MACOSX, OS:LINUX, OS:WINDOWS,
+# * Active operating system: OS:LINUX, OS:MACOSX, OS:WINDOWS,
 #   OS:IOS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS, or OS:UNKNOWN.
 #
 # * Active CPU architecture: ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64,

@@ -1,12 +1,4 @@
-import kotlin.experimental.ExperimentalNativeApi
-
 typealias JaunchOptions = Map<String, JaunchOption>
-
-@OptIn(ExperimentalNativeApi::class)
-private val osName = Platform.osFamily.name
-
-@OptIn(ExperimentalNativeApi::class)
-private val cpuArch = Platform.cpuArchitecture.name
 
 fun main(args: Array<String>) {
     // Treat both lines of stdin and arguments on the CLI as inputs.
@@ -57,10 +49,10 @@ fun main(args: Array<String>) {
     val hints = mutableSetOf(
         // Kotlin knows these operating systems:
         //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
-        "OS:$osName",
+        "OS:$OS_NAME",
         // Kotlin knows these CPU architectures:
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
-        "ARCH:$cpuArch"
+        "ARCH:$CPU_ARCH"
     )
 
     // Declare a set to store option parameter values.
@@ -179,39 +171,36 @@ fun main(args: Array<String>) {
     debug("Suffixes to check for libjvm:")
     libjvmSuffixes.forEach { debug("* ", it) }
 
-    // Calculate distro and version constraints.
-    val versionMin = config.javaVersionMin
-    val versionMax = config.javaVersionMax
+    // Calculate Java distro and version constraints.
+    val allowWeirdJvms = config.allowWeirdJvms ?: false
     val distrosAllowed = calculate(config.javaDistrosAllowed, hints, vars)
     val distrosBlocked = calculate(config.javaDistrosBlocked, hints, vars)
+    val osAliases = calculate(config.osAliases, hints, vars)
+    val archAliases = calculate(config.archAliases, hints, vars)
+    val constraints = JavaConstraints(libjvmSuffixes,
+        allowWeirdJvms, config.javaVersionMin, config.javaVersionMax,
+        distrosAllowed, distrosBlocked, osAliases, archAliases)
 
     // Discover Java.
     debug()
     debug("Discovering Java installations...")
-    val javaAnalyzer = JavaAnalyzer(libjvmSuffixes)
-    var javaInfo: JavaInfo? = null
-    // CTR START HERE: Rename JavaAnalyzer / JavaInfo to JavaInstallation?
-    // Make the constraints above into a single Constraints data structure?
+    var java: JavaInstallation? = null
     for (rootPath in rootPaths) {
         debug("Analyzing candidate root directory: '", rootPath, "'")
-        val info = javaAnalyzer.info(rootPath)
+        val javaCandidate = JavaInstallation(rootPath, constraints)
+        if (!javaCandidate.conforms) continue
 
-        // Validate the Java installation. It needs to meet the configuration constraints.
-        if (!info.fits(versionMin, versionMax, distrosAllowed, distrosBlocked)) continue
-
-        // Root directory looks good! Moving on.
-        javaInfo = info
-        debug("jvmRootPath -> ", info.rootPath)
-        debug("libjvmPath -> ", info.libjvmPath ?: "<null>")
+        // Installation looks good! Moving on.
+        java = javaCandidate
+        debug("jvmRootPath -> ", java.rootPath)
+        debug("libjvmPath -> ", java.libjvmPath ?: "<null>")
         break
     }
-    if (javaInfo == null) {
-        error("No Java installation found.")
-    }
+    if (java == null) error("No Java installation found.")
 
     // Execute the print-java-home and/or print-java-info directive.
-    if ("print-java-home" in directives) printlnErr(javaInfo.rootPath)
-    if ("print-java-info" in directives) printlnErr(javaInfo.toString())
+    if ("print-java-home" in directives) printlnErr(java.rootPath)
+    if ("print-java-info" in directives) printlnErr(java.toString())
 
     // Calculate classpath.
     val classpath = calculate(config.classpath, hints, vars).flatMap { glob(it) }
@@ -260,12 +249,12 @@ fun main(args: Array<String>) {
     debugList("Main arguments calculated:", mainArgs)
 
     // Execute the dry-run directive.
-    if ("dry-run" in directives) dryRun(javaInfo, jvmArgs, mainClassName, mainArgs)
+    if ("dry-run" in directives) dryRun(java, jvmArgs, mainClassName, mainArgs)
 
     // Emit final configuration.
     debug("Emitting final configuration to stdout...")
     println(nativeDirective)
-    println(javaInfo.libjvmPath!!)
+    println(java.libjvmPath!!)
     println(jvmArgs.size)
     for (jvmArg in jvmArgs) println(jvmArg)
     println(mainClassName.replace(".", "/"))
@@ -380,13 +369,13 @@ private fun help(executable: String?, programName: String, supportedOptions: Jau
 }
 
 private fun dryRun(
-    javaInfo: JavaInfo,
+    java: JavaInstallation,
     jvmArgs: MutableList<String>,
     mainClassName: String?,
     mainArgs: MutableList<String>
 ) {
-    val lib = javaInfo.libjvmPath?.lastIndexOf("/lib/") ?: -1
-    val dirPath = if (lib >= 0) javaInfo.libjvmPath!!.substring(0, lib) else javaInfo.rootPath
+    val lib = java.libjvmPath?.lastIndexOf("/lib/") ?: -1
+    val dirPath = if (lib >= 0) java.libjvmPath!!.substring(0, lib) else java.rootPath
     val javaBinary = File("$dirPath/bin/java")
     val javaCommand = if (javaBinary.isFile) javaBinary.path else "java"
     printlnErr(buildString {

@@ -1,4 +1,6 @@
-expect fun executeCommand(command: String): Int
+import kotlin.experimental.ExperimentalNativeApi
+
+expect fun execute(command: String): List<String>?
 
 expect fun getenv(name: String): String?
 
@@ -12,3 +14,9 @@ expect fun memInfo(): MemoryInfo
 
 expect val SLASH: String
 expect val COLON: String
+
+@OptIn(ExperimentalNativeApi::class)
+val OS_NAME = Platform.osFamily.name
+
+@OptIn(ExperimentalNativeApi::class)
+val CPU_ARCH = Platform.cpuArchitecture.name
