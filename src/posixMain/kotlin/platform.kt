@@ -71,5 +71,6 @@ private fun String.extractMemoryValue(): Long? {
     return match?.groupValues?.getOrNull(1)?.toLongOrNull()
 }
 
+actual val USER_HOME = getenv("HOME")
 actual val SLASH = "/"
 actual val COLON = ":"

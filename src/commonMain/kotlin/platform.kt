@@ -12,6 +12,7 @@ data class MemoryInfo(var total: Long? = null, var free: Long? = null)
 
 expect fun memInfo(): MemoryInfo
 
+expect val USER_HOME: String?
 expect val SLASH: String
 expect val COLON: String
 

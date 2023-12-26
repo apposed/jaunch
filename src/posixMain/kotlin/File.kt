@@ -8,7 +8,8 @@ actual class File actual constructor(private val thePath: String) {
 
     actual val path: String
         get() {
-            return thePath
+            return if (thePath.startsWith("~"))
+                "$USER_HOME${thePath.substring(1)}" else thePath
         }
 
     actual val absolutePath: String
