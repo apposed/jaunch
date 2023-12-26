@@ -4,7 +4,7 @@
 #
 # This jaunch.toml file contains useful general-purpose, non-application-specific
 # configuration that defines some sensible defaults for typical Java-based launchers.
-# You can of course edit it to customize Jaunch's behavior however you like!
+# You can of course edit it to customize Jaunch's behavior however you like.
 #
 # Each application will typically have its own extensions to the general configuration
 # defined in another TOML file named the same as its native launcher executable.
@@ -31,7 +31,7 @@ jaunch-version = 1
 
 # ==============================================================================
 # The name of your program! This name will appear in the usage text.
-#program-name = 'Awesome-Sauce'
+#program-name = 'FizzBuzz'
 
 # ==============================================================================
 # The list of command line options supported by Jaunch out of the box.
@@ -107,7 +107,7 @@ supported-options = [
 # These are used to guess, when the minus-minus divider (--) is absent, whether each arg
 # is a JVM one or a main one. Note that as with the classpath field, the asterisk symbol
 # (*) is a wildcard. All values on this list are assumed to be given with at least one
-# dash symbol prepended, maybe two. (Heck, go nuts and put three or four if you want!
+# dash symbol prepended, maybe two. (Heck, go nuts and put three or four if you want.
 # Java won't like it, though.)
 #
 # About main method arguments: Jaunch's philosophy is to remain agnostic of the options
@@ -126,7 +126,7 @@ supported-options = [
 #
 # Even though the Java argument appears after the main class arguments. Your users can
 # mix and match to their hearts' content, being as sloppy as they want, and Jaunch will
-# sort out the mess! As long as the JVM args are on the list here, of course.
+# sort out the mess. As long as the JVM args are on the list here, of course.
 recognized-jvm-args = [
     '?',
     'D*',
@@ -181,13 +181,13 @@ recognized-jvm-args = [
 #     java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
 #
 # You and I both know that Java will barf when confronted with an argument like
-# -ZZ:SuperSecretOption! But maybe you are using a custom build of OpenJDK produced by
+# -ZZ:SuperSecretOption. But maybe you are using a custom build of OpenJDK produced by
 # your organization's new superintelligent AI, which actually *does* have this option!
 # Who is Jaunch to judge? (In that case, I would argue you should really just add
-# '-ZZ:*' to your list of recognized JVM args above, but then I would be judging!)
+# '-ZZ:*' to your list of recognized JVM args above, but then I would be judging.)
 # Or maybe you just want to trust your users as OpenJDK evolves, rather than dealing
 # with the bureaucracy of updating the TOML file every time OpenJDK changes its
-# supported options. In such cases, this option is here for you!
+# supported options. In such cases, this option is here for you.
 allow-unrecognized-jvm-args = false
 
 # ==============================================================================
@@ -195,8 +195,8 @@ allow-unrecognized-jvm-args = false
 #
 # When Jaunch discovers a Java installation on the user's system, it tries very hard
 # to understand the details of that installation, including Java version, distribution
-# (see below), operating system, and CPU architecture, so that it can respect the
-# constraints defined in this config file.
+# (see `java-distros-allowed` and `java-distros-blocked` below), operating system, and
+# CPU architecture, so that it can respect the constraints defined in this config file.
 #
 # However, the variability across JVM distributions is actually quite a lot:
 #
