@@ -1,7 +1,0 @@
-archive="jdk_zulu_8_x64.tar.gz"
-dir_prefix="jdk_zulu_8_x64"
-JAVA_VERSION="1.8.0_265"
-OS_NAME="Linux"
-OS_VERSION="2.6"
-OS_ARCH="amd64"
-SOURCE=" .:39608c0f5659 corba:1c00b159ed29 hotspot:c44e2dd88246 jaxp:8347db681742 jaxws:175780ad41ab jdk:3966ce352b80 langtools:a6ff3a8f35cc nashorn:212f69b607ab"

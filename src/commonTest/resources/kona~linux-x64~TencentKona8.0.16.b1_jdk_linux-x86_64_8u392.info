@@ -1,7 +1,0 @@
-archive="TencentKona8.0.16.b1_jdk_linux-x86_64_8u392.tar.gz"
-dir_prefix="TencentKona-8.0.16-392"
-JAVA_VERSION="1.8.0_392"
-OS_NAME="Linux"
-OS_VERSION="2.6"
-OS_ARCH="amd64"
-SOURCE=".:git:767d05cf8b1d+"
