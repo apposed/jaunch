@@ -498,26 +498,25 @@ arch-aliases = [
 root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
-    '!--system|OS:LINUX|ARCH:X64|java/linux64',            # TODO: Fiji-specific?
-    '!--system|OS:LINUX|ARCH:X86|java/linux',              # TODO: Fiji-specific?
-    '!--system|OS:LINUX|ARCH:X86|java/linux32',            # TODO: Fiji-specific?
-    '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64',    # TODO: Fiji-specific?
-    '!--system|OS:MACOSX|ARCH:X64|java/macosx',            # TODO: Fiji-specific?
-    '!--system|OS:WINDOWS|ARCH:X64|java/win64',            # TODO: Fiji-specific?
-    '!--system|OS:WINDOWS|ARCH:X86|java/win32',            # TODO: Fiji-specific?
-    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',               # Conda (openjdk 9+)
-    '${CONDA_PREFIX}/pkgs/openjdk*',                       # Conda (openjdk 8)
-    'OS:LINUX|/usr/lib/jvm',                               # Linux distro package manager (e.g. apt)
-    'OS:LINUX|/var/lib/flatpak/...',                       # TODO: Flatpak
-    'OS:LINUX|~/.sdkman/candidates/java',                  # sdkman.io
-    'OS:LINUX|~/.cache/cjdk/v*/jdks/*',                    # github.com/cachedjdk/cjdk
-    'OS:LINUX|~/.jdk',                                     # github.com/jyksnw/install-jdk
-    'OS:LINUX|~/.jre',                                     # github.com/jyksnw/install-jdk
-    'OS:MACOSX|/Library/Java/JavaVirtualMachines',         # Java 8+
-    'OS:MACOSX|/usr/local/...',                            # TODO: Homebrew
-    'OS:WINDOWS|C:/Program Files/Java',
-    'OS:WINDOWS|C:/Program Files (x86)/Java',
-    'OS:WINDOWS|~/scoop/Apps/...',                         # TODO: Scoop
+    '!--system|OS:LINUX|ARCH:X64|java/linux64/*',                   # TODO: Fiji-specific?
+    '!--system|OS:LINUX|ARCH:X86|java/linux/*',                     # TODO: Fiji-specific?
+    '!--system|OS:LINUX|ARCH:X86|java/linux32/*',                   # TODO: Fiji-specific?
+    '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64/*',           # TODO: Fiji-specific?
+    '!--system|OS:MACOSX|ARCH:X64|java/macosx/*',                   # TODO: Fiji-specific?
+    '!--system|OS:WINDOWS|ARCH:X64|java/win64/*',                   # TODO: Fiji-specific?
+    '!--system|OS:WINDOWS|ARCH:X86|java/win32/*',                   # TODO: Fiji-specific?
+    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                        # Conda (openjdk 9+)
+    '${CONDA_PREFIX}/pkgs/openjdk*',                                # Conda (openjdk 8)
+    'OS:LINUX|/usr/lib/jvm/*',                                      # Linux distro package manager (e.g. apt)
+    'OS:LINUX|/var/lib/flatpak/...',                                # TODO: Flatpak
+    'OS:LINUX|~/.sdkman/candidates/java/*',                         # sdkman.io
+    'OS:LINUX|~/.cache/cjdk/v*/jdks/*/*',                           # github.com/cachedjdk/cjdk
+    'OS:LINUX|~/.jdk/*',                                            # github.com/jyksnw/install-jdk
+    'OS:LINUX|~/.jre/*',                                            # github.com/jyksnw/install-jdk
+    'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',  # Java 8+
+    'OS:WINDOWS|C:/Program Files/Java/*',
+    'OS:WINDOWS|C:/Program Files (x86)/Java/*',
+    'OS:WINDOWS|~/scoop/Apps/...',                                  # TODO: Scoop
 ]
 
 # ==============================================================================
@@ -541,27 +540,18 @@ root-paths = [
 #
 # Perusing the list below, you may notice several entries beginning with jre/.
 # This nested jre/ folder is only present up to Java 8, nothing after.
-#
-# One other point of note: on macOS, some distros have *two* libjli.dylib files:
-# the first in one of the usual spots under Contents/Home, and the second oddly
-# in Contents/MacOS. Perhaps surprisingly: the two files are not binary identical.
-# Testing is needed to determine if there's any difference in behavior based on which
-# one gets linked. For now, Jaunch opts to ignore the one in Contents/MacOS, since
-# no known version of any distribution has solely the Contents/MacOS/libjli.dylib.
 libjvm-suffixes = [
-    'OS:LINUX|lib/server/libjvm.so',                     # Java 9+
-    'OS:LINUX|jre/lib/amd64/server/libjvm.so',           # Java 8 (64-bit)
-    'OS:LINUX|jre/lib/i386/server/libjvm.so',            # Java 8 (32-bit)
-    'OS:LINUX|jbr/lib/server/libjvm.so',                 # jbrsdk_11.0.8_x64
-    'OS:MACOSX|Contents/Home/jre/lib/jli/libjli.dylib',  # Java 8
-    'OS:MACOSX|Contents/Home/lib/jli/libjli.dylib',      # Java 9-11
-    'OS:MACOSX|Contents/Home/lib/libjli.dylib',          # Java 12+
-    #'OS:MACOSX|Contents/MacOS/libjli.dylib',             # some distros Java 8+
-    'OS:MACOSX|Contents/Libraries/libjli.jnilib',        # Apple Java 6
-    'OS:WINDOWS|bin/server/jvm.dll',                     # Java 9+
-    'OS:WINDOWS|bin/client/jvm.dll',                     # Java 9+
-    'OS:WINDOWS|jre/bin/server/jvm.dll',                 # Java 8
-    'OS:WINDOWS|jre/bin/client/jvm.dll',                 # Java 8
+    'OS:LINUX|lib/server/libjvm.so',           # Java 9+
+    'OS:LINUX|jre/lib/amd64/server/libjvm.so', # Java 8 (64-bit)
+    'OS:LINUX|jre/lib/i386/server/libjvm.so',  # Java 8 (32-bit)
+    'OS:LINUX|jbr/lib/server/libjvm.so',       # jbrsdk_11.0.8_x64
+    'OS:MACOSX|lib/libjli.dylib',              # Java 12+
+    'OS:MACOSX|lib/jli/libjli.dylib',          # Java 9-11
+    'OS:MACOSX|jre/lib/jli/libjli.dylib',      # Java 8
+    'OS:WINDOWS|bin/server/jvm.dll',           # Java 9+
+    'OS:WINDOWS|bin/client/jvm.dll',           # Java 9+
+    'OS:WINDOWS|jre/bin/server/jvm.dll',       # Java 8
+    'OS:WINDOWS|jre/bin/client/jvm.dll',       # Java 8
 ]
 
 # ==============================================================================

@@ -38,7 +38,7 @@ actual class File actual constructor(private val thePath: String) {
             stat(path, statResult.ptr)
             statResult
         }
-        return (statResult.st_mode and modeBits.toUInt()) != 0u
+        return (statResult.st_mode.toUInt() and modeBits.toUInt()) != 0u
     }
 
     actual fun listFiles(): List<File> {
