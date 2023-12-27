@@ -1,86 +1,29 @@
 @file:OptIn(ExperimentalForeignApi::class)
 
 import kotlinx.cinterop.*
+import platform.posix._popen
+import platform.posix.fgets
 import platform.windows.*
 
 actual fun execute(command: String): List<String>? {
-    val stdout = mutableListOf<String>()
-
-    // TODO: Might need to prepend "cmd /c" to the `command`?
-
-    memScoped {
-        val readPipe = alloc<HANDLEVar>()
-        val writePipe = alloc<HANDLEVar>()
-
-        // Create pipes for stdout redirection
-        if (CreatePipe(readPipe.ptr, writePipe.ptr, null, 0) == 0) {
-            println("Error creating pipe: ${GetLastError()}")
-            return emptyList()
-        }
-
-        val processInfo = alloc<PROCESS_INFORMATION>()
-        val startupInfo = alloc<STARTUPINFOA>().apply {
-            cb = sizeOf<STARTUPINFOA>().convert()
-            dwFlags = STARTF_USESTDHANDLES.convert()
-            hStdOutput = writePipe.value
-        }
-
-        if (CreateProcessA(
-                null,
-                command,
-                null,
-                null,
-                true,
-                0,
-                null,
-                null,
-                startupInfo.ptr,
-                processInfo.ptr
-            ) == 0
-        ) {
-            println("Error creating process: ${GetLastError()}")
-            CloseHandle(readPipe.value)
-            CloseHandle(writePipe.value)
-            return emptyList()
-        }
-
-        // Close the write end of the pipe, as we're only reading from it
-        CloseHandle(writePipe.value)
-
-        val buffer = allocArray<ByteVar>(4096)
-        var bytesRead = 0.convert<UInt>()
-
-        do {
-            if (ReadFile(readPipe.value, buffer, buffer.size.convert(), bytesRead.ptr, null) == 0) {
-                break
-            }
-
-            if (bytesRead > 0) {
-                stdout.add(buffer.toKString())
-            }
-        } while (bytesRead > 0)
-
-        CloseHandle(readPipe.value)
-        WaitForSingleObject(processInfo.hProcess, INFINITE)
-
-        CloseHandle(processInfo.hThread)
-        CloseHandle(processInfo.hProcess)
+    // Source: https://stackoverflow.com/a/69385366/1207769
+    val lines = mutableListOf<String>()
+    val fp = _popen(command, "r") ?: error("Failed to run command: $command")
+    val buffer = ByteArray(128 * 128)
+    while (true) {
+        val input = fgets(buffer.refTo(0), buffer.size, fp) ?: break
+        lines.add(input.toKString().replace(Regex("(\\r\\n|\\n)$"), ""))
     }
-
-    return stdout
+    return lines
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun getenv(name: String): String? {
-    val bufferSize = 4096
+    val bufferSize = 1024 * 1024
     memScoped {
         val buffer = allocArray<ByteVar>(bufferSize)
         val result = GetEnvironmentVariableA(name, buffer, bufferSize.toUInt())
-
-        if (result == 0u) {
-            // The function returns 0 if the variable does not exist
-            return null
-        }
-
+        if (result == 0u) return null // Variable does not exist.
         return buffer.toKString()
     }
 }
@@ -93,9 +36,9 @@ actual fun printlnErr(s: String) {
             return
         }
 
-        val messageBuffer = s.cstr
-        var bytesWritten = 0.convert<UInt>()
-        if (WriteConsoleA(stderrHandle, messageBuffer, messageBuffer.size.convert(), bytesWritten.ptr, null) == 0) {
+        val messageBuffer = (s + NL).cstr
+        val bytesWritten = alloc<DWORDVar>()
+        if (WriteConsoleA(stderrHandle, messageBuffer, messageBuffer.size.toUInt(), bytesWritten.ptr, null) == 0) {
             println("Error writing to stderr: ${GetLastError()}")
         }
     }
@@ -111,18 +54,22 @@ actual fun stdinLines(): Array<String> {
             return emptyArray()
         }
 
-        val buffer = allocArray<ByteVar>(4096)
-        var bytesRead = 0.convert<UInt>()
-
-        while (ReadConsoleA(stdinHandle, buffer, buffer.size.convert(), bytesRead.ptr, null) != 0) {
-            if (bytesRead > 0) {
-                lines.add(buffer.toKString())
+        val size = 1024 * 1024
+        val buffer = allocArray<ByteVar>(size)
+        val bytesRead = alloc<DWORDVar>()
+        val stdin = buildString {
+            while (ReadConsoleA(stdinHandle, buffer, size.toUInt(), bytesRead.ptr, null) != 0) {
+                if (bytesRead.value > 0u) {
+                    append(buffer.toKString().substring(0, bytesRead.value.toInt()))
+                }
             }
         }
 
-        if (GetLastError() != ERROR_BROKEN_PIPE) {
-            println("Error reading from stdin: ${GetLastError()}")
+        val error = GetLastError()
+        if (error != ERROR_BROKEN_PIPE.toUInt()) {
+            println("Error reading from stdin: $error")
         }
+        lines.addAll(stdin.split(Regex("(\\r\\n|\\n)")))
     }
 
     return lines.toTypedArray()
@@ -132,7 +79,7 @@ actual fun memInfo(): MemoryInfo {
     val memInfo = MemoryInfo()
     memScoped {
         val memoryStatus = alloc<MEMORYSTATUSEX>().apply {
-            dwLength = sizeOf<MEMORYSTATUSEX>().convert()
+            dwLength = sizeOf<MEMORYSTATUSEX>().toUInt()
         }
 
         if (GlobalMemoryStatusEx(memoryStatus.ptr) != 0) {

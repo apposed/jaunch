@@ -1,4 +1,4 @@
-private val DEBUG = getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
+private val DEBUG = true // getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
 
 fun debug(vararg args: Any) { if (DEBUG) report("DEBUG", *args) }
 

@@ -111,10 +111,13 @@ class JavaInstallation(
 
     /** Calls `bin/java Props` to harvest system properties from the horse's mouth. */
     private fun askJavaForSystemProperties(): Map<String, String>? {
-        debug("Invoking `\"", rootPath, SLASH, "bin", SLASH, "java\" Props`...")
-
-        val binJava = File("$rootPath/bin/java")
-        if (!binJava.exists) return null
+        val extension = if (OS_NAME == "WINDOWS") ".exe" else ""
+        val binJava = File("$rootPath${SLASH}bin${SLASH}java$extension")
+        debug("Invoking `\"", binJava.path, "\" Props`...")
+        if (!binJava.exists) {
+            debug("Java executable does not exist")
+            return null
+        }
         val stdout = execute("$binJava Props") ?: return null
         return linesToMap(stdout, "=")
     }

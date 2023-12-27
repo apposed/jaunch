@@ -22,55 +22,41 @@ actual class File actual constructor(private val thePath: String) {
         get() {
             val fileAttributes = GetFileAttributesA(path)
             return fileAttributes != INVALID_FILE_ATTRIBUTES &&
-                    (fileAttributes and FILE_ATTRIBUTE_DIRECTORY) == 0.convert<UInt>()
+                    (fileAttributes and FILE_ATTRIBUTE_DIRECTORY.toUInt()) == 0u
         }
 
     actual val isFile: Boolean
-        get() {
-            val fileAttributes = GetFileAttributesA(filePath)
-            return fileAttributes != INVALID_FILE_ATTRIBUTES &&
-                    (fileAttributes and FILE_ATTRIBUTE_DIRECTORY) == 0.convert<UInt>() &&
-                    (fileAttributes and FILE_ATTRIBUTE_NORMAL) == FILE_ATTRIBUTE_NORMAL.convert<UInt>()
-        }
+        get() = isMode(FILE_ATTRIBUTE_NORMAL)
 
     actual val isDirectory: Boolean
-        get() {
-            val fileAttributes = GetFileAttributesA(filePath)
-            return fileAttributes != INVALID_FILE_ATTRIBUTES &&
-                    (fileAttributes and FILE_ATTRIBUTE_DIRECTORY) == 0.convert<UInt>() &&
-                    (fileAttributes and FILE_ATTRIBUTE_NORMAL) == FILE_ATTRIBUTE_NORMAL.convert<UInt>()
-        }
+        get() = isMode(FILE_ATTRIBUTE_DIRECTORY)
 
     private fun isMode(modeBits: Int): Boolean {
-        val statResult = memScoped {
-            val statResult = alloc<stat>()
-            stat(path, statResult.ptr)
-            statResult
-        }
-        return (statResult.st_mode.toUInt() and modeBits.toUInt()) != 0u
+        val fileAttributes = GetFileAttributesA(path)
+        return fileAttributes != INVALID_FILE_ATTRIBUTES && (fileAttributes and modeBits.toUInt()) != 0u
     }
 
     actual fun listFiles(): List<File> {
         if (!isDirectory) throw IllegalArgumentException("Not a directory: $path")
 
-        val files = mutableListOf<String>()
+        val files = mutableListOf<File>()
 
-        val findFileData = platform.windows.WIN32_FIND_DATAW.alloc()
+        memScoped {
+            val findFileData = alloc<WIN32_FIND_DATAW>()
 
-        val hFindFile = FindFirstFileW("$directoryPath\\*", findFileData.ptr)
-        if (hFindFile == INVALID_HANDLE_VALUE) {
-            return emptyList()
-        }
+            val hFindFile = FindFirstFileW("$directoryPath\\*", findFileData.ptr)
+            if (hFindFile == INVALID_HANDLE_VALUE) return emptyList()
 
-        try {
-            do {
-                val fileName = findFileData.cFileName.toKString()
-                if (fileName != "." && fileName != "..") {
-                    files.add(fileName)
-                }
-            } while (FindNextFileW(hFindFile, findFileData.ptr) != 0)
-        } finally {
-            FindClose(hFindFile)
+            try {
+                do {
+                    val fileName = findFileData.cFileName.toKString()
+                    if (fileName != "." && fileName != "..") {
+                        files.add(File(fileName))
+                    }
+                } while (FindNextFileW(hFindFile, findFileData.ptr) != 0)
+            } finally {
+                FindClose(hFindFile)
+            }
         }
 
         return files
@@ -98,10 +84,10 @@ actual class File actual constructor(private val thePath: String) {
             try {
                 val fileSize = GetFileSize(fileHandle, null).toInt()
                 val buffer = allocArray<ByteVar>(fileSize)
-                var bytesRead = 0.convert<UInt>()
-
-                if (ReadFile(fileHandle, buffer, fileSize.convert(), bytesRead.ptr, null)) {
-                    lines.addAll(buffer.toKString().split('\n'))
+                val bytesRead = alloc<DWORDVar>()
+                // TODO: Is bytesRead < fileSize possible? If so, do we need to loop here?
+                if (ReadFile(fileHandle, buffer, fileSize.toUInt(), bytesRead.ptr, null) != 0) {
+                    lines.addAll(buffer.toKString().split(Regex("(\\r\\n|\\n)")))
                 } else {
                     println("Error reading file: ${GetLastError()}")
                 }
