@@ -48,7 +48,13 @@ actual fun memInfo(): MemoryInfo {
     val memInfo = MemoryInfo()
     memScoped {
         val stat = alloc<stat>()
-        if (stat("/proc/meminfo", stat.ptr) != 0) return memInfo
+        if (stat("/proc/meminfo", stat.ptr) != 0) {
+            // No /proc/meminfo... are we on macOS? Let's try sysctl.
+            val sysctlOutput = execute("sysctl -n hw.memsize")
+            val memsize = sysctlOutput?.getOrNull(0)?.trim()?.toLongOrNull()
+            if (memsize != null) memInfo.total = memsize / 1024 // B -> KB
+            return memInfo
+        }
 
         // TODO: Handle lines longer than 1M correctly instead of crashing.
         val buffer = ByteArray(1024 * 1024)
