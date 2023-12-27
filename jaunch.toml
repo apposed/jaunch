@@ -516,7 +516,7 @@ root-paths = [
     'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',  # Java 8+
     'OS:WINDOWS|C:/Program Files/Java/*',
     'OS:WINDOWS|C:/Program Files (x86)/Java/*',
-    'OS:WINDOWS|~/scoop/Apps/...',                                  # TODO: Scoop
+    'OS:WINDOWS|~/scoop/apps/openjdk*/*',                           # Scoop
 ]
 
 # ==============================================================================
