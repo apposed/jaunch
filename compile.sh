@@ -9,7 +9,7 @@ echo "== Building C code =="
 jdkdir=$JAVA_HOME
 test -d "$jdkdir" || jdkdir=$(test ! -x update-java-alternatives || update-java-alternatives -l | head -n1 | sed 's/.* //')
 test -d "$jdkdir" || jdkdir=$(test ! -x /usr/libexec/java_home || /usr/libexec/java_home)
-gcc -I"$jdkdir/include" -I"$jdkdir/include/darwin" -I"$jdkdir/include/linux" -fPIC -fno-stack-protector src/c/jaunch.c -o runme
+gcc -I"$jdkdir/include" -I"$jdkdir/include/linux" -I"$jdkdir/include/darwin" -I"$jdkdir/include/win32" -fPIC -fno-stack-protector src/c/jaunch.c -o runme
 
 echo
 echo "== Building Kotlin code =="

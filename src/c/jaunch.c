@@ -11,8 +11,8 @@
  * And it loads that libjvm and invokes the main method with those parameters.
  *
  * run_command:
- *	 1. path to configurator executable
- *	 2. argv list, to be passed to the configurator via stdin, one per line
+ *   1. path to configurator executable
+ *   2. argv list, to be passed to the configurator via stdin, one per line
  * It invokes that configurator executable in its own process, and waits for
  * the process to complete. The configurator produces output suitable for
  * passing to the `launch_jvm` function above. and then calls the low-level
@@ -22,9 +22,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <dlfcn.h>
 #include <string.h>
+
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
 #include <sys/wait.h>
+#endif
 
 #include "jni.h"
 
@@ -84,7 +89,7 @@ char *path(const char *argv0, const char *command) {
 	if (result == NULL) return NULL;
 
 	// Build the result string.
-  if (last_slash == NULL) {
+	if (last_slash == NULL) {
 		result[0] = '.';
 	}
 	else {
@@ -92,11 +97,82 @@ char *path(const char *argv0, const char *command) {
 	}
 	result[dir_len] = '/';
 	result[dir_len + 1] = '\0';
-  strcat(result, command); // result += command
+	strcat(result, command); // result += command
 
 	return result;
 }
 
+
+#ifdef WIN32
+void handleError(const char* errorMessage) {
+    fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
+    exit(1);
+}
+
+int run_command(const char *command,
+	const char *input[], size_t numInput,
+	char ***output, size_t *numOutput)
+{
+	// Thanks to ChatGPT for coding up this routine.
+
+	// Create pipes for stdin and stdout
+	HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite;
+	SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+	if (!CreatePipe(&stdinRead, &stdinWrite, &sa, 0) ||
+		!CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0))
+	{
+		handleError("Error creating pipes");
+	}
+
+	// Set the properties of the process to start
+	STARTUPINFO si = { sizeof(STARTUPINFO) };
+	PROCESS_INFORMATION pi;
+
+	// Specify that the process should inherit the handles
+	si.hStdInput = stdinRead;
+	si.hStdOutput = stdoutWrite;
+	si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+	si.dwFlags |= STARTF_USESTDHANDLES;
+
+	// Create the subprocess
+	if (!CreateProcess(NULL, command, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+		handleError("Error creating process");
+	}
+
+	// Close unnecessary handles
+	CloseHandle(stdinRead);
+	CloseHandle(stdoutWrite);
+
+	// Write data to stdin
+	DWORD bytesWritten;
+	for (size_t i = 0; i < numInput; i++) {
+		if (!WriteFile(stdinWrite, input[i], strlen(input[i]), &bytesWritten, NULL)) {
+			handleError("Error writing to stdin");
+		}
+		if (!WriteFile(stdinWrite, "\r\n", 2, &bytesWritten, NULL)) {
+			handleError("Error writing to stdin");
+		}
+	}
+
+	// Close the stdin write handle to signal end of input
+	CloseHandle(stdinWrite);
+
+	// Read data from stdout
+	char buffer[4096];
+	DWORD bytesRead;
+	while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
+		// Process the output data (e.g., print it)
+		fwrite(buffer, 1, bytesRead, stdout);
+	}
+
+	// Close handles
+	CloseHandle(stdoutRead);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+
+	return 0;
+}
+#else
 int run_command(const char *command,
 	const char *input[], size_t numInput,
 	char ***output, size_t *numOutput)
@@ -216,13 +292,23 @@ int run_command(const char *command,
 	}
 	return SUCCESS;
 }
+#endif
+
+#ifdef WIN32
+void dlclose(void* library) { FreeLibrary(library); }
+char *dlerror() { return "error" /*GetLastError()*/; }
+#endif
 
 int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
 	const char *main_class_name, const size_t main_argc, const char *main_argv[])
 {
 	// Load libjvm.
 	debug("LOADING LIBJVM");
+#ifdef WIN32
+	HMODULE jvm_library = LoadLibrary(libjvm_path);
+#else
 	void *jvm_library = dlopen(libjvm_path, RTLD_NOW | RTLD_GLOBAL);
+#endif
 	if (!jvm_library) {
 		error("Error loading libjvm: %s", dlerror());
 		return ERROR_DLOPEN;
@@ -230,8 +316,12 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 
 	// Load JNI_CreateJavaVM function.
 	debug("LOADING JNI_CreateJavaVM");
+#ifdef WIN32
+	FARPROC JNI_CreateJavaVM = GetProcAddress(jvm_library, "JNI_CreateJavaVM");
+#else
 	static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
 	JNI_CreateJavaVM = dlsym(jvm_library, "JNI_CreateJavaVM");
+#endif
 	if (!JNI_CreateJavaVM) {
 		error("Error finding JNI_CreateJavaVM: %s", dlerror());
 		dlclose(jvm_library);
@@ -311,7 +401,12 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 }
 
 int main(const int argc, const char *argv[]) {
-	const char *command = path(argc == 0 ? NULL : argv[0], "jaunch");
+#ifdef WIN32
+	const char *jaunch_exe = "jaunch.exe";
+#else
+	const char *jaunch_exe = "jaunch";
+#endif
+	const char *command = path(argc == 0 ? NULL : argv[0], jaunch_exe);
 	if (command == NULL) {
 		error("command path");
 		return ERROR_COMMAND_PATH;
