@@ -5,8 +5,9 @@ data class JaunchOption(
     val help: String?,
 ) {
     fun help(): String = buildString {
+        val indent = "$NL                    "
         append(flags.joinToString(", "))
-        assignment?.let { append(" = $it") }
-        help?.let { append("\n                    $it") }
+        assignment?.let { append(" $it") }
+        help?.let { append("$indent${it.replace("\n", indent)}") }
     }
 }
