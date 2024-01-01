@@ -163,7 +163,7 @@ fun main(args: Array<String>) {
     if ("help" in directives) help(executable, programName, supportedOptions)
 
     // Calculate all the places to search for Java.
-    val rootPaths = calculate(config.rootPaths, hints, vars)
+    val rootPaths = calculate(config.rootPaths, hints, vars).flatMap { glob(it) }.toSet()
     debug()
     debug("Root paths to search for Java:")
     rootPaths.forEach { debug("* ", it) }
@@ -300,7 +300,7 @@ private fun calculateMaxHeap(maxHeap: String?): String? {
 }
 
 private fun calculate(items: Array<String>, hints: Set<String>, vars: Map<String, String>): List<String> {
-    return items.mapNotNull { it.evaluate(hints, vars) }
+    return items.mapNotNull { it.evaluate(hints, vars) }.filter { it.isNotEmpty() }
 }
 
 // -- String extensions --
