@@ -17,4 +17,20 @@ class PlatformTest {
         assertNotNull(path)
         assertTrue(path.isNotEmpty())
     }
+
+    @Test
+    fun testMemInfo() {
+        val totalMem = memInfo().total
+        assertNotNull(totalMem)
+        assertTrue(totalMem > 256 * 1024 * 1024)
+    }
+
+    @Test
+    fun testConstants() {
+        assertTrue(
+            (OS_NAME == "WINDOWS" && SLASH == "\\" && COLON == ";" && NL == "\r\n") ||
+            (OS_NAME == "MACOSX" && SLASH == "/" && COLON == ":" && NL == "\n") ||
+            (OS_NAME == "LINUX" && SLASH == "/" && COLON == ":" && NL == "\n")
+        )
+    }
 }
