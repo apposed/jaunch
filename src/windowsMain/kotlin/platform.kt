@@ -1,10 +1,9 @@
-@file:OptIn(ExperimentalForeignApi::class)
-
 import kotlinx.cinterop.*
 import platform.posix._popen
 import platform.posix.fgets
 import platform.windows.*
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun execute(command: String): List<String>? {
     // Source: https://stackoverflow.com/a/69385366/1207769
     val lines = mutableListOf<String>()
@@ -28,6 +27,7 @@ actual fun getenv(name: String): String? {
     }
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun printlnErr(s: String) {
     memScoped {
         val stderrHandle = GetStdHandle(STD_ERROR_HANDLE)
@@ -44,6 +44,7 @@ actual fun printlnErr(s: String) {
     }
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun stdinLines(): Array<String> {
     val lines = mutableListOf<String>()
 
@@ -75,6 +76,7 @@ actual fun stdinLines(): Array<String> {
     return lines.toTypedArray()
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun memInfo(): MemoryInfo {
     val memInfo = MemoryInfo()
     memScoped {
