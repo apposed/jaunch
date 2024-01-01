@@ -289,8 +289,7 @@ int run_command(const char *command,
 		// Passing the input line count as the first line tells the child process what
 		// to expect, so that it can stop reading from stdin once it has received
 		// those lines, even though the pipe is not yet closed. This avoids deadlocks.
-		dprintf(stdinPipe[1], "%d\n", numInput);
-		fflush(stdinPipe[1]);
+		dprintf(stdinPipe[1], "%zu\n", numInput);
 		debug("run_command: wrote numInput: %d", numInput);
 		for (size_t i = 0; i < numInput; i++) {
 			dprintf(stdinPipe[1], "%s\n", input[i]);
