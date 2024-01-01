@@ -479,11 +479,11 @@ arch-aliases = [
 #
 # For example, consider the following root-paths line:
 #
-#     '!--system|OS:WINDOWS|ARCH:X64|java/win64',
+#     '!--system|OS:LINUX|ARCH:X64|java/linux64',
 #
-# The applicable hints are !--system, OS:WINDOWS, and ARCH:X64, so the root path
-# of java/win64 will only be considered on 64-bit Windows systems, and only when
-# the --system option was *not* given as part of the launcher invocation.
+# The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path
+# of java/linux64 will only be considered on 64-bit Windows systems, and only
+# when the --system option was *not* given as part of the launcher invocation.
 #
 # This is also the first field where we see Jaunch's variables in use:
 #
@@ -503,10 +503,12 @@ root-paths = [
     '!--system|OS:LINUX|ARCH:X86|java/linux32/*',                   # TODO: Fiji-specific?
     '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64/*',           # TODO: Fiji-specific?
     '!--system|OS:MACOSX|ARCH:X64|java/macosx/*',                   # TODO: Fiji-specific?
-    '!--system|OS:WINDOWS|ARCH:X64|java/win64/*',                   # TODO: Fiji-specific?
-    '!--system|OS:WINDOWS|ARCH:X86|java/win32/*',                   # TODO: Fiji-specific?
-    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                        # Conda (openjdk 9+)
-    '${CONDA_PREFIX}/pkgs/openjdk*',                                # Conda (openjdk 8)
+    '!--system|OS:WINDOWS|ARCH:X64|java\win64\*',                   # TODO: Fiji-specific?
+    '!--system|OS:WINDOWS|ARCH:X86|java\win32\*',                   # TODO: Fiji-specific?
+    'OS:WINDOWS|${CONDA_PREFIX}\pkgs\openjdk*\lib\jvm',             # Conda (openjdk 9+)
+    'OS:WINDOWS|${CONDA_PREFIX}\pkgs\openjdk*',                     # Conda (openjdk 8)
+    '!OS:WINDOWS|${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',            # Conda (openjdk 9+)
+    '!OS:WINDOWS|${CONDA_PREFIX}/pkgs/openjdk*',                    # Conda (openjdk 8)
     'OS:LINUX|/usr/lib/jvm/*',                                      # Linux distro package manager (e.g. apt)
     'OS:LINUX|/var/lib/flatpak/...',                                # TODO: Flatpak
     'OS:LINUX|~/.sdkman/candidates/java/*',                         # sdkman.io
@@ -514,9 +516,9 @@ root-paths = [
     'OS:LINUX|~/.jdk/*',                                            # github.com/jyksnw/install-jdk
     'OS:LINUX|~/.jre/*',                                            # github.com/jyksnw/install-jdk
     'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',  # Java 8+
-    'OS:WINDOWS|C:/Program Files/Java/*',
-    'OS:WINDOWS|C:/Program Files (x86)/Java/*',
-    'OS:WINDOWS|~/scoop/apps/openjdk*/*',                           # Scoop
+    'OS:WINDOWS|C:\Program Files\Java\*',
+    'OS:WINDOWS|C:\Program Files (x86)\Java\*',
+    'OS:WINDOWS|~\scoop\apps\openjdk*\*',                           # Scoop
 ]
 
 # ==============================================================================
@@ -548,10 +550,10 @@ libjvm-suffixes = [
     'OS:MACOSX|lib/libjli.dylib',              # Java 12+
     'OS:MACOSX|lib/jli/libjli.dylib',          # Java 9-11
     'OS:MACOSX|jre/lib/jli/libjli.dylib',      # Java 8
-    'OS:WINDOWS|bin/server/jvm.dll',           # Java 9+
-    'OS:WINDOWS|bin/client/jvm.dll',           # Java 9+
-    'OS:WINDOWS|jre/bin/server/jvm.dll',       # Java 8
-    'OS:WINDOWS|jre/bin/client/jvm.dll',       # Java 8
+    'OS:WINDOWS|bin\server\jvm.dll',           # Java 9+
+    'OS:WINDOWS|bin\client\jvm.dll',           # Java 9+
+    'OS:WINDOWS|jre\bin\server\jvm.dll',       # Java 8
+    'OS:WINDOWS|jre\bin\client\jvm.dll',       # Java 8
 ]
 
 # ==============================================================================
