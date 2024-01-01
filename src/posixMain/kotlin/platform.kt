@@ -1,9 +1,8 @@
-@file:OptIn(ExperimentalForeignApi::class)
-
 import kotlinx.cinterop.*
 import platform.posix.*
 import platform.posix.getenv as pGetEnv
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun execute(command: String): List<String>? {
     val stdout = mutableListOf<String>()
 
@@ -21,16 +20,20 @@ actual fun execute(command: String): List<String>? {
     return stdout
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun getenv(name: String): String? {
     return pGetEnv(name)?.toKString()
 }
 
+@OptIn(ExperimentalForeignApi::class)
 private val STDERR = fdopen(2, "w")
+@OptIn(ExperimentalForeignApi::class)
 actual fun printlnErr(s: String) {
     fprintf(STDERR, "%s\n", s)
     fflush(STDERR)
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun stdinLines(): Array<String> {
     var lines = emptyArray<String>()
     memScoped {
@@ -48,6 +51,7 @@ actual fun stdinLines(): Array<String> {
     return lines
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun memInfo(): MemoryInfo {
     val memInfo = MemoryInfo()
     memScoped {
