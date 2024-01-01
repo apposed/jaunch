@@ -206,7 +206,9 @@ fun main(args: Array<String>) {
     if ("print-java-info" in directives) printlnErr(java.toString())
 
     // Calculate classpath.
-    val classpath = calculate(config.classpath, hints, vars).flatMap { glob(it) }
+    val rawClasspath = calculate(config.classpath, hints, vars)
+    debugList("Classpath to calculate:", rawClasspath)
+    val classpath = rawClasspath.flatMap { glob(it) }
     debugList("Classpath calculated:", classpath)
 
     // Execute the print-class-path directive.
