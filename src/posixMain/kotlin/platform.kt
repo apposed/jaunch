@@ -36,7 +36,11 @@ actual fun stdinLines(): Array<String> {
     memScoped {
         val bufferLength = 1 shl 20  // 1 MB
         val buffer = allocArray<ByteVar>(bufferLength)
-        while (true) {
+        // Passing the line count as the first line lets us stop reading from stdin once we have
+        // seen those lines, even though the pipe is still technically open. This avoids deadlocks.
+        val numLines = fgets(buffer, bufferLength, stdin)?.toKString()?.trim()?.toInt() ?:
+            error("Expected input line count as the first line of input")
+        for (i in 0..<numLines) {
             val input = fgets(buffer, bufferLength, stdin)?.toKString()?.trim() ?: break
             lines += input
         }

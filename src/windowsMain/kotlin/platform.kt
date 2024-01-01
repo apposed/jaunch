@@ -1,6 +1,6 @@
 import kotlinx.cinterop.*
-import platform.posix._popen
-import platform.posix.fgets
+import platform.posix.*
+import platform.posix.getenv as pGetEnv
 import platform.windows.*
 
 @OptIn(ExperimentalForeignApi::class)
@@ -46,34 +46,20 @@ actual fun printlnErr(s: String) {
 
 @OptIn(ExperimentalForeignApi::class)
 actual fun stdinLines(): Array<String> {
-    val lines = mutableListOf<String>()
-
+    var lines = emptyArray<String>()
     memScoped {
-        val stdinHandle = GetStdHandle(STD_INPUT_HANDLE)
-        if (stdinHandle == INVALID_HANDLE_VALUE) {
-            println("Error getting stdin handle: ${GetLastError()}")
-            return emptyArray()
+        val bufferLength = 65536
+        val buffer = allocArray<ByteVar>(bufferLength)
+        // Passing the line count as the first line lets us stop reading from stdin once we have
+        // seen those lines, even though the pipe is still technically open. This avoids deadlocks.
+        val numLines = fgets(buffer, bufferLength, stdin)?.toKString()?.trim()?.toInt() ?:
+            error("Expected input line count as the first line of input")
+        for (i in 0..<numLines) {
+            val input = fgets(buffer, bufferLength, stdin)?.toKString()?.trim() ?: break
+            lines += input
         }
-
-        val size = 1024 * 1024
-        val buffer = allocArray<ByteVar>(size)
-        val bytesRead = alloc<DWORDVar>()
-        val stdin = buildString {
-            while (ReadConsoleA(stdinHandle, buffer, size.toUInt(), bytesRead.ptr, null) != 0) {
-                if (bytesRead.value > 0u) {
-                    append(buffer.toKString().substring(0, bytesRead.value.toInt()))
-                }
-            }
-        }
-
-        val error = GetLastError()
-        if (error != ERROR_BROKEN_PIPE.toUInt()) {
-            println("Error reading from stdin: $error")
-        }
-        lines.addAll(stdin.split(Regex("(\\r\\n|\\n)")))
     }
-
-    return lines.toTypedArray()
+    return lines
 }
 
 @OptIn(ExperimentalForeignApi::class)

@@ -101,7 +101,6 @@ char *path(const char *argv0, const char *command) {
 	return result;
 }
 
-
 #ifdef WIN32
 void handleError(const char* errorMessage) {
 	fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
@@ -222,12 +221,21 @@ int run_command(const char *command,
 		close(stdoutPipe[1]);
 
 		// Write to the child process's stdin
+		debug("run_command: writing to jaunch stdin");
+		// Passing the input line count as the first line tells the child process what
+		// to expect, so that it can stop reading from stdin once it has received
+		// those lines, even though the pipe is not yet closed. This avoids deadlocks.
+		dprintf(stdinPipe[1], "%d\n", numInput);
+		fflush(stdinPipe[1]);
+		debug("run_command: wrote numInput: %d", numInput);
 		for (size_t i = 0; i < numInput; i++) {
 			dprintf(stdinPipe[1], "%s\n", input[i]);
+			debug("run_command: wrote input #%d: %s", i, input[i]);
 		}
 
 		// Close the write end of stdin to signal the end of input
 		close(stdinPipe[1]);
+		debug("run_command: closed jaunch stdin pipe");
 
 		// Read from the child process's stdout
 		char buffer[1024];
@@ -242,6 +250,7 @@ int run_command(const char *command,
 		}
 
 		while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
+			debug("run_command: got %d bytes from jaunch", strlen(buffer));
 			if (totalBytesRead + bytesRead > bufferSize) {
 				bufferSize *= 2;
 				outputBuffer = realloc(outputBuffer, bufferSize);
