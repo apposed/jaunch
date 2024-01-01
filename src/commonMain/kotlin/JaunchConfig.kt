@@ -6,9 +6,11 @@ import kotlinx.serialization.Serializable
 data class JaunchConfig (
 
     /** Jaunch configuration schema version. */
-    val jaunchVersion: String? = null,
+    @SerialName("jaunch-version")
+    val jaunchVersion: Int? = null,
 
     /** Name of the program being launched by Jaunch. */
+    @SerialName("program-name")
     val programName: String? = null,
 
     /** TODO */
@@ -137,27 +139,32 @@ data class JaunchConfig (
         return false
     }
 
-    operator fun plus(config: JaunchConfig): JaunchConfig = JaunchConfig(
-        programName = config.programName ?: programName,
-        classpath = config.classpath + classpath,
-        maxHeap = config.maxHeap ?: maxHeap,
-        supportedOptions = config.supportedOptions + supportedOptions,
-        recognizedJvmArgs = config.recognizedJvmArgs + recognizedJvmArgs,
-        allowUnrecognizedJvmArgs = config.allowUnrecognizedJvmArgs ?: allowUnrecognizedJvmArgs,
-        allowWeirdJvms = config.allowWeirdJvms ?: allowWeirdJvms,
-        javaVersionMin = config.javaVersionMin ?: javaVersionMin,
-        javaVersionMax = config.javaVersionMax ?: javaVersionMax,
-        javaDistrosAllowed = config.javaDistrosAllowed + javaDistrosAllowed,
-        javaDistrosBlocked = config.javaDistrosBlocked + javaDistrosBlocked,
-        osAliases = config.osAliases + osAliases,
-        archAliases = config.archAliases + archAliases,
-        rootPaths = config.rootPaths + rootPaths,
-        libjvmSuffixes = config.libjvmSuffixes + libjvmSuffixes,
-        modes = config.modes + modes,
-        directives = config.directives + directives,
-        jvmArgs = config.jvmArgs + jvmArgs,
-        mainClass = config.mainClass ?: mainClass,
-        mainClassCandidates = config.mainClassCandidates + mainClassCandidates,
-        mainArgs = config.mainArgs + mainArgs,
-    )
+    operator fun plus(config: JaunchConfig): JaunchConfig {
+        if (config.jaunchVersion != jaunchVersion) {
+            throw IllegalArgumentException("Config versions are incompatible: ${config.jaunchVersion} != $jaunchVersion")
+        }
+        return JaunchConfig(
+            programName = config.programName ?: programName,
+            classpath = config.classpath + classpath,
+            maxHeap = config.maxHeap ?: maxHeap,
+            supportedOptions = config.supportedOptions + supportedOptions,
+            recognizedJvmArgs = config.recognizedJvmArgs + recognizedJvmArgs,
+            allowUnrecognizedJvmArgs = config.allowUnrecognizedJvmArgs ?: allowUnrecognizedJvmArgs,
+            allowWeirdJvms = config.allowWeirdJvms ?: allowWeirdJvms,
+            javaVersionMin = config.javaVersionMin ?: javaVersionMin,
+            javaVersionMax = config.javaVersionMax ?: javaVersionMax,
+            javaDistrosAllowed = config.javaDistrosAllowed + javaDistrosAllowed,
+            javaDistrosBlocked = config.javaDistrosBlocked + javaDistrosBlocked,
+            osAliases = config.osAliases + osAliases,
+            archAliases = config.archAliases + archAliases,
+            rootPaths = config.rootPaths + rootPaths,
+            libjvmSuffixes = config.libjvmSuffixes + libjvmSuffixes,
+            modes = config.modes + modes,
+            directives = config.directives + directives,
+            jvmArgs = config.jvmArgs + jvmArgs,
+            mainClass = config.mainClass ?: mainClass,
+            mainClassCandidates = config.mainClassCandidates + mainClassCandidates,
+            mainArgs = config.mainArgs + mainArgs,
+        )
+    }
 }

@@ -182,6 +182,7 @@ int run_command(const char *command,
 	int stdinPipe[2];
 	int stdoutPipe[2];
 
+	debug("run_command: opening pipes to/from jaunch");
 	if (pipe(stdinPipe) == -1 || pipe(stdoutPipe) == -1) {
 		error("pipe");
 		return ERROR_PIPE;
