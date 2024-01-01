@@ -156,7 +156,7 @@ int run_command(const char *command,
 	CloseHandle(stdinWrite);
 
 	// Read data from stdout
-	char buffer[4096];
+	char buffer[65536];
 	DWORD bytesRead;
 	while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
 		// Process the output data (e.g., print it)

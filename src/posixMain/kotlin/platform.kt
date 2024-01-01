@@ -9,7 +9,7 @@ actual fun execute(command: String): List<String>? {
 
     val process = popen(command, "r") ?: return null
     memScoped {
-        val bufferLength = 1 shl 20  // 1 MB
+        val bufferLength = 65536
         val buffer = allocArray<ByteVar>(bufferLength)
         while (true) {
             val line = fgets(buffer, bufferLength, process) ?: break
@@ -34,7 +34,7 @@ actual fun printlnErr(s: String) {
 actual fun stdinLines(): Array<String> {
     var lines = emptyArray<String>()
     memScoped {
-        val bufferLength = 1 shl 20  // 1 MB
+        val bufferLength = 65536
         val buffer = allocArray<ByteVar>(bufferLength)
         // Passing the line count as the first line lets us stop reading from stdin once we have
         // seen those lines, even though the pipe is still technically open. This avoids deadlocks.
@@ -60,8 +60,8 @@ actual fun memInfo(): MemoryInfo {
             return memInfo
         }
 
-        // TODO: Handle lines longer than 1M correctly instead of crashing.
-        val buffer = ByteArray(1024 * 1024)
+        // TODO: Handle lines longer than 64K correctly instead of crashing.
+        val buffer = ByteArray(65536)
         val file = fopen("/proc/meminfo", "r")
         val bytesRead = fread(buffer.refTo(0), 1u, buffer.size.toULong(), file)
         fclose(file)

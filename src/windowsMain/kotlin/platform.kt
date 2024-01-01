@@ -8,7 +8,7 @@ actual fun execute(command: String): List<String>? {
     // Source: https://stackoverflow.com/a/69385366/1207769
     val lines = mutableListOf<String>()
     val fp = _popen(command, "r") ?: error("Failed to run command: $command")
-    val buffer = ByteArray(128 * 128)
+    val buffer = ByteArray(65536)
     while (true) {
         val input = fgets(buffer.refTo(0), buffer.size, fp) ?: break
         lines.add(input.toKString().replace(Regex("(\\r\\n|\\n)$"), ""))
