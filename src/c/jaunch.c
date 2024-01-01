@@ -55,8 +55,7 @@
 #define ERROR_MAIN_ARGC_TOO_LARGE 19
 #define ERROR_UNKNOWN_DIRECTIVE 20
 
-void error(const char *fmt, ...)
-{
+void error(const char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
@@ -105,8 +104,8 @@ char *path(const char *argv0, const char *command) {
 
 #ifdef WIN32
 void handleError(const char* errorMessage) {
-    fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
-    exit(1);
+	fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
+	exit(1);
 }
 
 int run_command(const char *command,
