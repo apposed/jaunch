@@ -154,7 +154,7 @@ int run_command(const char *command,
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
 	// Create the subprocess
-	if (!CreateProcess(NULL, command, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+	if (!CreateProcess(NULL, (LPSTR)command, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		handleError("Error creating process");
 	}
 
