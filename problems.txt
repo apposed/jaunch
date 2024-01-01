@@ -1,0 +1,13 @@
+In decreasing order of severity:
+
+The `JAVA:` hints are not yet implemented.
+
+The `${app-dir}` special variable is not yet populated.
+It needs to be set to the directory containing the launcher executable.
+
+The `--option=value` syntax does not work; you have to write `--option value`
+as two separate arguments.
+
+The --dry-run output on Windows works in Command Prompt, but not PowerShell,
+because PowerShell gets weird about unquoted arguments with the dot (.) symbol.
+Should the Windows --dry-run put double quotes around *every* argument? :-/
