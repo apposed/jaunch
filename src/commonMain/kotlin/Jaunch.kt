@@ -22,7 +22,9 @@ fun main(args: Array<String>) {
         config += readConfig("${exeFile.withoutSuffix}.toml")
     }
 
-    val programName = config.programName ?: executable?.let(::File)?.name?.let(::File)?.withoutSuffix ?: "Jaunch"
+    val programName = config.programName ?:
+        executable?.let(::File)?.name?.let(::File)?.withoutSuffix ?:
+        "Jaunch"
     debug("programName -> ", programName)
 
     // Parse the configuration's declared Jaunch options.
