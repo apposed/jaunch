@@ -197,6 +197,7 @@ fun main(args: Array<String>) {
         java = javaCandidate
         debug("jvmRootPath -> ", java.rootPath)
         debug("libjvmPath -> ", java.libjvmPath ?: "<null>")
+        debug("binJava -> ", java.binJava ?: "<null>")
         break
     }
     if (java == null) error("No Java installation found.")
@@ -382,12 +383,8 @@ private fun dryRun(
     mainClassName: String?,
     mainArgs: MutableList<String>
 ) {
-    val lib = java.libjvmPath?.lastIndexOf("/lib/") ?: -1
-    val dirPath = if (lib >= 0) java.libjvmPath!!.substring(0, lib) else java.rootPath
-    val javaBinary = File("$dirPath/bin/java")
-    val javaCommand = if (javaBinary.isFile) javaBinary.path else "java"
     printlnErr(buildString {
-        append(javaCommand)
+        append(java.binJava ?: "java")
         jvmArgs.forEach { append(" $it") }
         append(" $mainClassName")
         mainArgs.forEach { append(" $it") }

@@ -45,6 +45,7 @@ class JavaInstallation(
     val constraints: JavaConstraints,
 ) {
     val libjvmPath: String? by lazy { findLibjvm() }
+    val binJava: String? by lazy { findBinJava() }
     val version: String? by lazy { guessJavaVersion() }
     val distro: String? by lazy { guessDistribution() }
     val osName: String? by lazy { guessOperatingSystemName() }
@@ -70,6 +71,15 @@ class JavaInstallation(
 
     private fun findLibjvm(): String? {
         return constraints.libjvmSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
+    }
+
+    private fun findBinJava(): String? {
+        val extension = if (OS_NAME == "WINDOWS") ".exe" else ""
+        for (candidate in arrayOf("bin", "jre${SLASH}bin")) {
+            val javaFile = File("$rootPath$SLASH$candidate${SLASH}java$extension")
+            if (javaFile.exists) return javaFile.path
+        }
+        return null
     }
 
     private fun guessJavaVersion(): String? {
@@ -109,16 +119,15 @@ class JavaInstallation(
         return linesToMap(releaseFile.readLines(), "=", stripQuotes=true)
     }
 
-    /** Calls `bin/java Props` to harvest system properties from the horse's mouth. */
+    /** Calls `java Props` to harvest system properties from the horse's mouth. */
     private fun askJavaForSystemProperties(): Map<String, String>? {
-        val extension = if (OS_NAME == "WINDOWS") ".exe" else ""
-        val binJava = File("$rootPath${SLASH}bin${SLASH}java$extension")
-        debug("Invoking `\"", binJava.path, "\" Props`...")
-        if (!binJava.exists) {
+        val javaExe = binJava
+        if (javaExe == null) {
             debug("Java executable does not exist")
             return null
         }
-        val stdout = execute("$binJava Props") ?: return null
+        debug("Invoking `\"", javaExe, "\" Props`...")
+        val stdout = execute("$javaExe Props") ?: return null
         return linesToMap(stdout, "=")
     }
 
