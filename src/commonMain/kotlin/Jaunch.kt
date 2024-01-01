@@ -1,12 +1,13 @@
 typealias JaunchOptions = Map<String, JaunchOption>
 
 fun main(args: Array<String>) {
-    // Treat both lines of stdin and arguments on the CLI as inputs.
-    // Normally, there will only be lines of stdin, not command line arguments,
-    // but it's convenient for testing to be able to pass args to main, too.
-    val stdinArgs = stdinLines()
-    val executable = stdinArgs.getOrNull(0)
-    val inputArgs = stdinArgs.slice(1..<stdinArgs.size) + args
+    // If arguments were not given on the CLI, read them from stdin.
+    val theArgs = if (args.isEmpty()) stdinLines() else args
+    // The first argument is the path to the calling executable.
+    val executable = theArgs.getOrNull(0)
+    debug("executable -> ", executable ?: "<null>")
+    // Subsequent arguments were specified by the user.
+    val inputArgs = theArgs.slice(1..<theArgs.size)
     debug("inputArgs -> ", inputArgs)
 
     // Discern the directory containing this program.
