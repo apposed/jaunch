@@ -44,14 +44,14 @@ actual class File actual constructor(private val thePath: String) {
         memScoped {
             val findFileData = alloc<WIN32_FIND_DATAW>()
 
-            val hFindFile = FindFirstFileW("$directoryPath\\*", findFileData.ptr)
+            val hFindFile = FindFirstFileW("$path\\*", findFileData.ptr)
             if (hFindFile == INVALID_HANDLE_VALUE) return emptyList()
 
             try {
                 do {
                     val fileName = findFileData.cFileName.toKString()
                     if (fileName != "." && fileName != "..") {
-                        files.add(File(fileName))
+                        files.add(File("$path$SLASH$fileName"))
                     }
                 } while (FindNextFileW(hFindFile, findFileData.ptr) != 0)
             } finally {
