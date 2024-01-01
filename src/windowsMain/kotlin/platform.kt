@@ -83,7 +83,8 @@ actual fun memInfo(): MemoryInfo {
         }
 
         if (GlobalMemoryStatusEx(memoryStatus.ptr) != 0) {
-            memInfo.total = memoryStatus.ullAvailVirtual.toLong()
+            memInfo.total = memoryStatus.ullTotalPhys.toLong()
+            memInfo.free = memoryStatus.ullAvailPhys.toLong()
         } else {
             println("Error getting memory status: ${GetLastError()}")
         }
