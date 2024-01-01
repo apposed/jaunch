@@ -69,7 +69,7 @@ class JavaInstallation(
     // -- Lazy evaluation functions --
 
     private fun findLibjvm(): String? {
-        return constraints.libjvmSuffixes.map { File("$rootPath/$it") }.firstOrNull { it.exists }?.path
+        return constraints.libjvmSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
     }
 
     private fun guessJavaVersion(): String? {

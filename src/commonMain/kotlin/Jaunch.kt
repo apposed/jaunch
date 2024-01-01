@@ -16,7 +16,7 @@ fun main(args: Array<String>) {
     debug("exeDir -> ", exeDir)
 
     // Load the configuration from the TOML files.
-    var config = readConfig("$exeDir/jaunch.toml")
+    var config = readConfig("$exeDir${SLASH}jaunch.toml")
     if (exeFile != null) {
         // Parse and merge the app-specific TOML file as well.
         config += readConfig("${exeFile.withoutSuffix}.toml")
