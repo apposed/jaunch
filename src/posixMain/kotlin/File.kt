@@ -68,8 +68,7 @@ actual class File actual constructor(private val thePath: String) {
             val file = fopen(path, "r") ?: throw RuntimeException("Failed to open file")
             try {
                 while (true) {
-                    // TODO: Handle lines longer than 1M correctly instead of crashing.
-                    val buffer = ByteArray(1024 * 1024)
+                    val buffer = ByteArray(BUFFER_SIZE)
                     val line = fgets(buffer.refTo(0), FILENAME_MAX, file)?.toKString() ?: break
                     lines.add(line)
                 }

@@ -12,3 +12,5 @@ fun readConfig(tomlPath: String): JaunchConfig {
         )
     ).decodeFromFile(serializer(), tomlPath)
 }
+
+val BUFFER_SIZE = 65536
