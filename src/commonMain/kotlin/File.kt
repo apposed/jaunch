@@ -71,9 +71,18 @@ private fun glob(prefixes: List<String>, remaining: String?): List<String> {
 }
 
 fun glob(path: String): List<String> {
-    val p = path.replace("~", USER_HOME ?: error("WTF no user home"))
+    // Expand tilde home character.
+    val expanded = path.replace("~", USER_HOME ?: error("WTF no user home"))
+    // Standardize slashes.
+    val p = expanded.replace("/", SLASH).replace("\\", SLASH)
+
+    // Find the first instance of a glob.
     val star = p.indexOf("*")
-    if (star < 0) return listOf(p)
+    if (star < 0) return listOf(p) // No glob -- just return what we have.
+
+    // Start with the directory prefix before the glob.
+    // If there is no prefix before the first glob, it must be a relative path.
+    // Or we're on Windows and they did `*:\...`, which I refuse to support. :-P
     val slash = p.lastIndexOf(SLASH, star)
     val prefix = if (slash < 0) "." else p.substring(0, slash)
     val remain = if (slash < 0) p else p.substring(slash + 1)

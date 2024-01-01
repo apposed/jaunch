@@ -133,8 +133,8 @@ jvm-args = [
     'OS:LINUX|ARCH:X86|-Djava.library.path=${ijDirPath}/lib/linux32',
     'OS:MACOSX|ARCH:ARM64|-Djava.library.path=${ijDirPath}/lib/macosx-arm64',
     'OS:MACOSX|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/macosx',
-    'OS:WINDOWS|ARCH:X64|-Djava.library.path=${ijDirPath}/lib/win64',
-    'OS:WINDOWS|ARCH:X86|-Djava.library.path=${ijDirPath}/lib/win32',
+    'OS:WINDOWS|ARCH:X64|-Djava.library.path=${ijDirPath}\lib\win64',
+    'OS:WINDOWS|ARCH:X86|-Djava.library.path=${ijDirPath}\lib\win32',
 
     '-Dscijava.context.strict=false',  # Make SciJava startup less brittle.
     '-Dpython.console.encoding=UTF-8',  # TODO: What is this for?

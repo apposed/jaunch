@@ -505,10 +505,8 @@ root-paths = [
     '!--system|OS:MACOSX|ARCH:X64|java/macosx/*',                   # TODO: Fiji-specific?
     '!--system|OS:WINDOWS|ARCH:X64|java\win64\*',                   # TODO: Fiji-specific?
     '!--system|OS:WINDOWS|ARCH:X86|java\win32\*',                   # TODO: Fiji-specific?
-    'OS:WINDOWS|${CONDA_PREFIX}\pkgs\openjdk*\lib\jvm',             # Conda (openjdk 9+)
-    'OS:WINDOWS|${CONDA_PREFIX}\pkgs\openjdk*',                     # Conda (openjdk 8)
-    '!OS:WINDOWS|${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',            # Conda (openjdk 9+)
-    '!OS:WINDOWS|${CONDA_PREFIX}/pkgs/openjdk*',                    # Conda (openjdk 8)
+    '{CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                         # Conda (openjdk 9+)
+    '{CONDA_PREFIX}/pkgs/openjdk*',                                 # Conda (openjdk 8)
     'OS:LINUX|/usr/lib/jvm/*',                                      # Linux distro package manager (e.g. apt)
     'OS:LINUX|/var/lib/flatpak/...',                                # TODO: Flatpak
     'OS:LINUX|~/.sdkman/candidates/java/*',                         # sdkman.io
