@@ -140,7 +140,9 @@ data class JaunchConfig (
     }
 
     operator fun plus(config: JaunchConfig): JaunchConfig {
-        if (config.jaunchVersion != jaunchVersion) {
+        if (config.jaunchVersion != null && jaunchVersion != null &&
+            config.jaunchVersion != jaunchVersion)
+        {
             throw IllegalArgumentException("Config versions are incompatible: ${config.jaunchVersion} != $jaunchVersion")
         }
         return JaunchConfig(
