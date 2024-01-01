@@ -13,27 +13,27 @@ expect class File(thePath: String) {
 
 val File.directoryPath: String
     get() {
-        val slash = path.lastIndexOf('/')
+        val slash = path.lastIndexOf(SLASH)
         return if (slash < 0) "." else path.substring(0, slash)
     }
 
 val File.name: String
     get() {
-        val slash = path.lastIndexOf('/')
+        val slash = path.lastIndexOf(SLASH)
         return if (slash < 0) path else path.substring(slash + 1)
     }
 
 val File.suffix: String?
     get() {
-        val slash = path.lastIndexOf('/')
-        val dot = path.lastIndexOf('.', slash + 1)
+        val slash = path.lastIndexOf(SLASH)
+        val dot = path.lastIndexOf('.')
         return if (dot < slash || dot < 0) null else path.substring(dot + 1)
     }
 
 val File.withoutSuffix: String
     get() {
-        val slash = path.lastIndexOf('/')
-        val dot = path.lastIndexOf('.', slash + 1)
+        val slash = path.lastIndexOf(SLASH)
+        val dot = path.lastIndexOf('.')
         return if (dot < slash || dot < 0) path else path.substring(0, dot)
     }
 

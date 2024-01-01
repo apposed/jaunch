@@ -5,6 +5,15 @@ import kotlin.test.assertTrue
 
 class FileTest {
     @Test
+    fun testBasics() {
+        val file = File("path${SLASH}to${SLASH}hello.txt")
+        assertEquals("hello.txt", file.name)
+        assertEquals("txt", file.suffix)
+        assertEquals("path${SLASH}to${SLASH}hello", file.withoutSuffix)
+        assertEquals("path${SLASH}to", file.directoryPath)
+    }
+
+    @Test
     fun testCwd() {
         val cwd = File(".")
         assertTrue(cwd.exists)
