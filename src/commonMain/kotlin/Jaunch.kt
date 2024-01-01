@@ -276,12 +276,15 @@ private fun calculateMaxHeap(maxHeap: String?): String? {
         warn("Ignoring invalid max-heap value '", maxHeap, "'")
         return null
     }
+
     val memInfo = memInfo()
     if (memInfo.total == null) {
         warn("Cannot determine total memory -- ignoring max-heap value '", maxHeap, "'")
         return null
     }
-    val kbValue = (percent * memInfo.total!! / 100).toInt()
+    else debug("System reported memTotal of ", memInfo.total.toString())
+
+    val kbValue = (percent * memInfo.total!! / 100 / 1024).toInt()
     if (kbValue <= 9999) {
         debug("Calculated maxHeap of ", kbValue, " KB")
         return "${kbValue}k"

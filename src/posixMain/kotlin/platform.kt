@@ -52,7 +52,7 @@ actual fun memInfo(): MemoryInfo {
             // No /proc/meminfo... are we on macOS? Let's try sysctl.
             val sysctlOutput = execute("sysctl -n hw.memsize")
             val memsize = sysctlOutput?.getOrNull(0)?.trim()?.toLongOrNull()
-            if (memsize != null) memInfo.total = memsize / 1024 // B -> KB
+            if (memsize != null) memInfo.total = memsize
             return memInfo
         }
 
@@ -75,7 +75,10 @@ actual fun memInfo(): MemoryInfo {
 private fun String.extractMemoryValue(): Long? {
     val regex = Regex("(\\d+) kB")
     val match = regex.find(this)
-    return match?.groupValues?.getOrNull(1)?.toLongOrNull()
+    val value = match?.groupValues?.getOrNull(1)?.toLongOrNull()
+    // Multiply result by 1024 to return value in bytes, not KB.
+    if (value != null) value *= 1024
+    return value
 }
 
 actual val USER_HOME = getenv("HOME")
