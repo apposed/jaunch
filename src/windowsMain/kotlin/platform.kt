@@ -11,6 +11,7 @@ actual fun execute(command: String): List<String>? {
     val buffer = ByteArray(65536)
     while (true) {
         val input = fgets(buffer.refTo(0), buffer.size, fp) ?: break
+        // Record the line, stripping the trailing newline.
         lines.add(input.toKString().replace(Regex("(\\r\\n|\\n)$"), ""))
     }
     return lines
