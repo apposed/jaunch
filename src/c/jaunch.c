@@ -216,7 +216,7 @@ int run_command(const char *command,
 	if (totalBytesRead > 0) {
 		// Split the output buffer into lines
 		size_t lineCount = 0;
-		char *token = strtok(outputBuffer, "\n");
+		char *token = strtok(outputBuffer, "\r\n");
 		while (token != NULL) {
 			*output = realloc(*output, (lineCount + 1) * sizeof(char *));
 			if (*output == NULL) {
@@ -229,12 +229,13 @@ int run_command(const char *command,
 				return ERROR_STRDUP;
 			}
 			lineCount++;
-			token = strtok(NULL, "\n");
+			token = strtok(NULL, "\r\n");
 		}
 
 		*numOutput = lineCount;
-		free(outputBuffer); // Free the temporary buffer
 	}
+	free(outputBuffer);
+	return SUCCESS;
 }
 #else
 int run_command(const char *command,
@@ -359,8 +360,8 @@ int run_command(const char *command,
 			}
 
 			*numOutput = lineCount;
-			free(outputBuffer); // Free the temporary buffer
 		}
+		free(outputBuffer);
 	}
 	return SUCCESS;
 }
