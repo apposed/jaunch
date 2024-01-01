@@ -85,8 +85,7 @@ private fun String.extractMemoryValue(): Long? {
     val match = regex.find(this)
     val value = match?.groupValues?.getOrNull(1)?.toLongOrNull()
     // Multiply result by 1024 to return value in bytes, not KB.
-    if (value != null) value *= 1024
-    return value
+    return if (value == null) null else value * 1024
 }
 
 actual val USER_HOME = getenv("HOME")
