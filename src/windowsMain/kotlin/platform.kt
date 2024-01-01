@@ -19,30 +19,15 @@ actual fun execute(command: String): List<String>? {
 
 @OptIn(ExperimentalForeignApi::class)
 actual fun getenv(name: String): String? {
-    val bufferSize = 1024 * 1024
-    memScoped {
-        val buffer = allocArray<ByteVar>(bufferSize)
-        val result = GetEnvironmentVariableA(name, buffer, bufferSize.toUInt())
-        if (result == 0u) return null // Variable does not exist.
-        return buffer.toKString()
-    }
+    return pGetEnv(name)?.toKString()
 }
 
 @OptIn(ExperimentalForeignApi::class)
+private val STDERR = fdopen(2, "w")
+@OptIn(ExperimentalForeignApi::class)
 actual fun printlnErr(s: String) {
-    memScoped {
-        val stderrHandle = GetStdHandle(STD_ERROR_HANDLE)
-        if (stderrHandle == INVALID_HANDLE_VALUE) {
-            println("Error getting stderr handle: ${GetLastError()}")
-            return
-        }
-
-        val messageBuffer = (s + NL).cstr
-        val bytesWritten = alloc<DWORDVar>()
-        if (WriteConsoleA(stderrHandle, messageBuffer, messageBuffer.size.toUInt(), bytesWritten.ptr, null) == 0) {
-            println("Error writing to stderr: ${GetLastError()}")
-        }
-    }
+    fprintf(STDERR, "%s\n", s)
+    fflush(STDERR)
 }
 
 @OptIn(ExperimentalForeignApi::class)
