@@ -9,3 +9,8 @@ as two separate arguments.
 The --dry-run output on Windows works in Command Prompt, but not PowerShell,
 because PowerShell gets weird about unquoted arguments with the dot (.) symbol.
 Should the Windows --dry-run put double quotes around *every* argument? :-/
+
+Jaunch's design treats options as a set, not a list. Therefore, order does not
+matter, nor does Jaunch support repeat options. E.g., when passing an option
+twice with different values (e.g. `--add a.jar --add b.jar`), the latter value
+overwrites the former. A workaround is to use a style like `--add a.jar,b.jar`.
