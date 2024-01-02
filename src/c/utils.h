@@ -1,5 +1,5 @@
-#ifndef _LOGGING_H
-#define _LOGGING_H
+#ifndef _UTILS_H
+#define _UTILS_H
 
 // -- Return codes --
 
@@ -15,15 +15,14 @@
 #define ERROR_MALLOC 9
 #define ERROR_REALLOC 10
 #define ERROR_WAITPID 11
-#define ERROR_REALLOC2 12
-#define ERROR_STRDUP 13
-#define ERROR_COMMAND_PATH 14
-#define ERROR_OUTPUT 15
-#define ERROR_JVM_ARGC_TOO_SMALL 16
-#define ERROR_JVM_ARGC_TOO_LARGE 17
-#define ERROR_MAIN_ARGC_TOO_SMALL 18
-#define ERROR_MAIN_ARGC_TOO_LARGE 19
-#define ERROR_UNKNOWN_DIRECTIVE 20
+#define ERROR_STRDUP 12
+#define ERROR_COMMAND_PATH 13
+#define ERROR_OUTPUT 14
+#define ERROR_JVM_ARGC_TOO_SMALL 15
+#define ERROR_JVM_ARGC_TOO_LARGE 16
+#define ERROR_MAIN_ARGC_TOO_SMALL 17
+#define ERROR_MAIN_ARGC_TOO_LARGE 18
+#define ERROR_UNKNOWN_DIRECTIVE 19
 
 // -- Helper functions --
 
@@ -45,6 +44,22 @@ void debug(const char *fmt, ...) {
 	va_end(ap);
 	fputc('\n', stderr);
 	fflush(stderr);
+}
+
+/* Splits an output buffer into lines. */
+int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
+    size_t lineCount = 0;
+    char *token = strtok(buffer, delim);
+    while (token != NULL) {
+        *output = realloc(*output, (lineCount + 1) * sizeof(char *));
+        if (*output == NULL) { error("Memory reallocation failed"); return ERROR_REALLOC; }
+        (*output)[lineCount] = strdup(token);
+        if ((*output)[lineCount] == NULL) { error("String duplication failed"); return ERROR_STRDUP; }
+        lineCount++;
+        token = strtok(NULL, delim);
+    }
+
+    *numOutput = lineCount;
 }
 
 #endif

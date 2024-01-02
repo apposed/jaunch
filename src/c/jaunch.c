@@ -1,22 +1,26 @@
 /*
- * A minimal but general-purpose C program to launch Java in the same process.
+ * This is the C portion of Jaunch, the configurable Java launcher.
  *
- * It has two functions:
+ * Its primary function is:
  *
- * launch_jvm:
- *   1. path to libjvm
- *   2. argc + argv for the jvm
- *   3. main class to run
- *   4. argc + argv for the main invocation
- * And it loads that libjvm and invokes the main method with those parameters.
+ *   launch_jvm:
+ *     1. path to libjvm
+ *     2. argc + argv for the jvm
+ *     3. main class to run
+ *     4. argc + argv for the main invocation
  *
- * run_command:
- *   1. path to configurator executable
- *   2. argv list, to be passed to the configurator via stdin, one per line
- * It invokes that configurator executable in its own process, and waits for
- * the process to complete. The configurator produces output suitable for
- * passing to the `launch_jvm` function above. and then calls the low-level
- * function with the outputs.
+ * To invoke this function in a configurable way, it uses a secondary function:
+ *
+ *   run_command:
+ *     1. path to configurator executable
+ *     2. argv list, to be passed to the configurator via stdin, one per line
+ *
+ * This function is used to invoke Jaunch, a.k.a. the configurator executable,
+ * in its own process. The C code waits for the Jaunch process to complete,
+ * then passes the outputs given by Jaunch to the `launch_jvm` function above.
+ *
+ * In this way, Java is launched in the same process by C, but in a way that
+ * is fuily customizable from the Jaunch code written in a high-level language.
  */
 
 #include <stdio.h>
@@ -24,56 +28,13 @@
 #include <unistd.h>
 #include <string.h>
 
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#include <sys/wait.h>
-#endif
-
 #include "jni.h"
 
-#define SUCCESS 0
-#define ERROR_DLOPEN 1
-#define ERROR_DLSYM 2
-#define ERROR_CREATE_JAVA_VM 3
-#define ERROR_FIND_CLASS 4
-#define ERROR_GET_STATIC_METHOD_ID 5
-#define ERROR_PIPE 6
-#define ERROR_FORK 7
-#define ERROR_EXECLP 8
-#define ERROR_MALLOC 9
-#define ERROR_REALLOC 10
-#define ERROR_WAITPID 11
-#define ERROR_REALLOC2 12
-#define ERROR_STRDUP 13
-#define ERROR_COMMAND_PATH 14
-#define ERROR_OUTPUT 15
-#define ERROR_JVM_ARGC_TOO_SMALL 16
-#define ERROR_JVM_ARGC_TOO_LARGE 17
-#define ERROR_MAIN_ARGC_TOO_SMALL 18
-#define ERROR_MAIN_ARGC_TOO_LARGE 19
-#define ERROR_UNKNOWN_DIRECTIVE 20
-
-void error(const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fputc('\n', stderr);
-}
-
-void debug(const char *fmt, ...) {
-	//if (!debug_mode) return;
-	va_list ap;
-	int i;
-	va_list nothing;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fputc('\n', stderr);
-	fflush(stderr);
-}
+#ifdef WIN32
+#include "win32.h"
+#else
+#include "posix.h"
+#endif
 
 /* result=$(dirname "$argv0")/"$command" */
 char *path(const char *argv0, const char *command) {
@@ -101,277 +62,6 @@ char *path(const char *argv0, const char *command) {
 	return result;
 }
 
-#ifdef WIN32
-void handleError(const char* errorMessage) {
-	fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
-	exit(1);
-}
-
-void writeLine(HANDLE stdinWrite, const char *input) {
-    DWORD bytesWritten;
-
-    // Calculate the length of the input string
-    size_t inputLength = strlen(input);
-
-    // Allocate memory for the string with newline
-    char *line = (char *)malloc(inputLength + 2);  // +1 for newline, +1 for null terminator
-
-    // Copy the input string and add a newline
-    strcpy(line, input);
-    strcat(line, "\n");
-
-    // Write the string with newline to the pipe
-    if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL))
-			handleError("Error writing to stdin");
-
-    // Free allocated memory
-    free(line);
-}
-
-int run_command(const char *command,
-	const char *input[], size_t numInput,
-	char ***output, size_t *numOutput)
-{
-	// Create pipes for stdin and stdout
-	HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite;
-	SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
-
-	debug("run_command: opening pipes to/from jaunch");
-	if (!CreatePipe(&stdinRead, &stdinWrite, &sa, 0) ||
-		!CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0))
-	{
-		handleError("Error creating pipes");
-	}
-
-	// Set the properties of the process to start
-	STARTUPINFO si = { sizeof(STARTUPINFO) };
-	PROCESS_INFORMATION pi;
-
-	// Specify that the process should inherit the handles
-	si.hStdInput = stdinRead;
-	si.hStdOutput = stdoutWrite;
-	si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-	si.dwFlags |= STARTF_USESTDHANDLES;
-
-	// Create the subprocess
-	if (!CreateProcess(NULL, (LPSTR)command, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-		handleError("Error creating process");
-	}
-
-	// Close unnecessary handles
-	CloseHandle(stdinRead);
-	CloseHandle(stdoutWrite);
-
-	// Write to the child process's stdin
-	debug("run_command: writing to jaunch stdin");
-	// Passing the input line count as the first line tells the child process what
-	// to expect, so that it can stop reading from stdin once it has received
-	// those lines, even though the pipe is not yet closed. This avoids deadlocks.
-	char *numInputString = (char *)malloc(21);
-	if (numInputString == NULL) error("malloc");
-	snprintf(numInputString, 21, "%zu", numInput);
-	writeLine(stdinWrite, numInputString);
-	free(numInputString);
-	for (size_t i = 0; i < numInput; i++)
-		writeLine(stdinWrite, input[i]);
-
-	// Close the stdin write handle to signal end of input
-	CloseHandle(stdinWrite);
-
-	// Read from the child process's stdout
-	char buffer[1024];
-	DWORD bytesRead;
-	DWORD totalBytesRead = 0;
-	size_t bufferSize = 1024;
-	char *outputBuffer = malloc(bufferSize);
-
-	if (outputBuffer == NULL) {
-		error("malloc");
-		return ERROR_MALLOC;
-	}
-
-	while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
-		debug("run_command: got %d bytes from jaunch", strlen(buffer));
-		if (totalBytesRead + bytesRead > bufferSize) {
-			bufferSize *= 2;
-			outputBuffer = realloc(outputBuffer, bufferSize);
-			if (outputBuffer == NULL) {
-				error("realloc");
-				return ERROR_REALLOC;
-			}
-		}
-		memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
-		totalBytesRead += bytesRead;
-	}
-
-	// Close handles
-	CloseHandle(stdoutRead);
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
-
-	// Return the output buffer and the number of lines
-	*output = NULL;
-	*numOutput = 0;
-
-	if (totalBytesRead > 0) {
-		// Split the output buffer into lines
-		size_t lineCount = 0;
-		char *token = strtok(outputBuffer, "\r\n");
-		while (token != NULL) {
-			*output = realloc(*output, (lineCount + 1) * sizeof(char *));
-			if (*output == NULL) {
-				error("realloc");
-				return ERROR_REALLOC2;
-			}
-			(*output)[lineCount] = strdup(token);
-			if ((*output)[lineCount] == NULL) {
-				error("strdup");
-				return ERROR_STRDUP;
-			}
-			lineCount++;
-			token = strtok(NULL, "\r\n");
-		}
-
-		*numOutput = lineCount;
-	}
-	free(outputBuffer);
-	return SUCCESS;
-}
-#else
-int run_command(const char *command,
-	const char *input[], size_t numInput,
-	char ***output, size_t *numOutput)
-{
-	// Create pipes for stdin and stdout
-	int stdinPipe[2];
-	int stdoutPipe[2];
-
-	debug("run_command: opening pipes to/from jaunch");
-	if (pipe(stdinPipe) == -1 || pipe(stdoutPipe) == -1) {
-		error("pipe");
-		return ERROR_PIPE;
-	}
-
-	// Fork to create a child process
-	pid_t pid = fork();
-
-	if (pid == -1) {
-		error("fork");
-		return ERROR_FORK;
-	}
-
-	if (pid == 0) { // Child process
-		// Close unused ends of the pipes
-		close(stdinPipe[1]);
-		close(stdoutPipe[0]);
-
-		// Redirect stdin and stdout
-		dup2(stdinPipe[0], STDIN_FILENO);
-		dup2(stdoutPipe[1], STDOUT_FILENO);
-
-		// Close duplicated ends
-		close(stdinPipe[0]);
-		close(stdoutPipe[1]);
-
-		// Execute the command
-		execlp(command, command, (char *)NULL);
-
-		// If execlp fails
-		error("execlp");
-		return ERROR_EXECLP;
-	}
-	else { // Parent process
-		// Close unused ends of the pipes
-		close(stdinPipe[0]);
-		close(stdoutPipe[1]);
-
-		// Write to the child process's stdin
-		debug("run_command: writing to jaunch stdin");
-		// Passing the input line count as the first line tells the child process what
-		// to expect, so that it can stop reading from stdin once it has received
-		// those lines, even though the pipe is not yet closed. This avoids deadlocks.
-		dprintf(stdinPipe[1], "%zu\n", numInput);
-		debug("run_command: wrote numInput: %d", numInput);
-		for (size_t i = 0; i < numInput; i++) {
-			dprintf(stdinPipe[1], "%s\n", input[i]);
-			debug("run_command: wrote input #%d: %s", i, input[i]);
-		}
-
-		// Close the write end of stdin to signal the end of input
-		close(stdinPipe[1]);
-		debug("run_command: closed jaunch stdin pipe");
-
-		// Read from the child process's stdout
-		char buffer[1024];
-		size_t bytesRead;
-		size_t totalBytesRead = 0;
-		size_t bufferSize = 1024;
-		char *outputBuffer = malloc(bufferSize);
-
-		if (outputBuffer == NULL) {
-			error("malloc");
-			return ERROR_MALLOC;
-		}
-
-		while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
-			debug("run_command: got %d bytes from jaunch", strlen(buffer));
-			if (totalBytesRead + bytesRead > bufferSize) {
-				bufferSize *= 2;
-				outputBuffer = realloc(outputBuffer, bufferSize);
-				if (outputBuffer == NULL) {
-					error("realloc");
-					return ERROR_REALLOC;
-				}
-			}
-			memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
-			totalBytesRead += bytesRead;
-		}
-
-		// Close the read end of stdout
-		close(stdoutPipe[0]);
-
-		// Wait for the child process to finish
-		if (waitpid(pid, NULL, 0) == -1) {
-			error("waitpid");
-			return ERROR_WAITPID;
-		}
-
-		// Return the output buffer and the number of lines
-		*output = NULL;
-		*numOutput = 0;
-
-		if (totalBytesRead > 0) {
-			// Split the output buffer into lines
-			size_t lineCount = 0;
-			char *token = strtok(outputBuffer, "\n");
-			while (token != NULL) {
-				*output = realloc(*output, (lineCount + 1) * sizeof(char *));
-				if (*output == NULL) {
-					error("realloc");
-					return ERROR_REALLOC2;
-				}
-				(*output)[lineCount] = strdup(token);
-				if ((*output)[lineCount] == NULL) {
-					error("strdup");
-					return ERROR_STRDUP;
-				}
-				lineCount++;
-				token = strtok(NULL, "\n");
-			}
-
-			*numOutput = lineCount;
-		}
-		free(outputBuffer);
-	}
-	return SUCCESS;
-}
-#endif
-
-#ifdef WIN32
-void dlclose(void* library) { FreeLibrary(library); }
-char *dlerror() { return "error" /*GetLastError()*/; }
-#endif
-
 int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
 	const char *main_class_name, const size_t main_argc, const char *main_argv[])
 {
@@ -382,10 +72,7 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 #else
 	void *jvm_library = dlopen(libjvm_path, RTLD_NOW | RTLD_GLOBAL);
 #endif
-	if (!jvm_library) {
-		error("Error loading libjvm: %s", dlerror());
-		return ERROR_DLOPEN;
-	}
+	if (!jvm_library) { error("Error loading libjvm: %s", dlerror()); return ERROR_DLOPEN; }
 
 	// Load JNI_CreateJavaVM function.
 	debug("LOADING JNI_CreateJavaVM");
@@ -474,12 +161,7 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 }
 
 int main(const int argc, const char *argv[]) {
-#ifdef WIN32
-	const char *jaunch_exe = "jaunch.exe";
-#else
-	const char *jaunch_exe = "jaunch";
-#endif
-	const char *command = path(argc == 0 ? NULL : argv[0], jaunch_exe);
+	const char *command = path(argc == 0 ? NULL : argv[0], JAUNCH_EXE);
 	if (command == NULL) {
 		error("command path");
 		return ERROR_COMMAND_PATH;
