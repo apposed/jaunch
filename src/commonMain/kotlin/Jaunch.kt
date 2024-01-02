@@ -1,3 +1,5 @@
+import kotlin.math.min
+
 typealias JaunchOptions = Map<String, JaunchOption>
 
 fun main(args: Array<String>) {
@@ -191,20 +193,30 @@ fun main(args: Array<String>) {
     for (rootPath in rootPaths) {
         debug("Analyzing candidate root directory: '", rootPath, "'")
         val javaCandidate = JavaInstallation(rootPath, constraints)
-        if (!javaCandidate.conforms) continue
-
-        // Installation looks good! Moving on.
-        java = javaCandidate
-        debug("jvmRootPath -> ", java.rootPath)
-        debug("libjvmPath -> ", java.libjvmPath ?: "<null>")
-        debug("binJava -> ", java.binJava ?: "<null>")
-        break
+        if (javaCandidate.conforms) {
+            // Installation looks good! Moving on.
+            java = javaCandidate
+            break
+        }
     }
     if (java == null) error("No Java installation found.")
+    debug("* jvmRootPath -> ", java.rootPath)
+    debug("* libjvmPath -> ", java.libjvmPath ?: "<null>")
+    debug("* binJava -> ", java.binJava ?: "<null>")
 
     // Execute the print-java-home and/or print-java-info directive.
     if ("print-java-home" in directives) printlnErr(java.rootPath)
     if ("print-java-info" in directives) printlnErr(java.toString())
+
+    // Apply JAVA: hints.
+    val mv = java.majorVersion
+    if (mv != null) {
+        hints += "JAVA:$mv"
+        // If Java version is OVER 9000, something went wrong in the parsing.
+        // Let's not explode the hints set with too many bogus values.
+        for (v in 0..min(mv, 9000)) hints += "JAVA:$v+"
+    }
+    debug("* hints -> ", hints)
 
     // Calculate classpath.
     val rawClasspath = calculate(config.classpath, hints, vars)

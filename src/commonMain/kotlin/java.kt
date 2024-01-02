@@ -54,6 +54,29 @@ class JavaInstallation(
     val sysProps: Map<String, String>? by lazy { askJavaForSystemProperties() }
     val conforms: Boolean by lazy { checkConstraints() }
 
+    /**
+     * Gets the major version digit (i.e. "Java product version") of the Java installation.
+     * For versions 1.8 and prior, the second digit is returned:
+     *
+     * * 1.0.x -> 0
+     * * 1.1.x -> 1
+     * * 1.2.x -> 2
+     * * ...
+     * * 1.8.x -> 8
+     * * 9.x.y -> 9
+     * * 10.x.y -> 10
+     * * 11.x.y -> 11
+     * * etc.
+     */
+    val majorVersion: Int?
+        get() {
+            val digits = versionDigits(version ?: return null)
+            if (digits.isEmpty()) return null
+            var major = digits[0]
+            if (major == 1 && digits.size > 1) major = digits[1] // e.g. 1.8 -> 8
+            return major
+        }
+
     override fun toString(): String {
         return listOf(
             "root: $rootPath",
@@ -277,10 +300,13 @@ fun compareVersions(v1: String, v2: String?): Int {
     if (v2 == null) return 0 // Hacky but effective.
 
     // Extract the list of digits for each version.
-    val re = Regex("\\d+")
-    val digits1 = re.findAll(v1).map { it.value.toLong() }.toList()
-    val digits2 = re.findAll(v2).map { it.value.toLong() }.toList()
+    val digits1 = versionDigits(v1)
+    val digits2 = versionDigits(v2)
 
     // Compare digit by digit.
     return digits1.zip(digits2).map { (e1, e2) -> e1.compareTo(e2) }.firstOrNull { it != 0 } ?: 0
+}
+
+fun versionDigits(v: String): List<Int> {
+    return Regex("\\d+").findAll(v).map { it.value.toInt() }.toList()
 }

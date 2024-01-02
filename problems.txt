@@ -1,7 +1,5 @@
 In decreasing order of severity:
 
-The `JAVA:` hints are not yet implemented.
-
 The `${app-dir}` special variable is not yet populated.
 It needs to be set to the directory containing the launcher executable.
 
