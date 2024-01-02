@@ -266,10 +266,10 @@ allow-weird-jvms = true
 #   version 1.8.0_XYZ -- which is also written as 8.0_XYZ or 8.0.XYZ -- is
 #   frequently expressed as 8uXYZ.
 #
-# * With the release of Java 9, the '1.' prefix was officially dropped (finally!).
+# * With the release of Java 9, the '1.' prefix was finally officially dropped.
 #
-# * Still, for backwards compatibility with old assumptions, you might still see
-#   a '1.' here or there, such as the /usr/lib/jvm folder on Debian/Ubuntu.
+# * Nonetheless, for backwards compatibility with old assumptions, you might still
+#   see a '1.' here or there, such as the /usr/lib/jvm folder on Debian/Ubuntu.
 #
 # You can read more details at https://en.wikipedia.org/wiki/Java_version_history.
 #
@@ -438,7 +438,7 @@ arch-aliases = [
 # * More complex version filtering rules, e.g. multiple version exclusion ranges.
 #
 # Implementing such additional criteria will be done according to user demand.
-# If you need these, pull requests are welcome: https://github.com/scijava/jaunch
+# If you need these, open an issue: https://github.com/scijava/jaunch/issues/new
 
 # ==============================================================================
 # Paths to check for Java installations.
@@ -482,7 +482,7 @@ arch-aliases = [
 #     '!--system|OS:LINUX|ARCH:X64|java/linux64',
 #
 # The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path
-# of java/linux64 will only be considered on 64-bit Windows systems, and only
+# of java/linux64 will only be considered on 64-bit Linux systems, and only
 # when the --system option was *not* given as part of the launcher invocation.
 #
 # This is also the first field where we see Jaunch's variables in use:
