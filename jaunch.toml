@@ -538,8 +538,17 @@ root-paths = [
 # then Jaunch will check the path /the-best-jvm/lib/server/libjvm.so for the
 # library. If found, we have a winning Java installation!
 #
-# Perusing the list below, you may notice several entries beginning with jre/.
-# This nested jre/ folder is only present up to Java 8, nothing after.
+# For macOS, the reason to prefer libjli.dylib over libjvm.dylib is that if
+# one dynamically loads libjvm.dylib via dlopen(), macOS helpfully pops up a
+# dialog box instructing the user to install Apple Java 6. At least: it did
+# so for many years, including for several OS versions where Apple Java 6 no
+# longer functioned properly. While it is possible that Apple has since changed
+# this problematic behavior, we keep using libjli.dylib because it still works,
+# and definitely avoids the problem on systems where that behavior is present.
+# Related reading: https://bugs.openjdk.org/browse/JDK-8064542
+#
+# Finally, perusing the list below, you may notice several entries beginning
+# with jre/. This nested folder is only present up to Java 8, nothing after.
 libjvm-suffixes = [
     'OS:LINUX|lib/server/libjvm.so',           # Java 9+
     'OS:LINUX|jre/lib/amd64/server/libjvm.so', # Java 8 (64-bit)
@@ -608,11 +617,14 @@ modes = []
 #                     the folder containing the launcher.
 #
 # When a directive gets activated, Jaunch's default launching behavior is disabled.
-# So when you run e.g. ./fizz-buzz --help, you'll see the usage text printed out,
+# So when you run e.g. `./fizz-buzz --help`, you'll see the usage text printed out,
 # but no Java will be launched.
 #
-# If you need to support other directives besides those above, you'll have to hack the
-# configurator source code to include them, and also write rules here in the TOML.
+# If you need to support other directives besides those above, you'll have to hack
+# the Kotlin source code to include them, and also write rules here in the TOML.
+#
+# But if you simply want to disable e.g. Jaunch's built-in help, you can safely
+# remove the `--help` and `-h` lines below to do so.
 directives = [
   '--help|help',
   '-h|help',
