@@ -7,14 +7,15 @@ fun main(args: Array<String>) {
     val theArgs = if (args.isEmpty()) stdinLines() else args
     // The first argument is the path to the calling executable.
     val executable = theArgs.getOrNull(0)
-    debug("executable -> ", executable ?: "<null>")
     // Subsequent arguments were specified by the user.
     val inputArgs = theArgs.slice(1..<theArgs.size)
-    debug("inputArgs -> ", inputArgs)
 
     // Discern the directory containing this program.
     val exeFile = executable?.let(::File)
     val exeDir = exeFile?.directoryPath ?: "."
+
+    debug("inputArgs -> ", inputArgs)
+    debug("executable -> ", executable ?: "<null>")
     debug("exeDir -> ", exeDir)
 
     // Load the configuration from the TOML files.
@@ -166,12 +167,14 @@ fun main(args: Array<String>) {
 
     // Calculate all the places to search for Java.
     val rootPaths = calculate(config.rootPaths, hints, vars).flatMap { glob(it) }.toSet()
+
     debug()
     debug("Root paths to search for Java:")
     rootPaths.forEach { debug("* ", it) }
 
     // Calculate all the places to look for the JVM library.
     val libjvmSuffixes = calculate(config.libjvmSuffixes, hints, vars)
+
     debug()
     debug("Suffixes to check for libjvm:")
     libjvmSuffixes.forEach { debug("* ", it) }
@@ -204,10 +207,6 @@ fun main(args: Array<String>) {
     debug("* libjvmPath -> ", java.libjvmPath ?: "<null>")
     debug("* binJava -> ", java.binJava ?: "<null>")
 
-    // Execute the print-java-home and/or print-java-info directive.
-    if ("print-java-home" in directives) printlnErr(java.rootPath)
-    if ("print-java-info" in directives) printlnErr(java.toString())
-
     // Apply JAVA: hints.
     val mv = java.majorVersion
     if (mv != null) {
@@ -217,6 +216,10 @@ fun main(args: Array<String>) {
         for (v in 0..min(mv, 9000)) hints += "JAVA:$v+"
     }
     debug("* hints -> ", hints)
+
+    // Execute the print-java-home and/or print-java-info directive.
+    if ("print-java-home" in directives) printlnErr(java.rootPath)
+    if ("print-java-info" in directives) printlnErr(java.toString())
 
     // Calculate classpath.
     val rawClasspath = calculate(config.classpath, hints, vars)
@@ -256,6 +259,8 @@ fun main(args: Array<String>) {
     }
 
     // Calculate main class.
+    debug()
+    debug("Calculating main class name...")
     val mainClassNames = calculate(config.mainClasses, hints, vars)
     val mainClassName = if (mainClassNames.isEmpty()) null else mainClassNames.first()
     debug("mainClassName -> ", mainClassName ?: "<null>")
@@ -270,6 +275,7 @@ fun main(args: Array<String>) {
     if ("dry-run" in directives) dryRun(java, jvmArgs, mainClassName, mainArgs)
 
     // Emit final configuration.
+    debug()
     debug("Emitting final configuration to stdout...")
     println(nativeDirective)
     println(java.libjvmPath!!)
@@ -292,6 +298,8 @@ private fun calculateMaxHeap(maxHeap: String?): String? {
         return null
     }
 
+    debug()
+    debug("Calculating max heap (", maxHeap, ")...")
     val memInfo = memInfo()
     if (memInfo.total == null) {
         warn("Cannot determine total memory -- ignoring max-heap value '", maxHeap, "'")
@@ -300,17 +308,10 @@ private fun calculateMaxHeap(maxHeap: String?): String? {
     else debug("System reported memTotal of ", memInfo.total.toString())
 
     val kbValue = (percent * memInfo.total!! / 100 / 1024).toInt()
-    if (kbValue <= 9999) {
-        debug("Calculated maxHeap of ", kbValue, " KB")
-        return "${kbValue}k"
-    }
+    if (kbValue <= 9999) return "${kbValue}k"
     val mbValue = kbValue / 1024
-    if (mbValue <= 9999) {
-        debug("Calculated maxHeap of ", mbValue, " MB")
-        return "${mbValue}m"
-    }
+    if (mbValue <= 9999) return "${mbValue}m"
     val gbValue = mbValue / 1024
-    debug("Calculated maxHeap of ", gbValue, " GB")
     return "${gbValue}g"
 }
 
