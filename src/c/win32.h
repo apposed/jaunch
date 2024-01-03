@@ -82,6 +82,7 @@ int run_command(const char *command,
 
 	// Close the stdin write handle to signal end of input
 	CloseHandle(stdinWrite);
+	debug("run_command: closed jaunch stdin pipe");
 
 	// Read from the child process's stdout
 	char buffer[1024];
@@ -105,6 +106,7 @@ int run_command(const char *command,
 
 	// Close handles
 	CloseHandle(stdoutRead);
+	debug("run_command: closed jaunch stdout pipe");
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 

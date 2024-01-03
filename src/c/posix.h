@@ -72,7 +72,6 @@ int run_command(const char *command,
 		if (outputBuffer == NULL) { error("malloc"); return ERROR_MALLOC; }
 
 		while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
-			debug("run_command: got %d bytes from jaunch", strlen(buffer));
 			if (totalBytesRead + bytesRead > bufferSize) {
 				bufferSize *= 2;
 				outputBuffer = realloc(outputBuffer, bufferSize);
@@ -84,6 +83,7 @@ int run_command(const char *command,
 
 		// Close the read end of stdout
 		close(stdoutPipe[0]);
+		debug("run_command: closed jaunch stdout pipe");
 
 		// Wait for the child process to finish
 		if (waitpid(pid, NULL, 0) == -1) { error("Failed waiting for Jaunch termination"); return ERROR_WAITPID; }
