@@ -34,6 +34,7 @@ void error(const char *fmt, ...) {
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fputc('\n', stderr);
+	fflush(stderr);
 }
 
 void debug(const char *fmt, ...) {
@@ -50,18 +51,18 @@ void debug(const char *fmt, ...) {
 
 /* Splits an output buffer into lines. */
 int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
-    size_t lineCount = 0;
-    char *token = strtok(buffer, delim);
-    while (token != NULL) {
-        *output = realloc(*output, (lineCount + 1) * sizeof(char *));
-        if (*output == NULL) { error("Memory reallocation failed"); return ERROR_REALLOC; }
-        (*output)[lineCount] = strdup(token);
-        if ((*output)[lineCount] == NULL) { error("String duplication failed"); return ERROR_STRDUP; }
-        lineCount++;
-        token = strtok(NULL, delim);
-    }
-
-    *numOutput = lineCount;
+	size_t lineCount = 0;
+	char *token = strtok(buffer, delim);
+	while (token != NULL) {
+		*output = realloc(*output, (lineCount + 1) * sizeof(char *));
+		if (*output == NULL) { error("Memory reallocation failed"); return ERROR_REALLOC; }
+		(*output)[lineCount] = strdup(token);
+		if ((*output)[lineCount] == NULL) { error("String duplication failed"); return ERROR_STRDUP; }
+		lineCount++;
+		token = strtok(NULL, delim);
+	}
+	*numOutput = lineCount;
+	return SUCCESS;
 }
 
 #endif
