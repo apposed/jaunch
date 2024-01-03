@@ -11,7 +11,7 @@ actual fun execute(command: String): List<String>? {
         val buffer = allocArray<ByteVar>(BUFFER_SIZE)
         while (true) {
             val line = fgets(buffer, BUFFER_SIZE, process) ?: break
-            stdout += line.toKString()
+            stdout += line.toKString().replace(Regex("(\\r\\n|\\n)$"), "")
         }
     }
     pclose(process)
