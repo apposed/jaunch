@@ -80,7 +80,6 @@ class JavaTest {
             "ibm-semeru-open-jdk_x64_linux_17.0.9_9_openj9-0.41.0" to "17.0.9_9",
             "ibm-semeru-open-jdk_x64_linux_20.0.2_9_openj9-0.40.0" to "20.0.2_9",
             "ibm-semeru-open-jre_x64_linux_17.0.9_9_openj9-0.41.0" to "17.0.9_9",
-            "OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12" to "21.0.1_12",
             "jdk_zulu_11_x64" to "11",
             "jdk_zulu_14_x64" to "14",
             "jdk_zulu_8_x64" to "1.8",
