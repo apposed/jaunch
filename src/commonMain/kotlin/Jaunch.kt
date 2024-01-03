@@ -5,10 +5,15 @@ typealias JaunchOptions = Map<String, JaunchOption>
 fun main(args: Array<String>) {
     // If arguments were not given on the CLI, read them from stdin.
     val theArgs = if (args.isEmpty()) stdinLines() else args
+
     // The first argument is the path to the calling executable.
     val executable = theArgs.getOrNull(0)
+
     // Subsequent arguments were specified by the user.
     val inputArgs = theArgs.slice(1..<theArgs.size)
+
+    // Enable debug mode when --debug flag is present.
+    debug_mode = inputArgs.contains("--debug")
 
     // Discern the directory containing this program.
     val exeFile = executable?.let(::File)

@@ -161,6 +161,10 @@ int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_a
 }
 
 int main(const int argc, const char *argv[]) {
+	// Enable debug mode when --debug is an argument.
+	for (size_t i = 0; i < argc; i++)
+		if (strcmp(argv[i], "--debug") == 0) debug_mode = 1;
+
 	const char *command = path(argc == 0 ? NULL : argv[0], JAUNCH_EXE);
 	if (command == NULL) {
 		error("command path");

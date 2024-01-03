@@ -1,6 +1,6 @@
-private val DEBUG = true // getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
+var debug_mode = getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
 
-fun debug(vararg args: Any) { if (DEBUG) report("DEBUG", *args) }
+fun debug(vararg args: Any) { if (debug_mode) report("DEBUG", *args) }
 
 fun debugList(message: String, items: Collection<String>) {
     debug()

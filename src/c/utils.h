@@ -24,6 +24,8 @@
 #define ERROR_MAIN_ARGC_TOO_LARGE 18
 #define ERROR_UNKNOWN_DIRECTIVE 19
 
+int debug_mode = 0;
+
 // -- Helper functions --
 
 void error(const char *fmt, ...) {
@@ -35,7 +37,7 @@ void error(const char *fmt, ...) {
 }
 
 void debug(const char *fmt, ...) {
-	//if (!debug_mode) return;
+	if (!debug_mode) return;
 	va_list ap;
 	int i;
 	va_list nothing;
