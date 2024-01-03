@@ -94,7 +94,6 @@ int run_command(const char *command,
 	if (outputBuffer == NULL) { error("malloc"); return ERROR_MALLOC; }
 
 	while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
-		debug("run_command: got %d bytes from jaunch", strlen(buffer));
 		if (totalBytesRead + bytesRead > bufferSize) {
 			bufferSize *= 2;
 			outputBuffer = realloc(outputBuffer, bufferSize);
