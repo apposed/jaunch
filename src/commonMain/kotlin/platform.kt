@@ -22,3 +22,7 @@ val OS_NAME = Platform.osFamily.name
 
 @OptIn(ExperimentalNativeApi::class)
 val CPU_ARCH = Platform.cpuArchitecture.name
+
+fun userHome(): String {
+    return USER_HOME ?: throw IllegalArgumentException("Cannot get user's home directory")
+}

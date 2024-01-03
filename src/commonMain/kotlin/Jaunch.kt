@@ -15,24 +15,24 @@ fun main(args: Array<String>) {
     // Enable debug mode when --debug flag is present.
     debug_mode = inputArgs.contains("--debug")
 
-    // Discern the directory containing this program.
-    val exeFile = executable?.let(::File)
-    val exeDir = exeFile?.directoryPath ?: "."
+    // Discern important directories.
+    val exeFile = executable?.let(::File) // The native launcher program.
+    val appDir = exeFile?.dir ?: File(".")
+    val configDir = appDir
 
     debug("inputArgs -> ", inputArgs)
     debug("executable -> ", executable ?: "<null>")
-    debug("exeDir -> ", exeDir)
+    debug("appDir -> ", appDir)
+    debug("configDir -> ", configDir)
 
     // Load the configuration from the TOML files.
-    var config = readConfig("$exeDir${SLASH}jaunch.toml")
+    var config = readConfig(configDir / "jaunch.toml")
     if (exeFile != null) {
         // Parse and merge the app-specific TOML file as well.
-        config += readConfig("${exeFile.withoutSuffix}.toml")
+        config += readConfig(configDir / "${exeFile.base.name}.toml")
     }
 
-    val programName = config.programName ?:
-        executable?.let(::File)?.name?.let(::File)?.withoutSuffix ?:
-        "Jaunch"
+    val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
 
     // Parse the configuration's declared Jaunch options.
@@ -68,7 +68,10 @@ fun main(args: Array<String>) {
 
     // Declare a set to store option parameter values.
     // It will be populated at argument parsing time.
-    val vars = mutableMapOf<String, String>()
+    val vars = mutableMapOf<String, String>(
+        // Special variable containing path to the application.
+        "app-dir" to appDir.path,
+    )
 
     // Declare the authoritative lists of JVM arguments and main arguments.
     // At the end of the configuration process, we will emit these to stdout.
@@ -171,7 +174,8 @@ fun main(args: Array<String>) {
     if ("help" in directives) help(executable, programName, supportedOptions)
 
     // Calculate all the places to search for Java.
-    val rootPaths = calculate(config.rootPaths, hints, vars).flatMap { glob(it) }.toSet()
+    val rootPaths = calculate(config.rootPaths, hints, vars).
+        flatMap { glob(it) }.filter { File(it).isDirectory }.toSet()
 
     debug()
     debug("Root paths to search for Java:")

@@ -1,42 +1,28 @@
-@file:OptIn(ExperimentalForeignApi::class)
-
 import kotlinx.cinterop.*
 import platform.windows.*
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class File actual constructor(private val thePath: String) {
+actual class File actual constructor(private val rawPath: String) {
 
-    actual val path: String
-        get() {
-            // TODO: How can we make this DRY with the identical version in posixMain?
-            return if (thePath.startsWith("~"))
-                "$USER_HOME${thePath.substring(1)}" else thePath
-        }
+    actual val path: String = canonicalize(rawPath)
 
-    actual val absolutePath: String
-        get() {
-            return path // FIXME
-        }
+    actual val exists: Boolean get() = GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES
 
-    actual val exists: Boolean
-        get() {
-            val fileAttributes = GetFileAttributesA(path)
-            return fileAttributes != INVALID_FILE_ATTRIBUTES &&
-                    (fileAttributes and FILE_ATTRIBUTE_DIRECTORY.toUInt()) == 0u
-        }
+    actual val isFile: Boolean get() = isMode(FILE_ATTRIBUTE_NORMAL)
 
-    actual val isFile: Boolean
-        get() = isMode(FILE_ATTRIBUTE_NORMAL)
-
-    actual val isDirectory: Boolean
-        get() = isMode(FILE_ATTRIBUTE_DIRECTORY)
+    actual val isDirectory: Boolean get() = isMode(FILE_ATTRIBUTE_DIRECTORY)
 
     private fun isMode(modeBits: Int): Boolean {
-        val fileAttributes = GetFileAttributesA(path)
-        return fileAttributes != INVALID_FILE_ATTRIBUTES && (fileAttributes and modeBits.toUInt()) != 0u
+        val attrs = GetFileAttributesA(path)
+        return attrs != INVALID_FILE_ATTRIBUTES && (attrs.toInt() and modeBits) != 0
     }
 
-    actual fun listFiles(): List<File> {
+    actual val isRoot: Boolean =
+        // Is it a drive letter plus backslash (e.g. `C:\`)?
+        path.length == 3 && (path[0] in 'a'..'z' || path[0] in 'A'..'Z') && path[1] == ':' && path[2] == '\\'
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun ls(): List<File> {
         if (!isDirectory) throw IllegalArgumentException("Not a directory: $path")
 
         val files = mutableListOf<File>()
@@ -62,7 +48,8 @@ actual class File actual constructor(private val thePath: String) {
         return files
     }
 
-    actual fun readLines(): List<String> {
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun lines(): List<String> {
         val lines = mutableListOf<String>()
 
         memScoped {
@@ -101,5 +88,26 @@ actual class File actual constructor(private val thePath: String) {
 
     override fun toString(): String {
         return path
+    }
+}
+@OptIn(ExperimentalForeignApi::class)
+private fun canonicalize(path: String): String {
+    if (path.isEmpty()) return canonicalize(".")
+
+    // Expand leading tilde to user's home directory.
+    val p = when {
+        path == "~" -> userHome()
+        path.startsWith("~$SLASH") -> userHome() + path.substring(1)
+        path.startsWith("~") -> throw IllegalArgumentException("Tilde expansion for named users is unsupported")
+        else -> path
+    }
+
+    val bufferLength = MAX_PATH
+    memScoped {
+        val buffer = allocArray<UShortVar>(bufferLength)
+        val fullPathLength = GetFullPathName?.let { it(p.wcstr.ptr, bufferLength.toUInt(), buffer, null) } ?:
+            throw RuntimeException("GetFullPathName function not available")
+        if (fullPathLength == 0u) throw RuntimeException("Failed to get full path: ${GetLastError()}")
+        return buffer.toKString()
     }
 }

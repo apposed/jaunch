@@ -2,15 +2,14 @@ import com.akuleshov7.ktoml.TomlInputConfig
 import com.akuleshov7.ktoml.file.TomlFileReader
 import kotlinx.serialization.serializer
 
-fun readConfig(tomlPath: String): JaunchConfig {
-    debug("Reading config file: $tomlPath");
-    val tomlFile = File(tomlPath)
+fun readConfig(tomlFile: File): JaunchConfig {
+    debug("Reading config file: $tomlFile");
     if (!tomlFile.exists) return JaunchConfig()
     return TomlFileReader(
         inputConfig = TomlInputConfig(
             ignoreUnknownNames = true,
         )
-    ).decodeFromFile(serializer(), tomlPath)
+    ).decodeFromFile(serializer(), tomlFile.path)
 }
 
-val BUFFER_SIZE = 65536
+const val BUFFER_SIZE = 65536

@@ -1,33 +1,34 @@
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class FileTest {
     @Test
     fun testBasics() {
-        val file = File("path${SLASH}to${SLASH}hello.txt")
+        val file = File("path") / "to" / "hello.txt"
         assertEquals("hello.txt", file.name)
         assertEquals("txt", file.suffix)
-        assertEquals("path${SLASH}to${SLASH}hello", file.withoutSuffix)
-        assertEquals("path${SLASH}to", file.directoryPath)
+        assertTrue(file.base.path.endsWith("${SLASH}path${SLASH}to${SLASH}hello"))
+        assertTrue(file.dir.path.endsWith("${SLASH}path${SLASH}to"))
     }
 
     @Test
     fun testCwd() {
-        val cwd = File(".")
-        assertTrue(cwd.exists)
-        assertTrue(cwd.isDirectory)
-        assertFalse(cwd.isFile)
+        for (p in listOf(".", "")) {
+            val cwd = File(p)
+            assertTrue(cwd.exists)
+            assertTrue(cwd.isDirectory)
+            assertFalse(cwd.isFile)
+            assertFalse(cwd.isRoot) // Won't happen in practice.
+        }
     }
 
     @Test
     fun testUserHome() {
         val userHome = File("~")
-        assertEquals(userHome.path, USER_HOME)
+        assertEquals(USER_HOME, userHome.path)
         assertTrue(userHome.exists)
         assertTrue(userHome.isDirectory)
         assertFalse(userHome.isFile)
+        assertFalse(userHome.isRoot)
     }
 
     @Test
@@ -36,7 +37,16 @@ class FileTest {
         assertFalse(nonExistent.exists)
         assertFalse(nonExistent.isDirectory)
         assertFalse(nonExistent.isFile)
+        assertFalse(nonExistent.isRoot)
     }
 
-    // TODO: Test root dir ("/") and empty string ("").
+    @Test
+    fun testRootDir() {
+        val rootDir = File(SLASH)
+        assertTrue(rootDir.exists)
+        assertFalse(rootDir.isFile)
+        assertTrue(rootDir.isDirectory)
+        assertTrue(rootDir.isRoot)
+        assertFailsWith<IllegalArgumentException>("Root directory has no parent") { rootDir.dir }
+    }
 }

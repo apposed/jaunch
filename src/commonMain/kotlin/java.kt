@@ -139,7 +139,7 @@ class JavaInstallation(
 
         val releaseFile = File("$rootPath/release")
         if (!releaseFile.exists) return null
-        return linesToMap(releaseFile.readLines(), "=", stripQuotes=true)
+        return linesToMap(releaseFile.lines(), "=", stripQuotes=true)
     }
 
     /** Calls `java Props` to harvest system properties from the horse's mouth. */

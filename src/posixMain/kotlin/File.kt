@@ -1,68 +1,48 @@
-@file:OptIn(ExperimentalForeignApi::class)
-
 import kotlinx.cinterop.*
 import platform.posix.*
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class File actual constructor(private val thePath: String) {
+actual class File actual constructor(private val rawPath: String) {
 
-    actual val path: String
-        get() {
-            return if (thePath.startsWith("~"))
-                "$USER_HOME${thePath.substring(1)}" else thePath
-        }
+    actual val path: String = canonicalize(rawPath)
+    actual val exists: Boolean get() = access(path, F_OK) == 0
+    actual val isFile: Boolean get() = isMode(S_IFREG)
+    actual val isDirectory: Boolean get() = isMode(S_IFDIR)
+    actual val isRoot: Boolean = path == SLASH
 
-    actual val absolutePath: String
-        get() {
-            return path // FIXME
-        }
-
-    actual val exists: Boolean
-        get() {
-            return access(path, F_OK) == 0
-        }
-
-    actual val isFile: Boolean
-        get() {
-            return isMode(S_IFREG)
-        }
-
-    actual val isDirectory: Boolean
-        get() {
-            return isMode(S_IFDIR)
-        }
-
+    @OptIn(ExperimentalForeignApi::class)
     private fun isMode(modeBits: Int): Boolean {
         val statResult = memScoped {
             val statResult = alloc<stat>()
             stat(path, statResult.ptr)
             statResult
         }
-        return (statResult.st_mode.toUInt() and modeBits.toUInt()) != 0u
+        return (statResult.st_mode.toInt() and modeBits) != 0
     }
 
-    actual fun listFiles(): List<File> {
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun ls(): List<File> {
         if (!isDirectory) throw IllegalArgumentException("Not a directory: $path")
 
-        val directory = opendir(path) ?: throw IllegalArgumentException("Cannot open directory")
+        val directory = opendir(path) ?: throw IllegalArgumentException("Failed to open directory")
         val files = mutableListOf<File>()
 
         try {
             while (true) {
                 val entry = readdir(directory) ?: break
                 val name = entry.pointed.d_name.toKString()
-                if (name != "." && name != "..") {
-                    files.add(File("$path/$name"))
-                }
+                if (name != "." && name != "..") files.add(File("$path/$name"))
             }
-        } finally {
+        }
+        finally {
             closedir(directory)
         }
 
         return files
     }
 
-    actual fun readLines(): List<String> {
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun lines(): List<String> {
         val lines = mutableListOf<String>()
         memScoped {
             val file = fopen(path, "r") ?: throw RuntimeException("Failed to open file")
@@ -83,4 +63,36 @@ actual class File actual constructor(private val thePath: String) {
     override fun toString(): String {
         return path
     }
+
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun canonicalize(path: String): String {
+    var p = path
+
+    // Expand leading tilde to user's home directory.
+    if (p == "~") p = userHome()
+    else if (p.startsWith("~$SLASH")) p = userHome() + p.substring(1)
+    else if (p.startsWith("~")) throw IllegalArgumentException("Tilde expansion for named users is unsupported")
+
+    // Prepend CWD to relative path.
+    if (!p.startsWith(SLASH)) {
+        val cwd = getcwd(null, 0u)?.toKString() ?:
+            throw RuntimeException("Failed to get current working directory")
+        p = "$cwd$SLASH$p"
+    }
+
+    // Split now-absolute path into components.
+    val components = p.split(SLASH)
+
+    // Canonicalize the components.
+    val canonical = mutableListOf<String>()
+    for (component in components) {
+        when (component) {
+            "", "." -> {} // Skip empty components and current directory references.
+            ".." -> if (canonical.isNotEmpty()) canonical.removeLast() // Go up a directory.
+            else -> canonical.add(component) // Regular component.
+        }
+    }
+    return SLASH + canonical.joinToString(SLASH)
 }
