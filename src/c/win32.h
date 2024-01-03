@@ -111,10 +111,10 @@ int run_command(const char *command,
 	CloseHandle(pi.hThread);
 
 	// Return the output buffer and the number of lines
-    *output = NULL;
-    *numOutput = 0;
-    int split_result = SUCCESS;
-    if (totalBytesRead > 0) split_result = split_lines(outputBuffer, "\r\n", output, numOutput);
+	*output = NULL;
+	*numOutput = 0;
+	int split_result = SUCCESS;
+	if (totalBytesRead > 0) split_result = split_lines(outputBuffer, "\r\n", output, numOutput);
 	free(outputBuffer);
 	return split_result;
 }
