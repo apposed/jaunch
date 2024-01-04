@@ -3,7 +3,7 @@
 
 #include "utils.h"
 
-const char* JAUNCH_EXE = "jaunch -";
+const char* JAUNCH_EXE = "jaunch";
 
 int run_command(const char *command,
 	const char *input[], size_t numInput,
@@ -35,7 +35,7 @@ int run_command(const char *command,
 		close(stdoutPipe[1]);
 
 		// Execute the command
-		execlp(command, command, (char *)NULL);
+		execlp(command, command, "-", (char *)NULL);
 
 		// If execlp fails
 		error("execlp");
