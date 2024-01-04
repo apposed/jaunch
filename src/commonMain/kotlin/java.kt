@@ -17,11 +17,11 @@ data class JavaConstraints(
  *
  * The heuristics consist of three increasingly aggressive techniques:
  *
- * 1. Look for keyword tokens in the root directory name. Fast but fragile.
+ * 1. Look for keyword tokens in the JVM directory name. Fast but fragile.
  *
  * 2. Look inside the `$rootPath/release` file for useful keys such as
  *    IMPLEMENTOR, IMPLEMENTOR_VERSION, JAVA_VERSION, OS_NAME, and OS_ARCH.
- *    This is more reliable than examining the root directory name, but can still fail:
+ *    This is more reliable than examining the JVM directory name, but can still fail:
  *    - Some flavors (JBRSDK 8, Corretto 8) may be missing this file.
  *    - Some flavors (JBRSDK 8, macOS Adopt 8, macOS Zulu 8) do not have IMPLEMENTOR.
  *    - Some other flavors (JBRSDK 11.0.6, macOS Adopt 9) put "N/A" for IMPLEMENTOR.
@@ -208,12 +208,12 @@ class JavaInstallation(
     }
 
     private fun guessField(aliasLines: Iterable<String>, releaseField: String, propsField: String): String? {
-        val rootDirName = File(rootPath).name.lowercase()
+        val jvmDirName = File(rootPath).name.lowercase()
         val aliasMap = aliasMap(aliasLines)
 
         val alias =
-            // Look for an alias embedded in the root directory name.
-            aliasMap.values.flatten().firstOrNull { rootDirName.contains(it) } ?:
+            // Look for an alias embedded in the JVM directory name.
+            aliasMap.values.flatten().firstOrNull { jvmDirName.contains(it) } ?:
             // Look for the field in the release file.
             releaseInfo?.get(releaseField)?.lowercase() ?:
             // Extract the field from Java's system properties.
