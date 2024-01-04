@@ -5,9 +5,6 @@ is currently too dumb to check `../..` for the Jaunch configuration.
 
 The native launcher on Windows currently pops up a Command Prompt.
 
-The `--option=value` syntax does not work; you have to write `--option value`
-as two separate arguments.
-
 Right now, there are several files that must be in the application base
 directory, including fizzbuzz.exe, jaunch.exe, jaunch.toml, fizzbuzz.toml, and
 Props.class. It would be nice if there was an option to nest these into a
