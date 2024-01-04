@@ -676,6 +676,7 @@ jvm-args = [
     '--headless|-Djava.awt.headless=true',
     '--heap|-Xmx${heap}',
     '--ext|-Djava.ext.dirs=${ext}',
+    '--debugger|-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:${debugger}',
 ]
 
 # ==============================================================================
