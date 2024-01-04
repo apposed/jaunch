@@ -1,10 +1,39 @@
+import platform.posix.exit
 import kotlin.math.min
 
 typealias JaunchOptions = Map<String, JaunchOption>
 
 fun main(args: Array<String>) {
-    // If arguments were not given on the CLI, read them from stdin.
-    val theArgs = if (args.isEmpty()) stdinLines() else args
+    if (args.isEmpty()) {
+        // Display usage message.
+        printlnErr("""
+            Hello! You have found the Jaunch configurator.
+            Your curiosity is an asset. :-)
+
+            This program is intended to be called internally by Jaunch's native
+            launcher executable. Normally, you do not need to run it yourself.
+
+            However, if you wish, you can test its behavior by passing command line
+            arguments in the same manner as you would to Jaunch's native launcher,
+            prepended by the name of the native launcher executable.
+
+            For example, if your native launcher is called fizzbuzz, you could try:
+
+                jaunch fizzbuzz --heap 2g --debugger 8000
+
+            and watch how Jaunch transforms the arguments.
+
+            You can learn similar information using Jaunch's --dry-run option:
+
+                fizzbuzz --heap 2g --debugger 8000 --dry-run
+
+            For more details, check out the jaunch.toml file. Happy Jaunching!
+        """.trimIndent())
+        exit(1)
+    }
+
+    // If a sole `-` argument was given on the CLI, read the arguments from stdin.
+    val theArgs = if (args.size == 1 && args[0] == "-") stdinLines() else args
 
     // The first argument is the path to the calling executable.
     val executable = theArgs.getOrNull(0)

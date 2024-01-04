@@ -3,7 +3,7 @@
 
 #include "utils.h"
 
-const char* JAUNCH_EXE = "jaunch";
+const char* JAUNCH_EXE = "jaunch -";
 
 int run_command(const char *command,
 	const char *input[], size_t numInput,

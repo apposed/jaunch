@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-const char* JAUNCH_EXE = "jaunch.exe";
+const char* JAUNCH_EXE = "jaunch.exe -";
 
 void dlclose(void* library) { FreeLibrary(library); }
 char* dlerror() { return "error" /*TODO: GetLastError()*/; }
