@@ -64,8 +64,8 @@ data class JaunchConfig (
     val archAliases: Array<String> = emptyArray(),
 
     /** Paths to check for Java installations. */
-    @SerialName("root-paths")
-    val rootPaths: Array<String> = emptyArray(),
+    @SerialName("jvm-root-paths")
+    val jvmRootPaths: Array<String> = emptyArray(),
 
     /** List of places within a Java installation to look for the JVM library. */
     @SerialName("libjvm-suffixes")
@@ -142,7 +142,7 @@ data class JaunchConfig (
             javaDistrosBlocked = config.javaDistrosBlocked + javaDistrosBlocked,
             osAliases = config.osAliases + osAliases,
             archAliases = config.archAliases + archAliases,
-            rootPaths = config.rootPaths + rootPaths,
+            jvmRootPaths = config.jvmRootPaths + jvmRootPaths,
             libjvmSuffixes = config.libjvmSuffixes + libjvmSuffixes,
             modes = config.modes + modes,
             directives = config.directives + directives,

@@ -469,7 +469,7 @@ arch-aliases = [
 #   - JAVA:9+ if the selected Java installation is version 9 or later.
 #   - and so on.
 #   Of course, Java hints will only be set after a Java installation matches,
-#   so they won't work here in root-paths, nor in libjvm-suffixes.
+#   so they won't work here in jvm-root-paths, nor in libjvm-suffixes.
 #   But they can be useful in the jvm-args section to ensure Jaunch passes
 #   JVM args only to those versions of the JVM that support them, such as the
 #   JPMS-related flags like --add-opens which were introduced in Java 9.
@@ -477,7 +477,7 @@ arch-aliases = [
 # Finally, a segment prefixed by a bang symbol (!) negates the hint,
 # making that line match only when that particular hint is *not* set.
 #
-# For example, consider the following root-paths line:
+# For example, consider the following jvm-root-paths line:
 #
 #     '!--system|OS:LINUX|ARCH:X64|java/linux64',
 #
@@ -495,7 +495,7 @@ arch-aliases = [
 # 
 # Similarly, variable expressions are also sourced from environment variables, so
 # the '${JAVA_HOME}' line will be populated with the JAVA_HOME environment variable.
-root-paths = [
+jvm-root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
     '!--system|OS:LINUX|ARCH:X64|java/linux64/*',
@@ -566,7 +566,7 @@ libjvm-suffixes = [
 # ==============================================================================
 # List of additional hints to enable or disable based on other hints.
 #
-# See "root-paths" above for an overview of hints.
+# See "jvm-root-paths" above for an overview of hints.
 #
 # With modes, you can set a single hint in response to several different other hints,
 # which can help to consolidate rules in other sections of the configuration.
@@ -671,7 +671,7 @@ classpath = [
 # Arguments to pass to the JVM.
 #
 # This is the magic sauce where Jaunch options and other criteria get translated
-# into JVM arguments. See the 'root-paths' section above for a thorough explanation.
+# into JVM arguments. See 'jvm-root-paths' above for a thorough explanation.
 jvm-args = [
     '--headless|-Djava.awt.headless=true',
     '--heap|-Xmx${heap}',
@@ -703,7 +703,7 @@ jvm-args = [
 #
 # This is the other half of the magic sauce, along with jvm-args above:
 # Jaunch options and other criteria get translated into main arguments here.
-# See the 'root-paths' section above for a thorough explanation.
+# See the 'jvm-root-paths' section above for a thorough explanation.
 #main-args = [
 #    '--fizz|-Dfizzbuzz.mode=fizz',
 #    '--buzz|-Dfizzbuzz.mode=buzz',

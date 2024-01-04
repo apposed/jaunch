@@ -174,12 +174,12 @@ fun main(args: Array<String>) {
     if ("help" in directives) help(executable, programName, supportedOptions)
 
     // Calculate all the places to search for Java.
-    val rootPaths = calculate(config.rootPaths, hints, vars).
+    val jvmRootPaths = calculate(config.jvmRootPaths, hints, vars).
         flatMap { glob(it) }.filter { File(it).isDirectory }.toSet()
 
     debug()
     debug("Root paths to search for Java:")
-    rootPaths.forEach { debug("* ", it) }
+    jvmRootPaths.forEach { debug("* ", it) }
 
     // Calculate all the places to look for the JVM library.
     val libjvmSuffixes = calculate(config.libjvmSuffixes, hints, vars)
@@ -202,9 +202,9 @@ fun main(args: Array<String>) {
     debug()
     debug("Discovering Java installations...")
     var java: JavaInstallation? = null
-    for (rootPath in rootPaths) {
-        debug("Analyzing candidate root directory: '", rootPath, "'")
-        val javaCandidate = JavaInstallation(rootPath, constraints)
+    for (jvmPath in jvmRootPaths) {
+        debug("Analyzing candidate JVM directory: '", jvmPath, "'")
+        val javaCandidate = JavaInstallation(jvmPath, constraints)
         if (javaCandidate.conforms) {
             // Installation looks good! Moving on.
             java = javaCandidate
