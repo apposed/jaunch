@@ -1,11 +1,21 @@
 In decreasing order of severity:
 
+The native launcher on macOS, which typically would live in Contents/MacOS,
+is currently too dumb to check `../..` for the Jaunch configuration.
+
+The native launcher on Windows currently pops up a Command Prompt.
+
 The `--option=value` syntax does not work; you have to write `--option value`
 as two separate arguments.
 
+Right now, there are several files that must be in the application base
+directory, including fizzbuzz.exe, jaunch.exe, jaunch.toml, fizzbuzz.toml, and
+Props.class. It would be nice if there was an option to nest these into a
+common subfolder such as jaunch or .jaunch.
+
 The --dry-run output on Windows works in Command Prompt, but not PowerShell,
 because PowerShell gets weird about unquoted arguments with the dot (.) symbol.
-Should the Windows --dry-run put double quotes around *every* argument? :-/
+Should the Windows --dry-run put double quotes around each argument?
 
 Jaunch's design treats options as a set, not a list. Therefore, order does not
 matter, nor does Jaunch support repeat options. E.g., when passing an option
