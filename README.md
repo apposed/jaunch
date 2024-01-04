@@ -168,15 +168,23 @@ As so often in technology, there are so many. And yet nothing that does what thi
   * Imposes its opinions on the application directory structure (e.g. jars must go in `libs` folder).
   * Standalone executable launcher does not support passing JVM arguments (e.g. `-Xmx5g` to override max heap size).
   * Always bundles a Java runtime, rather than discovering existing Java installations.
+* Example:
+  * The [QuPath](https://qupath.readthedocs.io/) project uses jpackage for its launcher.
+    * QuPath provides a configuration dialog to modify the Java maximum heap size, which it handles by editing the jpackage .cfg file on the user's behalf.
 
 ### Call `java` in its own separate process
 
-E.g., via shell scripts such as `Contents/MacOS/JavaApplicationStub`
+E.g., via shell scripts such as `Contents/MacOS/JavaApplicationStub`.
 
 * Pros:
   * Very flexible and easy to code.
 * Cons:
   * Needs OpenJDK already installed and available on the system `PATH`, and/or pointed at by `JAVA_HOME`, and/or known to `/usr/libexec/java_home` on macOS, `/usr/bin/update-java-alternatives` on Linux, etc. In a nutshell: you are doing your own discovery of OpenJDK installations.
+* Example:
+  * The [Icy](https://icy.bioimageanalysis.org/) project uses shell script launchers on macOS and Linux, and a mystery meat (AFAICT) .exe launcher on Windows.
+    * For Linux, the `java` on the system path is used.
+    * For macOS, the `java` given by `/usr/libexec/java_home -v 1.8` is used.
+    * In both cases, no arguments can be passed to the program (neither to the JVM nor to the Icy application).
 
 ### Lean on command-line tools
 
@@ -186,6 +194,54 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
   * Leave it to dedicated external code to install and manage your JDKs.
 * Cons:
   * Unfriendly to require non-technical users to run terminal commands to launch a GUI-based application.
+
+### Use a general-purpose Java launcher
+
+[install4j](https://www.ej-technologies.com/products/install4j/overview.html) by ej Technologies.
+* You can pass parameters to the JVM at runtime [via the `-J` argument prefix](https://stackoverflow.com/a/63318626/1207769).
+* Not open source.
+
+[launch4j](https://launch4j.sourceforge.net/)
+* Must choose console or GUI a priori for Windows flavor.
+* Still hosted on SourceForge.
+* Can customize JVM options at runtime, but only by editing the application's `.l4j.ini` file.
+
+### Build your own native launcher
+
+[JavaCall.jl](https://github.com/JuliaInterop/JavaCall.jl)
+* Written in Julia, permissively licensed.
+* Provides a general API for working with the JVM from Julia code.
+* Would need to build a native launcher on top of it.
+* Does not work on macOS anymore with Julia 1.6.3+.
+
+[hfhbd/jniTest](https://github.com/hfhbd/jniTest)
+* Written in Kotlin (Native/KMP application).
+* Proof of concept for loading libjvm to launch Java code from a Kotlin program.
+* Built binary is 518K.
+* Does not use dlopen/dlsym, but rather links to libjvm. See my [post on Kotlin Discuss](https://discuss.kotlinlang.org/t/27756).
+* Also links to libpthread, unlike other native launchers on this list.
+
+#### Examples
+
+[ImageJ Launcher](https://github.com/imagej/imagej-launcher)
+* Written in C.
+* Built binary is 91K.
+* Supports custom runtime arguments to both ImageJ/Fiji and the JVM.
+* Sometimes needs to re-exec with `execvp`, either itself with changes to environment variables, or the system Java.
+
+[ijp-imagej-launcher](https://github.com/ij-plugins/ijp-imagej-launcher)
+* Written in Scala.
+* Built binary is 7.8M.
+* Links to libstdc++, unlike other native launchers on this list.
+* Calls `java` in a separate process.
+
+[Why](https://github.com/AstroImageJ/Why) (AstroImageJ)
+* Written in Rust.
+* Uses [jni-rs](https://github.com/jni-rs/jni-rs) crate, which leans on the intelligent Java discovery of [java-locator](https://crates.io/crates/java-locator).
+* Built binary is 51M.
+* Minimal dynamic library dependencies.
+* Project clearly targets Windows only; I had to modify the `Cargo.toml` and `file_handler.rs` in order to compile it for Linux.
+* No stated license.
 
 ------------------------------------------------------------------------------
 
