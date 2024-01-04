@@ -211,10 +211,12 @@ allow-unrecognized-jvm-args = false
 #
 # * For that reason, Jaunch also parses the directory name of the installation, trying
 #   to extract this information. But the naming schemes across distro are also very
-#   diverse and sometimes uninformative (e.g. JBRSDK 11 for x64 Linux, which has the
-#   vague folder name of "jbrsdk" with no version, or JBRSDK 8 for Linux, which has no
-#   directory prefix at all), and of course users and packaging scripts can rename the
-#   distro root directory to anything, corrupting this information in the process.
+#   diverse and sometimes uninformative: e.g. JBRSDK 11.0.6 for x64 Linux, which has the
+#   vague folder name of "jbrsdk" with no version, or JBRSDK 11.0.8 for x64 Linux, which
+#   has the nested folder name "jbrsdk_11.0.8_x64/jbr" making the final directory name
+#   "jbr" still with no version, or JBRSDK 8 for Linux, which has no directory prefix at
+#   all. And of course users and packaging scripts can rename the JVM root directory to
+#   anything, corrupting this information in the process.
 #
 # * As a final measure, when needed, Jaunch invokes the Java installation's bin/java on
 #   a small Java program that prints out all key=value pairs of System.getProperties(),
@@ -553,7 +555,6 @@ libjvm-suffixes = [
     'OS:LINUX|lib/server/libjvm.so',           # Java 9+
     'OS:LINUX|jre/lib/amd64/server/libjvm.so', # Java 8 (64-bit)
     'OS:LINUX|jre/lib/i386/server/libjvm.so',  # Java 8 (32-bit)
-    'OS:LINUX|jbr/lib/server/libjvm.so',       # jbrsdk_11.0.8_x64
     'OS:MACOSX|lib/libjli.dylib',              # Java 12+
     'OS:MACOSX|lib/jli/libjli.dylib',          # Java 9-11
     'OS:MACOSX|jre/lib/jli/libjli.dylib',      # Java 8
