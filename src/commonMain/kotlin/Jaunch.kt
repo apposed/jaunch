@@ -35,6 +35,11 @@ fun main(args: Array<String>) {
     // If a sole `-` argument was given on the CLI, read the arguments from stdin.
     val theArgs = if (args.size == 1 && args[0] == "-") stdinLines() else args
 
+    // TODO - make it so that the "else" case for directives is an error message,
+    //  which will be shown in a dialog box on a best effort basis on the C side.
+    //  Weeelll... do we want to complexify the C code? Probably not,
+    //  UNLESS we fail to run the jaunch configurator at all...
+
     // The first argument is the path to the calling executable.
     val executable = theArgs.getOrNull(0)
 

@@ -5,7 +5,7 @@ import platform.posix.*
 actual class File actual constructor(private val rawPath: String) {
 
     actual val path: String = canonicalize(rawPath)
-    actual val exists: Boolean get() = access(path, F_OK) == 0
+    actual val exists: Boolean get() = access(path, F_OK) == 0 // TODO: IJL uses R_OK... what's the diff?
     actual val isFile: Boolean get() = isMode(S_IFREG)
     actual val isDirectory: Boolean get() = isMode(S_IFDIR)
     actual val isRoot: Boolean = path == SLASH

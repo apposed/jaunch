@@ -675,6 +675,7 @@ classpath = [
 # into JVM arguments. See 'jvm-root-paths' above for a thorough explanation.
 jvm-args = [
     '--headless|-Djava.awt.headless=true',
+    '--headless|-Dapple.awt.UIElement=true',
     '--heap|-Xmx${heap}',
     '--ext|-Djava.ext.dirs=${ext}',
     '--debugger|-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:${debugger}',
