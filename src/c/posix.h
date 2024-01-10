@@ -1,7 +1,7 @@
 #include <dlfcn.h>
 #include <sys/wait.h>
 
-#include "utils.h"
+#include "common.h"
 
 const char* JAUNCH_EXE = "jaunch";
 

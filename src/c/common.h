@@ -1,8 +1,6 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
-// -- Return codes --
-
 #define SUCCESS 0
 #define ERROR_DLOPEN 1
 #define ERROR_DLSYM 2
@@ -25,8 +23,6 @@
 #define ERROR_UNKNOWN_DIRECTIVE 19
 
 int debug_mode = 0;
-
-// -- Helper functions --
 
 void error(const char *fmt, ...) {
 	va_list ap;
