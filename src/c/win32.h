@@ -13,21 +13,16 @@ void handleError(const char* errorMessage) {
 }
 
 void writeLine(HANDLE stdinWrite, const char *input) {
-    DWORD bytesWritten;
-
-    // Calculate the length of the input string
-    size_t inputLength = strlen(input);
-
-    // Allocate memory for the string with newline
-    char *line = (char *)malloc(inputLength + 2);  // +1 for newline, +1 for null terminator
-
     // Copy the input string and add a newline
+    size_t inputLength = strlen(input);
+    char *line = (char *)malloc(inputLength + 2);  // +1 for newline, +1 for null terminator
     strcpy(line, input);
     strcat(line, "\n");
 
     // Write the string with newline to the pipe
+    DWORD bytesWritten;
     if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL))
-            handleError("Error writing to stdin");
+        handleError("Error writing to stdin");
 
     // Free allocated memory
     free(line);
