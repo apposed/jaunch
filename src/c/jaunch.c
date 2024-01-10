@@ -30,6 +30,14 @@
 
 #include "jni.h"
 
+#ifdef __linux__
+#include "linux.h"
+#endif
+
+#ifdef APPLE
+#include "macos.h"
+#endif
+
 #ifdef WIN32
 #include "win32.h"
 #else

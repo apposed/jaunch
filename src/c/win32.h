@@ -112,3 +112,8 @@ int run_command(const char *command,
     free(outputBuffer);
     return split_result;
 }
+
+void show_alert(const char *title, const char *message) {
+    MessageBox(NULL, message, title, MB_ICONERROR);
+    GetStockObject(0);
+}
