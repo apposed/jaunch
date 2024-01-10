@@ -25,40 +25,40 @@
 int debug_mode = 0;
 
 void error(const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fputc('\n', stderr);
-	fflush(stderr);
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fputc('\n', stderr);
+    fflush(stderr);
 }
 
 void debug(const char *fmt, ...) {
-	if (!debug_mode) return;
-	va_list ap;
-	int i;
-	va_list nothing;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fputc('\n', stderr);
-	fflush(stderr);
+    if (!debug_mode) return;
+    va_list ap;
+    int i;
+    va_list nothing;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fputc('\n', stderr);
+    fflush(stderr);
 }
 
 /* Splits an output buffer into lines. */
 int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
-	size_t lineCount = 0;
-	char *token = strtok(buffer, delim);
-	while (token != NULL) {
-		*output = realloc(*output, (lineCount + 1) * sizeof(char *));
-		if (*output == NULL) { error("Memory reallocation failed"); return ERROR_REALLOC; }
-		(*output)[lineCount] = strdup(token);
-		if ((*output)[lineCount] == NULL) { error("String duplication failed"); return ERROR_STRDUP; }
-		lineCount++;
-		token = strtok(NULL, delim);
-	}
-	*numOutput = lineCount;
-	return SUCCESS;
+    size_t lineCount = 0;
+    char *token = strtok(buffer, delim);
+    while (token != NULL) {
+        *output = realloc(*output, (lineCount + 1) * sizeof(char *));
+        if (*output == NULL) { error("Memory reallocation failed"); return ERROR_REALLOC; }
+        (*output)[lineCount] = strdup(token);
+        if ((*output)[lineCount] == NULL) { error("String duplication failed"); return ERROR_STRDUP; }
+        lineCount++;
+        token = strtok(NULL, delim);
+    }
+    *numOutput = lineCount;
+    return SUCCESS;
 }
 
 #endif
