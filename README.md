@@ -84,7 +84,7 @@ But jpackage is inflexible:
 
 * On Windows, a jpackage launcher must be either a console application, or a non-console
   application. It cannot be both, contingent on how the user invokes it. Whereas Jaunch
-  connects to the existing console when there is one, but not create a new one.
+  connects to the existing console when there is one, but does not create a new one.
 
 All of that said, jpackage is a very nice tool, and if it works for you, use it! But if you
 want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then read on.
@@ -131,7 +131,7 @@ TODO - describe Jaunch's architecture here.
 - The native launcher (built from jaunch.c) should be named whatever you want. E.g. fiji.exe.
 - fiji.toml is the configuration that jaunch.exe uses to decide how to behave.
   - When fiji.exe invokes jaunch.exe, it passes `fiji` to jaunch.exe.
-- In this way, there can be multiple different launchers in the same directory that all lean on the same jaunch.exe.
+- In this way, there can be multiple different launchers in the same directory that all use the same jaunch.exe.
 
 Discover available Javas from:
 - Subfolders of the application (i.e. bundled Java).
@@ -162,8 +162,7 @@ As so often in technology, there are so many. And yet nothing that does what thi
 ### jpackage
 
 * Pros:
-  * [Official tooling](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jpackage.html)
-  * Official tooling supported by the OpenJDK project.
+  * [Official tooling](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jpackage.html) supported by the OpenJDK project.
 * Cons:
   * Imposes its opinions on the application directory structure (e.g. jars must go in `libs` folder).
   * Standalone executable launcher does not support passing JVM arguments (e.g. `-Xmx5g` to override max heap size).
