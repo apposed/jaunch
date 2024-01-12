@@ -198,12 +198,16 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
 
 [install4j](https://www.ej-technologies.com/products/install4j/overview.html) by ej Technologies.
 * You can pass parameters to the JVM at runtime [via the `-J` argument prefix](https://stackoverflow.com/a/63318626/1207769).
-* Not open source.
+* Closed source.
 
 [launch4j](https://launch4j.sourceforge.net/)
 * Must choose console or GUI a priori for Windows flavor.
 * Still hosted on SourceForge.
 * Can customize JVM options at runtime, but only by editing the application's `.l4j.ini` file.
+
+[WinRun4J](https://github.com/poidasmith/winrun4j)
+* Windows only.
+* [Unmaintained](https://github.com/poidasmith/winrun4j/issues/102) since 2018.
 
 ### Build your own native launcher
 
@@ -217,7 +221,7 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
 * Written in Kotlin (Native/KMP application).
 * Proof of concept for loading libjvm to launch Java code from a Kotlin program.
 * Built binary is 518K.
-* Does not use dlopen/dlsym, but rather links to libjvm. See my [post on Kotlin Discuss](https://discuss.kotlinlang.org/t/27756).
+* Does not use `dlopen`/`dlsym`, but rather links to libjvm. See my [post on Kotlin Discuss](https://discuss.kotlinlang.org/t/27756).
 * Also links to libpthread, unlike other native launchers on this list.
 
 #### Examples
