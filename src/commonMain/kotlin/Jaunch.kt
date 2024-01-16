@@ -47,7 +47,7 @@ fun main(args: Array<String>) {
     val inputArgs = theArgs.slice(1..<theArgs.size)
 
     // Enable debug mode when --debug flag is present.
-    debug_mode = inputArgs.contains("--debug")
+    debugMode = inputArgs.contains("--debug")
 
     // Discern important directories.
     val exeFile = executable?.let(::File) // The native launcher program.
