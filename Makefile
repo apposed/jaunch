@@ -1,12 +1,5 @@
 help:
-	@echo "Available targets:\n\
-		clean            - remove build files and directories\n\
-		compile-launcher - compile the native launcher (C)\n\
-		compile-config   - compile the Jaunch configurator (Kotlin)\n\
-		compile-all      - compile native launcher and Jaunch configurator\n\
-		app              - generate example application\n\
-		test             - run automated test suite\n\
-	"
+	@bin/help.sh
 
 clean:
 	@echo -e "\n\
