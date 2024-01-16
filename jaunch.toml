@@ -506,8 +506,8 @@ jvm-root-paths = [
     '!--system|OS:MACOSX|ARCH:X64|java/macosx/*',
     '!--system|OS:WINDOWS|ARCH:X64|java\win64\*',
     '!--system|OS:WINDOWS|ARCH:X86|java\win32\*',
-    '{CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                         # Conda (openjdk 9+)
-    '{CONDA_PREFIX}/pkgs/openjdk*',                                 # Conda (openjdk 8)
+    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                        # Conda (openjdk 9+)
+    '${CONDA_PREFIX}/pkgs/openjdk*',                                # Conda (openjdk 8)
     'OS:LINUX|/usr/lib/jvm/*',                                      # Linux distro package manager (e.g. apt)
     'OS:LINUX|/var/lib/flatpak/runtime/org.freedesktop.Sdk.Extension.openjdk*/*/*/*/files/jvm/*', # Flatpak
     'OS:LINUX|/snap/openjdk/*/jdk',                                 # snap
