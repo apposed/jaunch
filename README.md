@@ -75,15 +75,15 @@ But jpackage is inflexible:
   Java. It did once, back when it was the "JavaFX packager", but based on Internet
   searches and the docs, it seems they removed this feature. So you cannot have a
   "portable application" version of your program, runnable from a USB stick across
-  multiple platforms, as long as the computer has a system installation of Java.
+  multiple platforms, leveraging the current computer's system installation of Java.
 
 * jpackage has a feature to generate multiple launchers, each with its own arguments and
   main class, which is nice. But they end up as separate executables, so you cannot have
   an option like `fizzbuzz --update` that runs a different main class. (It would be
   doable on the Java side by having a main class that always gets run, which then
-  delegates to another main class, but it's a hassle.) Whereas the design of Jaunch
-  enables a `--main-class` option so that `fizzbuzz --main-class org.example.AltClass`
-  will run `AltClass` rather than FizzBuzz's default main class.
+  delegates to another main class, but it's a hassle.) Whereas the design of Jaunch is
+  flexible enough to support a `--main-class` option so that `fizzbuzz --main-class
+  org.example.AltClass` will run `AltClass` rather than FizzBuzz's default main class.
 
 * On Windows, a jpackage launcher must be either a console application, or a non-console
   application. It cannot be both, contingent on how the user invokes it. Whereas Jaunch

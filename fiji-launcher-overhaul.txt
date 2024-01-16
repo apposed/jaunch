@@ -16,7 +16,4 @@ However, the following features of the ImageJ Launcher are no longer supported:
 * No longer supports launching versions of ImageJ2 before 2.0.0-beta-8
   (released 2014-05-16) when the component+package structure was finalized.
 
-* The --set-icon feature was not ported over. There are other tools to
-  set icons in Windows EXE files. (TODO: list the recommended tool.)
-
-* TODO: Decide about all the various net.imagej.launcher.* features...
+* TODO: Decide about all the various `net.imagej.launcher.*` features...
