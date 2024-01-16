@@ -51,8 +51,9 @@ fun main(args: Array<String>) {
 
     // Discern important directories.
     val exeFile = executable?.let(::File) // The native launcher program.
+    // TODO: on macOS, the appDir is ../.. from the exeFile.
     val appDir = exeFile?.dir ?: File(".")
-    val configDir = appDir
+    val configDir = appDir / "jaunch"
 
     debug("inputArgs -> ", inputArgs)
     debug("executable -> ", executable ?: "<null>")

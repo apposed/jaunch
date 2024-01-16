@@ -1,6 +1,8 @@
 #include <objc/objc.h>
 #include <objc/NSObjCRuntime.h>
 
+const char* JAUNCH_EXE = "../../jaunch/jaunch";
+
 void show_alert(const char *title, const char *message) {
 	// Create an NSString from the C string
 	id nsMessage = objc_msgSend((id)objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), message);

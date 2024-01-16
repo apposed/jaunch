@@ -107,6 +107,15 @@ directory structures. (It uses `readlink`.) Should Jaunch also follow symlinks
 when doing glob matching?
 TEST THIS&mdash;DOES IT ALREADY WORK ON LINUX AND MACOS?
 
+**Linux aarch64:** What about Raspberry Pi? Does KMP/Native support it?
+If so: how should the naming of executables be done? Shall we keep doing
+what Fiji/ImageJ2 has done until now, which is to append an os/arch suffix?
+jaunch-linux-x64, jaunch-linux-aarch64, jaunch-macos, jaunch-windows-x64.exe?
+And then for portable applications, symlink or copy to the current os/arch?
+There's no reason to do that for the configurator though, only for the
+native launcher executable. The native launcher should always reach out to
+a jaunch executable with matching os/arch.
+
 **Auto-enable headless mode.** The ImageJ Launcher tries to detect when
 headless mode will be required, using the following code:
 ```c

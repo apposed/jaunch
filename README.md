@@ -6,34 +6,37 @@ Jaunch is a native launcher for applications that run on a Java Virtual Machine 
 
 * **Linux or macOS**
   ```shell
-  ./build.sh my-app /path/to/MyApp
+  make app
   ```
 
 * **Windows:** Install [Scoop](https://scoop.sh/) first, then:
   ```powershell
   scoop install mingw
-  sh build.sh my-app \path\to\MyApp
+  sh
+  make app
   ```
 
-Where `my-app` is what the final native launcher executable should be named,
-and `/path/to/MyApp` is where you want the Jaunch launcher files to be copied.
+The build process will:
 
-The build script will:
+1. Build the native C code, generating a binary named `build/launcher` (`build\launcher.exe` on Windows).
 
-1. Build the native C code, generating a binary named `my-app` (`my-app.exe` on Windows).
+2. Build the Kotlin code, generating a binary named `jaunch` (`jaunch.exe` on Windows).
 
-2. Build the Kotlin code, generating a binary named `jaunch`/`jaunch.exe`.
-
-3. Copy the needed files to the specified application path, including:
+3. Copy the needed files to the `app` directory, including:
    * The two native binaries (1) and (2);
-   * Two TOML configuration files, `jaunch.toml` and `my-app.toml`;
+   * Two TOML configuration files, `jaunch.toml` and `jy.toml`;
    * The `Props.class` helper program.
 
-Then edit the `my-app.toml` to match your application's requirements.
-(You can also edit `jaunch.toml`, although doing so is typically unnecessary.)
+Then try running `app/jy` and watch the fireworks. If it doesn't work,
+try `app/jy --debug`, which will show what's happening under the hood.
 
-Then try running `my-app` and watch the fireworks. If it doesn't work,
-try `my-app --debug`, which will show what's happening under the hood.
+### Launching your application with Jaunch
+
+1. Copy the `app/jy`/`app\jy.exe` native launcher to your application distribution root, renaming it to match your desired naming. For example, if your application is called Fizzbuzz, you might name it `fizzbuzz`/`fizzbuzz.exe`.
+
+2. Copy the entire `app/jaunch` folder to your application distribution root.
+
+3. Rename the `jaunch/jy.toml` to match the name of your native launcher&mdash;e.g. `jaunch/fizzbuzz.toml`, and edit it to match your application's requirements. See the comments in `jaunch/jaunch.toml` for detailed guidance.
 
 ## Why Jaunch
 

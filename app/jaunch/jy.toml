@@ -1,0 +1,35 @@
+# *** Welcome to the example Jy application's configuration file! ***
+#
+# This launcher is built on Jaunch (https://github.com/scijava/jaunch).
+#
+# There is a general layer of launcher configuration in the jaunch.toml file.
+# The contents below define Jy's particular launcher behavior and features,
+# on top of Jaunch's "sensible default" functionality.
+#
+# See that jaunch.toml file for more details about Jaunch configuration.
+
+jaunch-version = 1
+
+program-name = "Jy"
+
+java-version-min = "8"
+#java-version-max = "21"
+
+classpath = [
+    'lib/*.jar',
+]
+
+max-heap = '75%'
+
+jvm-args = [
+    '-Dpython.import.site=false',
+    '-Dpython.cachedir.skip=true',
+    '-Dpython.console.encoding=UTF-8',
+]
+
+main-class-candidates = [
+    'org.python.util.jython',
+]
+
+main-args = [
+]

@@ -1,5 +1,7 @@
 #include <string.h>
 
+const char* JAUNCH_EXE = "jaunch/jaunch";
+
 int isCommandAvailable(const char *command) {
     return access(command, X_OK) == 0;
 }
