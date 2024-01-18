@@ -101,9 +101,9 @@ want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then
 
 ### Discover Java installations already on the system
 
-* Recognize system-wide installations as well as bundled Java runtimes.
-* Link to the best libjvm on demand; do not invoke `java` in a separate process.
+* Link to the best libjvm on demand.
 * Search beneath specified JVM directory roots.
+* Recognize system-wide installations as well as bundled Java runtimes.
 * Define rules for deciding which installations meet application requirements.
 * If no appropriate Java installation is found, show an informative error message.
 
@@ -125,6 +125,11 @@ want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then
   in favor of most code being written in a more maintainable high-level language.
 * On the off-chance that the TOML-based configuration is not flexible enough for your
   application's needs, your next layer of customization is the Kotlin codebase, not C.
+
+## License
+
+To maximize the flexibility of downstream projects to use and adapt this code,
+Jaunch is [Unlicensed](https://unlicense.org/). See the UNLICENSE file for details.
 
 ## Architecture
 
