@@ -65,6 +65,11 @@ From the [ImageJ Launcher source code](https://github.com/openjdk/jdk/blob/jdk-2
  * desired JRE and reexec, in order to propagate the environment.
 ```
 
+**Launch Java via Python:** It would be very useful for Fiji if Jaunch supported
+discovery of `libpython` also, and launching Java from inside a Python interpreter
+via the [scyjava](https://github.com/scijava/scyjava) project, which uses JPype.
+Then Fiji's CPython script language could be used more easily.
+
 **Squash multiple memory options:** The ImageJ Launcher keeps only the last
 memory option for the `-Xm*` flags.
 ```c
