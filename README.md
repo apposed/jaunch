@@ -136,7 +136,8 @@ want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then
 ## License
 
 To maximize the flexibility of downstream projects to use and adapt this code,
-Jaunch is [Unlicensed](https://unlicense.org/). See the UNLICENSE file for details.
+Jaunch is [Unlicensed](https://unlicense.org/).
+See the [UNLICENSE](UNLICENSE) file for details.
 
 ## Architecture
 
