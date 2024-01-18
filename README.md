@@ -4,12 +4,19 @@ Jaunch is a native launcher for applications that run on a Java Virtual Machine 
 
 ## Quick Start
 
-* **Linux or macOS**
+* **Linux:**
   ```shell
   make app
   ```
 
-* **Windows:** Install [Scoop](https://scoop.sh/) first, then:
+* **macOS:**
+  [Install XCode](https://kotlinlang.org/docs/native-overview.html#target-platforms)
+  first. Then in a Terminal:
+  ```shell
+  make app
+  ```
+
+* **Windows:** Install [Scoop](https://scoop.sh/) first. Then in a PowerShell:
   ```powershell
   scoop install mingw
   sh
