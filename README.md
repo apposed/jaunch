@@ -141,26 +141,45 @@ See the [UNLICENSE](UNLICENSE) file for details.
 
 ## Architecture
 
-TODO - describe Jaunch's architecture here.
+Jaunch consists of two parts:
 
-- jaunch.exe is the Kotlin program. It does not need to be modified.
-- The native launcher (built from jaunch.c) should be named whatever you want. E.g. fiji.exe.
-- fiji.toml is the configuration that jaunch.exe uses to decide how to behave.
-  - When fiji.exe invokes jaunch.exe, it passes `fiji` to jaunch.exe.
-- In this way, there can be multiple different launchers in the same directory that all use the same jaunch.exe.
+1. A native launcher, [written in C](src/c), kept reasonably minimal.
 
-Discover available Javas from:
-- Subfolders of the application (i.e. bundled Java).
-- Known tool-specific installation locations.
-  - sdkman
-  - install-jdk
-  - cjdk
-  - conda
-  - brew
-  - scoop
-  This is done in a general way by having a list of directories in the default TOML configuration, which can be extended by specific applications as desired.
+2. A "configurator" executable written in Kotlin, which does the heavy lifting.
 
-.. more to come ...
+The native launcher (1) will be named after your particular application, it is placed in
+the base directory of your application. For example, for an application called Fizzbuzz,
+the launcher could be named `fizzbuzz.exe`.
+
+The configurator (2) is named `jaunch-<os>-<arch>.exe`, and placed in the `jaunch`
+subdirectory of your application. Examples: for ARM64 Linux it would be named
+`jaunch/jaunch-linux-aarch64`, whereas for x86-64 Windows it would be named
+`jaunch/jaunch-windows-x64.exe`. The reason for the `<os>-<arch>` suffix is so that
+portable applications can ship with all needed jaunch configurator executables in
+the same `jaunch` folder, without any name clashes.
+
+The native launcher invokes the configurator as a subprocess, passing its entire `argv`
+list to the appropriate `jaunch` program via a pipe to stdin. The jaunch configurator is
+then responsible for outputting the following things via its stdout:
+
+1. Number of lines of output.
+2. Directive for the native launcher to perform (LAUNCH, CANCEL, or an error message).
+3. Path to libjvm native library.
+4. Number of arguments to the JVM.
+5. List of JVM arguments, one per line.
+6. Main class to run, in slash-separated (not dot-separated) format.
+7. Number of arguments to the main class.
+8. List of main arguments, one per line.
+
+To deliver this output, the configurator must do the following things:
+
+* Decide which Java to use.
+* Decide which main class to run.
+* Decide how to transform the user arguments into JVM and/or main arguments.
+
+If your application's needs along these lines are relatively minimal&mdash;e.g. if you bundle a JDK in a known location, and always pass all user arguments as main arguments&mdash;you would likely not even need Jaunch's Kotlin/configurator code at all; you could write your own simple jaunch configurator as a shell script and/or batch file.
+
+However, Jaunch was designed to satisfy the needs of applications with more complex command line functionality, which is where the Kotlin configurator comes in. It reads declarative TOML configuration files, which define how Jaunch will make the above decisions. The TOML configuration is its own layer of the architecture, which is best learned by reading the [jaunch.toml](jaunch.toml) file directly. With this design, the behavior of Jaunch can be heavily customized without needing to modify source code and rebuild. And for applications that need it, there can be multiple different native launchers in the application base directory that all share the same jaunch configurator native binaries with different TOML configurations.
 
 ## Alternatives
 
