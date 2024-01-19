@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 cd "$(dirname "$0")/.."
+echo
+echo -e "\033[1;33m[compile-launcher]\033[0m"
 
 # Locate Java installation. We need this for the jni.h include,
 # even though Java will be loaded via dlopen at runtime.

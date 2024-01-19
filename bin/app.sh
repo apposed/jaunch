@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 cd "$(dirname "$0")/.."
+echo
+echo -e "\033[1;33m[app]\033[0m"
 
 # Copy native launcher executable.
 mkdir -p app
