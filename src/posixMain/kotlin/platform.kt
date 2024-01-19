@@ -20,6 +20,15 @@ actual fun execute(command: String): List<String>? {
 }
 
 @OptIn(ExperimentalForeignApi::class)
+actual fun getcwd(): String {
+    return getcwd(null, 0u)?.toKString() ?: ""
+}
+
+actual fun setcwd(cwd: String) {
+    chdir(cwd)
+}
+
+@OptIn(ExperimentalForeignApi::class)
 actual fun getenv(name: String): String? {
     return pGetEnv(name)?.toKString()
 }
