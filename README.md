@@ -19,7 +19,6 @@ Jaunch is a native launcher for applications that run on a Java Virtual Machine 
 * **Windows:** Install [Scoop](https://scoop.sh/) first. Then in a PowerShell:
   ```powershell
   scoop install mingw
-  sh
   make app
   ```
 

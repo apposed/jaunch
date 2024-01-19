@@ -7,24 +7,24 @@ clean:
 	bin/clean.sh
 
 compile-launcher:
-	@echo "\n\
+	@echo -e "\n\
 	\033[1;33m[compile-launcher]\033[0m"
 	bin/compile-launcher.sh
 
 compile-config:
-	@echo "\n\
+	@echo -e "\n\
 	\033[1;33m[compile-config]\033[0m"
 	bin/compile-config.sh
 
 compile-all: compile-launcher compile-config
 
 app: compile-all
-	@echo "\n\
+	@echo -e "\n\
 	\033[1;33m[app]\033[0m"
 	bin/app.sh
 
 test: app
-	@echo "\n\
+	@echo -e "\n\
 	\033[1;33m[test]\033[0m"
 	bin/test.sh
 
