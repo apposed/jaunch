@@ -130,13 +130,20 @@ jvm-args = [
     # Convince the Java module system to play nice.
     # Supported since Jigsaw was introduced in Java 9.
     # Necessary for ij1-patcher to work properly with Java 17+.
+
+    # net.imagej.patcher.LegacyInjector uses ClassLoader.findLoadedClass
+    # javassist.util.proxy.SecurityActions uses ClassLoader.defineClass
     'JAVA:9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
-    'JAVA:9+|--add-opens=java.base/java.util=ALL-UNNAMED',  # TODO: Why? What triggers this?
-    'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',  # TODO: Why? Is this Linux-specific?
-    'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED',  # TODO: what about Wayland?
+    # org.scijava.util.SizeableArrayList uses ArrayList.size
+    'JAVA:9+|--add-opens=java.base/java.util=ALL-UNNAMED',
+    # sc.fiji.compat.DefaultFijiService uses XToolkit.awtAppClassName
+    #'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 
+    'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED', 
+    # TODO: document where this happens on macOS.
     'JAVA:9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',
 
-    '-Dpython.cachedir.skip=true',  # Avoid Jython's huge startup cost.
+    # Avoid Jython's huge startup cost.
+    '-Dpython.cachedir.skip=true',
 
     # Set ImageJ's plugins.dir property.
     '--plugins|-Dplugins.dir=${plugins}'
