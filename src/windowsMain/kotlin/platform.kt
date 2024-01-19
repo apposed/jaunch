@@ -18,6 +18,20 @@ actual fun execute(command: String): List<String>? {
 }
 
 @OptIn(ExperimentalForeignApi::class)
+actual fun getcwd(): String {
+    memScoped {
+        val buffer = allocArray<ByteVar>(MAX_PATH)
+        val length = GetCurrentDirectoryA(MAX_PATH.convert(), buffer)
+        return if (length > 0u) buffer.toKString() else ""
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun setcwd(cwd: String) {
+    SetCurrentDirectoryA(cwd)
+}
+
+@OptIn(ExperimentalForeignApi::class)
 actual fun getenv(name: String): String? {
     return pGetEnv(name)?.toKString()
 }

@@ -2,6 +2,10 @@ import kotlin.experimental.ExperimentalNativeApi
 
 expect fun execute(command: String): List<String>?
 
+expect fun getcwd(): String
+
+expect fun setcwd(cwd: String)
+
 expect fun getenv(name: String): String?
 
 expect fun printlnErr(s: String = "")
