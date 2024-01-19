@@ -2,4 +2,4 @@
 set -e
 cd "$(dirname "$0")/.."
 
-./gradlew -i build
+./gradlew linkReleaseExecutable

@@ -14,7 +14,7 @@ then
 fi
 
 # Copy jaunch configurator executables.
-posixJaunchBinaryPath=build/bin/posix/debugExecutable/jaunch.kexe
+posixJaunchBinaryPath=build/bin/posix/releaseExecutable/jaunch.kexe
 posixJaunchBinaryType=$(file -b "$posixJaunchBinaryPath" 2>/dev/null)
 case "$posixJaunchBinaryType" in
   ELF*)
@@ -27,7 +27,7 @@ case "$posixJaunchBinaryType" in
     ;;
 esac
 
-windowsJaunchBinaryPath=build/bin/windows/debugExecutable/jaunch.exe
+windowsJaunchBinaryPath=build/bin/windows/releaseExecutable/jaunch.exe
 if [ -f "$windowsJaunchBinaryPath" ]
 then
   (set -x; cp "$windowsJaunchBinaryPath" app/jaunch/jaunch.exe)
