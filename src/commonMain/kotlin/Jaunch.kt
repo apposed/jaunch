@@ -238,7 +238,7 @@ fun main(args: Array<String>) {
     val distrosBlocked = calculate(config.javaDistrosBlocked, hints, vars)
     val osAliases = calculate(config.osAliases, hints, vars)
     val archAliases = calculate(config.archAliases, hints, vars)
-    val constraints = JavaConstraints(libjvmSuffixes,
+    val constraints = JavaConstraints(configDir, libjvmSuffixes,
         allowWeirdJvms, config.javaVersionMin, config.javaVersionMax,
         distrosAllowed, distrosBlocked, osAliases, archAliases)
 

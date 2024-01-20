@@ -1,4 +1,5 @@
 data class JavaConstraints(
+    val configDir: File,
     val libjvmSuffixes: List<String>,
     val allowWeirdJvms: Boolean,
     val versionMin: String?,
@@ -151,13 +152,12 @@ class JavaInstallation(
             return null
         }
         debug("Invoking `\"", javaExe, "\" Props`...")
-        val configDir = "jaunch" // FIXME: Needs to be relative to the app dir, not CWD
         // NB: Temporarily change the current working directory to the one containing
         // the Props.class helper program. This lets us invoke the java executable
         // in a simpler way, without needing to pass something like `-cp $configDir`,
         // which creates more quoting complexity, especially on Windows.
         val cwd = getcwd()
-        setcwd(configDir)
+        setcwd(constraints.configDir.path)
         val stdout = execute("\"$javaExe\" Props") ?: return null
         setcwd(cwd)
         return linesToMap(stdout, "=")
