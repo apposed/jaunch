@@ -2,6 +2,8 @@
 
 #include "common.h"
 
+#define SLASH '\\'
+
 const char* JAUNCH_EXE = "jaunch\\jaunch.exe -";
 
 void dlclose(void* library) { FreeLibrary(library); }

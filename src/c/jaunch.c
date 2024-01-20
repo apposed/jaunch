@@ -47,7 +47,7 @@
 /* result=$(dirname "$argv0")/"$command" */
 char *path(const char *argv0, const char *command) {
     // Calculate string lengths.
-    const char *last_slash = argv0 == NULL ? NULL : strrchr(argv0, '/');
+    const char *last_slash = argv0 == NULL ? NULL : strrchr(argv0, SLASH);
     size_t dir_len = (size_t)(last_slash == NULL ? 1 : last_slash - argv0);
     size_t command_len = strlen(command);
     size_t result_len = dir_len + 1 + command_len;
@@ -63,7 +63,7 @@ char *path(const char *argv0, const char *command) {
     else {
         strncpy(result, argv0, dir_len);
     }
-    result[dir_len] = '/';
+    result[dir_len] = SLASH;
     result[dir_len + 1] = '\0';
     strcat(result, command); // result += command
 
