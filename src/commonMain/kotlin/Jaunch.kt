@@ -376,7 +376,6 @@ private fun calculate(items: Array<String>, hints: Set<String>, vars: Map<String
 
 private fun String.evaluate(hints: Set<String>, vars: Map<String, String>): String? {
     val tokens = split('|')
-    //assert(tokens.isNotEmpty())
     val rules = tokens.subList(0, tokens.lastIndex)
     val value = tokens.last()
 
