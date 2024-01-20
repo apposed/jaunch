@@ -39,6 +39,7 @@ data class JavaConstraints(
  *
  * The logic is coded so that less expensive techniques are tried first, and metadata
  * is cached, so that more expensive techniques only trigger when necessary.
+ * TODO: Actually cache the metadata. ;-)
  */
 class JavaInstallation(
     val rootPath: String,
