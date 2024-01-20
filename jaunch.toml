@@ -516,8 +516,8 @@ jvm-root-paths = [
     'OS:LINUX|~/.jdk/*',                                            # github.com/jyksnw/install-jdk
     'OS:LINUX|~/.jre/*',                                            # github.com/jyksnw/install-jdk
     'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',  # Java 8+
-    'OS:WINDOWS|C:\Program Files\Java\*',
-    'OS:WINDOWS|C:\Program Files (x86)\Java\*',
+    'OS:WINDOWS|${ProgramFiles}\Java\*',
+    'OS:WINDOWS|${ProgramFiles(x86)}\Java\*',
     'OS:WINDOWS|~\scoop\apps\openjdk*\*',                           # Scoop
 ]
 
