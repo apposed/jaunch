@@ -4,40 +4,39 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[app]\033[0m"
 
+copyBinary() {
+  srcPath=$1
+  destDir=$2
+  destName=$3
+  makeExec=$4
+  test -f "$srcPath" || return
+  mkdir -p "$destDir"
+  (set -x; cp "$srcPath" "$destDir/$destName")
+  if [ "$makeExec" ]; then chmod +x "$destDir/$destName"; fi
+}
+
 # Copy native launcher executable.
-mkdir -p app
-if [ -f build/launcher ]
-then
-  (set -x; cp build/launcher app/jy && chmod +x app/jy)
-fi
-if [ -f build/launcher.exe ]
-then
-  (set -x; cp build/launcher.exe app/jy.exe)
-fi
+posixLauncherBinaryPath=build/launcher
+posixLauncherBinaryType=$(file -b "$posixLauncherBinaryPath" 2>/dev/null)
+case "$posixLauncherBinaryType" in
+  ELF*) copyBinary "$posixLauncherBinaryPath" app jy true ;;
+  Mach-O*) copyBinary "$posixLauncherBinaryPath" app/Contents/MacOS jy true ;;
+esac
+copyBinary build/launcher.exe app jy.exe
 
 # Copy jaunch configurator executables.
 posixJaunchBinaryPath=build/bin/posix/releaseExecutable/jaunch.kexe
 posixJaunchBinaryType=$(file -b "$posixJaunchBinaryPath" 2>/dev/null)
 case "$posixJaunchBinaryType" in
-  ELF*)
-    mkdir -p app/jaunch
-    (set -x; cp "$posixJaunchBinaryPath" app/jaunch/jaunch)
-    ;;
-  Mach-O*)
-    mkdir -p app/Contents/MacOS
-    (set -x; cp "$posixJaunchBinaryPath" app/Contents/MacOS/jaunch)
-    ;;
+  ELF*) copyBinary "$posixJaunchBinaryPath" app/jaunch jaunch
+  Mach-O*) copyBinary "$posixJaunchBinaryPath" app/Contents/MacOS jaunch
 esac
-
-windowsJaunchBinaryPath=build/bin/windows/releaseExecutable/jaunch.exe
-if [ -f "$windowsJaunchBinaryPath" ]
-then
-  (set -x; cp "$windowsJaunchBinaryPath" app/jaunch/jaunch.exe)
-fi
+copyBinary build/bin/windows/releaseExecutable/jaunch.exe app/jaunch jaunch.exe
 
 # Copy TOML configuration files.
 if [ ! -f app/jaunch/jaunch.toml ]
 then
+  mkdir -p app/jaunch
   (set -x; cp jaunch.toml app/jaunch/)
 fi
 
