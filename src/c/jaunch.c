@@ -34,7 +34,7 @@
 #include "linux.h"
 #endif
 
-#ifdef APPLE
+#ifdef __APPLE__
 #include "macos.h"
 #endif
 

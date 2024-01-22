@@ -4,6 +4,7 @@
 const char* JAUNCH_EXE = "../../jaunch/jaunch";
 
 void show_alert(const char *title, const char *message) {
+	/* TODO: Get this objc code working.
 	// Create an NSString from the C string
 	id nsMessage = objc_msgSend((id)objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), message);
 
@@ -14,4 +15,5 @@ void show_alert(const char *title, const char *message) {
 
 	// Run the alert modal
 	objc_msgSend(alert, sel_registerName("runModal"));
+	*/
 }
