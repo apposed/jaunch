@@ -10,14 +10,14 @@
 
 jaunch-version = 1
 
-program-name = "Fiji"
+program-name = 'Fiji'
 
 supported-options = [
     '--print-ij-dir|print where Fiji thinks it is located',
-    "--ij-dir=<path>|set the ImageJ directory to <path> (used to find\njars/, plugins/ and macros/)",
+    '--ij-dir=<path>|set the ImageJ directory to <path> (used to find\njars/, plugins/ and macros/)',
     '--pass-classpath=<classpath>|pass -classpath <classpath> to the main() method',
     '--full-classpath|call the main class with the full ImageJ class path',
-    "--default-gc|do not use advanced garbage collector settings by default\n(-XX:+UseG1GC)",
+    '--default-gc|do not use advanced garbage collector settings by default\n(-XX:+UseG1GC)',
     '--gc-g1|use the G1 garbage collector',
     '--debug-gc|show debug info about the garbage collector on stderr',
     '--no-splash|suppress showing a splash screen upon startup',
@@ -35,57 +35,57 @@ supported-options = [
 
     # Options to run programs other than Fiji:
     '--update|start the command-line version of the ImageJ updater',
-    "--main-class=<class name>|start the given class instead of Fiji",
-    "--jar=<jar path>|run the given JAR instead of Fiji",
+    '--main-class=<class name>|start the given class instead of Fiji',
+    '--jar=<jar path>|run the given JAR instead of Fiji',
 
     # Windows things
-    "--console,--attach-console|attempt to attach output to the calling console",
-    "--new-console|ensure the launch of a new, dedicated console for output",
-    "--set-icon=<exe-file>,<ico-file>|add/replace the icon of the given program", #NO
+    '--console,--attach-console|attempt to attach output to the calling console',
+    '--new-console|ensure the launch of a new, dedicated console for output',
+    '--set-icon=<exe-file>,<ico-file>|add/replace the icon of the given program', #NO
 
     # Even more things...
-    "--freeze-classloader|TODO undocumented",
-    "--compile-and-run|TODO undocumented",
-    "--showUI|TODO undocumented",
-    "--jdb|TODO undocumented",
-    "--ijcp|TODO undocumented",
+    '--freeze-classloader|TODO undocumented',
+    '--compile-and-run|TODO undocumented',
+    '--showUI|TODO undocumented',
+    '--jdb|TODO undocumented',
+    '--ijcp|TODO undocumented',
 
 # Nico: NEED: execute a script with parameters
 # ./ImageJ-linux64 --ij2 --headless --console --run hello.py 'name="Mr Kraken"'
 ]
 
-java-version-min = "8"
-#java-version-max = "21"
+java-version-min = '8'
+#java-version-max = '21'
 
 modes = [
   # Decide which mode to launch: default, original-imagej, legacy-fiji, or custom-main.
-  "--dont-patch-ij1|original-imagej",
-  "--ij1|original-imagej",
-  "--ij2|!original-imagej",
-  "--legacy|legacy-fiji",
-  "--update|custom-main",
-  "--main-class|custom-main",
-  "--jar|custom-main",
+  '--dont-patch-ij1|original-imagej',
+  '--ij1|original-imagej',
+  '--ij2|!original-imagej',
+  '--legacy|legacy-fiji',
+  '--update|custom-main',
+  '--main-class|custom-main',
+  '--jar|custom-main',
 
   # TODO: the --update flag is a shorthand for the following IJL options:
-  #"--update --info --dont-patch-ij1 --full-classpath --main-class=net.imagej.updater.CommandLine",
+  # --update --info --dont-patch-ij1 --full-classpath --main-class=net.imagej.updater.CommandLine
 
   # To start in ImageJ2 or Fiji mode, we must patch IJ1.
   # But when running the command-line Updater, we don't need to.
-  "--dont-patch-ij1|no-ij1-patching",
-  "custom-main|no-ij1-patching",
-  "--ij2|!no-ij1-patching",
+  '--dont-patch-ij1|no-ij1-patching',
+  'custom-main|no-ij1-patching',
+  '--ij2|!no-ij1-patching',
 
   # Disable the splash screen when running a different
   # main class, and/or when --no-splash option is given.
-  "--no-splash|no-splash",
-  "--headless|no-splash",
-  "--update|no-splash",
-  "--main-class|no-splash",
+  '--no-splash|no-splash',
+  '--headless|no-splash',
+  '--update|no-splash',
+  '--main-class|no-splash',
 ]
 
 directives = [
-  "--print-ij-dir|print-app-dir", # For backwards compatibility.
+  '--print-ij-dir|print-app-dir', # For backwards compatibility.
 ]
 
 classpath = [

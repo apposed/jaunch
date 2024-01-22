@@ -10,10 +10,10 @@
 
 jaunch-version = 1
 
-program-name = "Jy"
+program-name = 'Jy'
 
-java-version-min = "8"
-#java-version-max = "21"
+java-version-min = '8'
+#java-version-max = '21'
 
 classpath = [
     '${app-dir}/lib/*.jar',
