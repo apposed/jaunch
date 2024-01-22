@@ -183,9 +183,15 @@ this from Jaunch.
 
 ### macOS
 
-**Contents/MacOS:** Logic to infer the application directory is broken,
-because the native launcher should typically would live in `Contents/MacOS`
-rather than the base `${app-dir}`.
+**Symlink from Contents/MacOS:** The jaunch configurator lives in
+`Contents/MacOS/jaunch` on macOS, and is smart enough to look in `../../jaunch`
+for the rest of its bits. But it can be nice to have a symlink to `myapp` in
+the application base directory from `Contents/MacOS/myapp`, to make the command
+line program more visible and simpler to invoke. But the application won't
+start from such a symlinked executable, because the native code does not follow
+the symlink to the original binary, nor allow for the possibility that the
+executable itself might dwell outside of `Contents/MacOS`. The native launcher
+should be improved to support both locations, as well as symlinks to anywhere.
 
 **Universal2 binary:** The jaunch configurator binary is built only for the
 current architecture. It needs to be built as a Universal2 binary, so that it
