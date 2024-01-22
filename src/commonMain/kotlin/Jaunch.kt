@@ -51,8 +51,13 @@ fun main(args: Array<String>) {
 
     // Discern important directories.
     val exeFile = executable?.let(::File) // The native launcher program.
-    // TODO: on macOS, the appDir is ../.. from the exeFile.
-    val appDir = exeFile?.dir ?: File(".")
+    // Check for native launcher in Contents/MacOS directory.
+    // If so, treat the app directory as two directories higher up.
+    // We do it this way, rather than OS_NAME == "MACOSX", so that the native
+    // launcher in Contents/MacOS can be symlinked elsewhere, such as into the
+    // app directory itself, and still function properly if executed from there.
+    val exeDir = exeFile?.dir ?: File(".")
+    val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir else exeDir
     val configDir = appDir / "jaunch"
 
     debug("inputArgs -> ", inputArgs)
