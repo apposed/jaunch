@@ -7,10 +7,10 @@ clean:
 compile-launcher:
 	@bin/compile-launcher.sh
 
-compile-config:
-	@bin/compile-config.sh
+compile-configurator:
+	@bin/compile-configurator.sh
 
-compile-all: compile-launcher compile-config
+compile-all: compile-launcher compile-configurator
 
 app: compile-all
 	@bin/app.sh
