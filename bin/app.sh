@@ -16,13 +16,16 @@ copyBinary() {
 }
 
 # Copy native launcher executable.
-posixLauncherBinaryPath=build/launcher
-posixLauncherBinaryType=$(file -b "$posixLauncherBinaryPath" 2>/dev/null)
-case "$posixLauncherBinaryType" in
-  ELF*) copyBinary "$posixLauncherBinaryPath" app jy true ;;
-  Mach-O*) copyBinary "$posixLauncherBinaryPath" app/Contents/MacOS jy true ;;
-esac
-copyBinary build/launcher.exe app jy.exe
+for app in parsy jy
+do
+  posixLauncherBinaryPath=build/launcher
+  posixLauncherBinaryType=$(file -b "$posixLauncherBinaryPath" 2>/dev/null)
+  case "$posixLauncherBinaryType" in
+    ELF*) copyBinary "$posixLauncherBinaryPath" app $app true ;;
+    Mach-O*) copyBinary "$posixLauncherBinaryPath" app/Contents/MacOS $app true ;;
+  esac
+  copyBinary build/launcher.exe app $app.exe
+done
 
 # Copy jaunch configurator executables.
 posixJaunchBinaryPath=build/bin/posix/releaseExecutable/jaunch.kexe
@@ -47,8 +50,15 @@ then
 fi
 
 # Install needed JAR files.
-if [ ! -f app/lib/jython-2.7.3.jar ]
-then
-  mkdir -p app/lib
-  (set -x; curl -fsL https://search.maven.org/remotecontent\?filepath\=org/python/jython/2.7.3/jython-2.7.3.jar > app/lib/jython-2.7.3.jar)
-fi
+copyDependency() {
+  g=$1
+  a=$2
+  v=$3
+  if [ ! -f app/lib/$a-$v.jar ]
+  then
+    mkdir -p app/lib
+    (set -x; curl -fsL https://search.maven.org/remotecontent\?filepath\=$g/$a/$v/$a-$v.jar > app/lib/$a-$v.jar)
+  fi
+}
+copyDependency org/scijava parsington 3.1.0
+copyDependency org/python jython 2.7.3
