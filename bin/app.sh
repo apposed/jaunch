@@ -9,7 +9,7 @@ copyBinary() {
   destDir=$2
   destName=$3
   makeExec=$4
-  test -f "$srcPath" || return
+  if [ ! -f "$srcPath" ]; then return; fi
   mkdir -p "$destDir"
   (set -x; cp "$srcPath" "$destDir/$destName")
   if [ "$makeExec" ]; then chmod +x "$destDir/$destName"; fi
@@ -28,8 +28,8 @@ copyBinary build/launcher.exe app jy.exe
 posixJaunchBinaryPath=build/bin/posix/releaseExecutable/jaunch.kexe
 posixJaunchBinaryType=$(file -b "$posixJaunchBinaryPath" 2>/dev/null)
 case "$posixJaunchBinaryType" in
-  ELF*) copyBinary "$posixJaunchBinaryPath" app/jaunch jaunch
-  Mach-O*) copyBinary "$posixJaunchBinaryPath" app/Contents/MacOS jaunch
+  ELF*) copyBinary "$posixJaunchBinaryPath" app/jaunch jaunch ;;
+  Mach-O*) copyBinary "$posixJaunchBinaryPath" app/Contents/MacOS jaunch ;;
 esac
 copyBinary build/bin/windows/releaseExecutable/jaunch.exe app/jaunch jaunch.exe
 
