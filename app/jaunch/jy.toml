@@ -16,7 +16,7 @@ java-version-min = "8"
 #java-version-max = "21"
 
 classpath = [
-    'lib/*.jar',
+    '${app-dir}/lib/*.jar',
 ]
 
 max-heap = '75%'

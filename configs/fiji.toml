@@ -89,10 +89,10 @@ directives = [
 ]
 
 classpath = [
-    '--full-classpath|jars/*.jar',
-    '--full-classpath|jars/bio-formats/*.jar',
-    '--full-classpath|plugins/*.jar',
-    '!--full-classpath|jars/imagej-launcher*.jar',
+    '--full-classpath|${app-dir}/jars/*.jar',
+    '--full-classpath|${app-dir}/jars/bio-formats/*.jar',
+    '--full-classpath|${app-dir}/plugins/*.jar',
+    '!--full-classpath|${app-dir}/jars/imagej-launcher*.jar',
     '--main-class|.', # Weird behavior, but it's what the ImageJ Launcher does.
     '--jar|${jar}',
 ]
