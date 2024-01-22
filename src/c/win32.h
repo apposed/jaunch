@@ -70,7 +70,10 @@ int run_command(const char *command,
     // to expect, so that it can stop reading from stdin once it has received
     // those lines, even though the pipe is not yet closed. This avoids deadlocks.
     char *numInputString = (char *)malloc(21);
-    if (numInputString == NULL) { error("malloc"); return ERROR_MALLOC; }
+    if (numInputString == NULL) {
+      error("Failed to allocate memory (input line count)");
+      return ERROR_MALLOC;
+    }
     snprintf(numInputString, 21, "%zu", numInput);
     writeLine(stdinWrite, numInputString);
     free(numInputString);
@@ -88,13 +91,19 @@ int run_command(const char *command,
     size_t bufferSize = 1024;
     char *outputBuffer = malloc(bufferSize);
 
-    if (outputBuffer == NULL) { error("malloc"); return ERROR_MALLOC; }
+    if (outputBuffer == NULL) {
+      error("Failed to allocate memory (output buffer)");
+      return ERROR_MALLOC;
+    }
 
     while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
         if (totalBytesRead + bytesRead > bufferSize) {
             bufferSize *= 2;
             outputBuffer = realloc(outputBuffer, bufferSize);
-            if (outputBuffer == NULL) { error("realloc"); return ERROR_REALLOC; }
+            if (outputBuffer == NULL) {
+              error("Failed to reallocate memory (output buffer)");
+              return ERROR_REALLOC;
+            }
         }
         memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
         totalBytesRead += bytesRead;

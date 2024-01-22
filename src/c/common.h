@@ -1,5 +1,5 @@
-#ifndef _UTILS_H
-#define _UTILS_H
+#ifndef _JAUNCH_COMMON_H
+#define _JAUNCH_COMMON_H
 
 #define SUCCESS 0
 #define ERROR_DLOPEN 1
@@ -51,9 +51,15 @@ int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     char *token = strtok(buffer, delim);
     while (token != NULL) {
         *output = realloc(*output, (lineCount + 1) * sizeof(char *));
-        if (*output == NULL) { error("Memory reallocation failed"); return ERROR_REALLOC; }
+        if (*output == NULL) {
+          error("Memory reallocation failed");
+          return ERROR_REALLOC;
+        }
         (*output)[lineCount] = strdup(token);
-        if ((*output)[lineCount] == NULL) { error("String duplication failed"); return ERROR_STRDUP; }
+        if ((*output)[lineCount] == NULL) {
+          error("String duplication failed");
+          return ERROR_STRDUP;
+        }
         lineCount++;
         token = strtok(NULL, delim);
     }
