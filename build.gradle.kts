@@ -11,11 +11,6 @@ repositories {
     mavenCentral()
 }
 
-val v = mapOf(
-    "okio" to "3.6.0",
-    "ktoml" to "0.5.0",
-)
-
 kotlin {
     val hostOs = System.getProperty("os.name")
     val isArm64 = System.getProperty("os.arch") == "aarch64"
@@ -37,13 +32,7 @@ kotlin {
         }
     }
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation("com.squareup.okio:okio:${v["okio"]}")
-                implementation("com.akuleshov7:ktoml-core:${v["ktoml"]}")
-                implementation("com.akuleshov7:ktoml-file:${v["ktoml"]}")
-            }
-        }
+        val commonMain by getting
         val commonTest by getting
     }
 }

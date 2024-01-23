@@ -92,11 +92,6 @@ we bother? It is especially convenient on Windows for GUI users, where the name
 path (`$PATH`) for java executables, as a way to discover Java installations.
 Should Jaunch support doing this?
 
-**Purge dependencies:** The ktoml dependency bloats the size of the executable
-by several MB. It would be good to rewrite the TOML parsing to purge this
-dependency (which would also eliminate the need for the okio dependency).
-(It's fine if the parsing is not fully compliant with the TOML spec.)
-
 **Launch java in a subprocess:** The ImageJ Launcher has logic to "fall back to
 system Java": i.e. launch `bin/java` in a subprocess, should the `dlopen` of
 libjvm fail. Jaunch does not have this logic, and in practice it seems
