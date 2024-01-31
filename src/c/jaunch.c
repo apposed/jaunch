@@ -44,27 +44,40 @@
 #include "posix.h"
 #endif
 
-/* result=$(dirname "$argv0")/"$command" */
-char *path(const char *argv0, const char *command) {
+// List of places to search for the jaunch configurator executable.
+//
+// NB: This list should align with the configDirs list in Jaunch.kt,
+// except for the trailing "Contents/MacOS/" and NULL entries.
+//
+// The trailing slashes make the math simpler in the path function logic.
+const char *JAUNCH_SEARCH_PATHS[] = {
+  "jaunch"SLASH,
+  ".jaunch"SLASH,
+  "config"SLASH"jaunch"SLASH,
+  ".config"SLASH"jaunch"SLASH,
+  "Contents"SLASH"MacOS"SLASH,
+  NULL,
+};
+
+/* result=$(dirname "$argv0")/$subdir$command */
+char *path(const char *argv0, const char *subdir, const char *command) {
     // Calculate string lengths.
-    const char *last_slash = argv0 == NULL ? NULL : strrchr(argv0, SLASH);
+    const char *last_slash = argv0 == NULL ? NULL : strrchr(argv0, SLASH[0]);
     size_t dir_len = (size_t)(last_slash == NULL ? 1 : last_slash - argv0);
+    size_t subdir_len = subdir == NULL ? 0 : strlen(subdir);
     size_t command_len = strlen(command);
-    size_t result_len = dir_len + 1 + command_len;
+    size_t result_len = dir_len + 1 + subdir_len + command_len;
 
     // Allocate the result string.
     char *result = (char *)malloc(result_len + 1);
     if (result == NULL) return NULL;
 
     // Build the result string.
-    if (last_slash == NULL) {
-        result[0] = '.';
-    }
-    else {
-        strncpy(result, argv0, dir_len);
-    }
-    result[dir_len] = SLASH;
+    if (last_slash == NULL) result[0] = '.';
+    else strncpy(result, argv0, dir_len);
+    result[dir_len] = SLASH[0];
     result[dir_len + 1] = '\0';
+    if (subdir != NULL) strcat(result, subdir); // result += subdir
     strcat(result, command); // result += command
 
     return result;
@@ -173,9 +186,16 @@ int main(const int argc, const char *argv[]) {
     for (size_t i = 0; i < argc; i++)
         if (strcmp(argv[i], "--debug") == 0) debug_mode = 1;
 
-    const char *command = path(argc == 0 ? NULL : argv[0], JAUNCH_EXE);
+    char *command = NULL;
+    size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
+    for (size_t i = 0; i < search_path_count; i++) {
+      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], JAUNCH_EXE);
+      if (file_exists(command)) break;
+      free(command);
+      command = NULL;
+    }
     if (command == NULL) {
-        error("Failed to construct configurator command path (out of memory?)");
+        error("Failed to locate the jaunch configurator program.");
         return ERROR_COMMAND_PATH;
     }
     debug("[JAUNCH] configurator command = %s", command);
@@ -185,7 +205,8 @@ int main(const int argc, const char *argv[]) {
 
     // Run external command to process the command line arguments.
 
-    int run_result = run_command(command, argv, argc, &outputLines, &numOutput);
+    int run_result = run_command((const char *)command, argv, argc, &outputLines, &numOutput);
+    free(command);
     if (run_result != SUCCESS) return run_result;
 
     debug("[JAUNCH] numOutput = %zu", numOutput);

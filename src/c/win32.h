@@ -2,9 +2,9 @@
 
 #include "common.h"
 
-#define SLASH '\\'
+#define SLASH "\\"
 
-const char* JAUNCH_EXE = "jaunch\\jaunch.exe -";
+const char* JAUNCH_EXE = "jaunch.exe";
 
 void dlclose(void* library) { FreeLibrary(library); }
 char* dlerror() { return "error" /*TODO: GetLastError()*/; }
@@ -28,6 +28,10 @@ void writeLine(HANDLE stdinWrite, const char *input) {
 
     // Free allocated memory
     free(line);
+}
+
+int file_exists(const char *path) {
+  return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
 }
 
 int run_command(const char *command,
@@ -56,9 +60,21 @@ int run_command(const char *command,
     si.dwFlags |= STARTF_USESTDHANDLES;
 
     // Create the subprocess
-    if (!CreateProcess(NULL, (LPSTR)command, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-        handleError("Error creating process");
+    // NB: We pass a single "-" argument to indicate to the jaunch
+    // configurator that it should harvest the actual input arguments
+    // from the stdin stream. We do this to avoid issues with quoting.
+    char *commandPlusDash = malloc(strlen(command) + 3);
+    if (commandPlusDash == NULL) {
+      error("Failed to allocate memory (command plus dash)");
+      return ERROR_MALLOC;
     }
+    strcpy(commandPlusDash, command);
+    strcat(commandPlusDash, " -");
+    if (!CreateProcess(NULL, (LPSTR)commandPlusDash, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+      free(commandPlusDash);
+      handleError("Error creating process");
+    }
+    free(commandPlusDash);
 
     // Close unnecessary handles
     CloseHandle(stdinRead);

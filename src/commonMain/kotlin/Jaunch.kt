@@ -49,23 +49,32 @@ fun main(args: Array<String>) {
     // Enable debug mode when --debug flag is present.
     debugMode = inputArgs.contains("--debug")
 
-    // Discern important directories.
+    debug("executable -> ", executable ?: "<null>")
+    debug("inputArgs -> ", inputArgs)
+
+    // Discern the application base directory.
     val exeFile = executable?.let(::File) // The native launcher program.
     // Check for native launcher in Contents/MacOS directory.
     // If so, treat the app directory as two directories higher up.
     // We do it this way, rather than OS_NAME == "MACOSX", so that the native
-    // launcher in Contents/MacOS can be symlinked elsewhere, such as into the
-    // app directory itself, and still function properly if executed from there.
+    // launcher also works on macOS when placed directly in the app directory.
     val exeDir = exeFile?.dir ?: File(".")
     val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir else exeDir
-    val configDir = appDir / "jaunch"
-
-    debug("inputArgs -> ", inputArgs)
-    debug("executable -> ", executable ?: "<null>")
     debug("appDir -> ", appDir)
+
+    // Find the configuration directory.
+    // NB: This list should match the JAUNCH_SEARCH_PATHS array in jaunch.c.
+    val configDirs = listOf(
+        appDir / "jaunch",
+        appDir / ".jaunch",
+        appDir / "config" / "jaunch",
+        appDir / ".config" / "jaunch"
+    )
+    val configDir = configDirs.find { it.isDirectory } ?:
+        error("Jaunch config directory not found. Please place config in one of: $configDirs")
     debug("configDir -> ", configDir)
 
-    // Load the configuration from the TOML files.
+    // Load the configuration from the TOML file(s).
     var config = readConfig(configDir / "jaunch.toml")
     if (exeFile != null) {
         // Parse and merge the app-specific TOML file as well.

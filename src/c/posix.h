@@ -3,7 +3,13 @@
 
 #include "common.h"
 
-#define SLASH '/'
+#define SLASH "/"
+
+const char* JAUNCH_EXE = "jaunch";
+
+int file_exists(const char *path) {
+  return access(path, F_OK) == 0;
+}
 
 int run_command(const char *command,
     const char *input[], size_t numInput,
@@ -41,6 +47,9 @@ int run_command(const char *command,
         close(stdoutPipe[1]);
 
         // Execute the command
+        // NB: We pass a single "-" argument to indicate to the jaunch
+        // configurator that it should harvest the actual input arguments
+        // from the stdin stream. We do this to avoid issues with quoting.
         execlp(command, command, "-", (char *)NULL);
 
         // If execlp fails
