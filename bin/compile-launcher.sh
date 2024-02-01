@@ -11,10 +11,22 @@ test -d "$jdkdir" || jdkdir=$(test ! -x update-java-alternatives || update-java-
 test -d "$jdkdir" || jdkdir=$(test ! -x /usr/libexec/java_home || /usr/libexec/java_home)
 
 mkdir -p build
-(set -x; gcc \
-  -I"$jdkdir/include" \
-  -I"$jdkdir/include/linux" \
-  -I"$jdkdir/include/darwin" \
-  -I"$jdkdir/include/win32" \
-  -fPIC -fno-stack-protector \
-  src/c/jaunch.c -o build/launcher)
+
+compile() {
+  (set -x; gcc \
+    -I"$jdkdir/include" \
+    -I"$jdkdir/include/linux" \
+    -I"$jdkdir/include/darwin" \
+    -I"$jdkdir/include/win32" \
+    -fPIC -fno-stack-protector \
+    src/c/jaunch.c $@)
+}
+
+case "$(uname)" in
+  Darwin)
+    compile -o build/launcher-x86_64 -target x86_64-apple-macos10.12 &&
+    compile -o build/launcher-arm64 -target arm64-apple-macos11 &&
+    (set -x; lipo -create -output build/launcher build/launcher-x86_64 build/launcher-arm64)
+    ;;
+  *) compile -o build/launcher ;;
+esac
