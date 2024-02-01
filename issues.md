@@ -1,13 +1,5 @@
 ### All OSes
 
-**Config file organization:** Right now, there are several files that must be
-in the `jaunch` subfolder of the application base directory, including
-`jaunch.exe`, `jaunch.toml`, `[app].toml`, and `Props.class`. It would be nice
-if the C code were a bit more flexible about where to find the `jaunch`
-configurator executable. The plan is to make the native launcher loop over a
-few options including `jaunch`, `.jaunch`, and `.config/jaunch`, which will
-make it easier to customize these places in the C code.
-
 **Friendly error dialog when Java not found:** The ImageJ Launcher has logic
 to display error dialog boxes on Windows with `FormatMessage` and `MessageBox`,
 including handling of `GetLastError()` codes. Jaunch has the beginnings of such
