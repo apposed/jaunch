@@ -35,19 +35,37 @@ The build process will:
 
 3. Copy the needed files to the `app` directory, including:
    * The two native binaries (1) and (2);
-   * Two TOML configuration files, `jaunch.toml` and `jy.toml`;
+   * Three TOML configuration files, `jaunch.toml`, `jy.toml`, and `parsy.toml`;
    * The `Props.class` helper program.
 
-Then try running `app/jy` and watch the fireworks. If it doesn't work,
-try `app/jy --debug`, which will show what's happening under the hood.
+Then try running `app/jy` or `app/parsy` and watch the fireworks. If it doesn't
+work, try `app/parsy --debug`, which will show what's happening under the hood.
+
+Note that these `jy` and `parsy` launchers are binary identical&mdash;each is
+merely an illustration of how your native launcher could be named and work.
+They launch different programs due to their respective `.toml` configurations.
+Typical applications need only one native launcher binary&mdash;the sample `app`
+distribution is just showcasing how Jaunch supports multiple launchers as needed.
 
 ### Launching your application with Jaunch
 
-1. Copy the `app/jy`/`app\jy.exe` native launcher to your application distribution root, renaming it to match your desired naming. For example, if your application is called Fizzbuzz, you might name it `fizzbuzz`/`fizzbuzz.exe`.
+1. Copy the `app/jy`/`app\jy.exe` native launcher to your application distribution
+   root, renaming it to match your desired naming. For example, if your application
+   is called Fizzbuzz, you might name it `fizzbuzz`/`fizzbuzz.exe`.
 
 2. Copy the entire `app/jaunch` folder to your application distribution root.
 
-3. Rename the `jaunch/jy.toml` to match the name of your native launcher&mdash;e.g. `jaunch/fizzbuzz.toml`, and edit it to match your application's requirements. See the comments in `jaunch/jaunch.toml` for detailed guidance.
+3. Delete the unneeded `jaunch/parsy.toml` file.
+
+4. Rename the `jaunch/jy.toml` to match the name of your native launcher&mdash;e.g.
+   `jaunch/fizzbuzz.toml`, and edit it to match your application's requirements.
+   See the comments in `jaunch/jaunch.toml` for detailed guidance.
+
+If you prefer, you can rename the `jaunch` configuration folder to `.jaunch`,
+`config/jaunch`, or `.config/jaunch`, all of which Jaunch supports by default.
+Or you can customize the allowed configuration directory names by editing the
+`JAUNCH_SEARCH_PATHS` list in [jaunch.c](src/c/jaunch.c) and
+matching `configDirs` list in [Jaunch.kt](src/commonMain/kotlin/Jaunch.kt).
 
 ## Why Jaunch
 
