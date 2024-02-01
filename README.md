@@ -21,6 +21,11 @@ Jaunch is a native launcher for applications that run on a Java Virtual Machine 
   scoop install mingw
   make app
   ```
+  And if that fails, try it from the bash shell&mdash;e.g.:
+  ```powershell
+  sh -c "make app"
+  ```
+  Which way works might depend on whether you installed Git using Scoop.
 
 The build process will:
 
