@@ -32,4 +32,4 @@ fi
 
 # Display the result.
 echo ================================================================
-ls -Rl dist
+ls -l $(find dist -type f)
