@@ -15,10 +15,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
-    defaults:
-      run:
-        shell: bash
-
     steps:
     - uses: actions/checkout@v4
 
@@ -27,6 +23,12 @@ jobs:
         distribution: 'zulu'
         java-version: '21'
         cache: 'gradle'
+
+    - name: Enable MinGW
+      if: runner.os == 'Windows'
+      # https://stackoverflow.com/a/77298592/1207769
+      run: |
+        $env:PATH = "C:\msys64\usr\bin;$env:PATH"
 
     - name: Build
       run: make compile-all
