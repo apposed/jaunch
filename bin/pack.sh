@@ -27,10 +27,7 @@ fi
 # If possible, run upx to compress the available binaries.
 if [ -x .upx/*/upx ]
 then
-  (
-    set -x;
-    .upx/*/upx $(find dist -perm /+x -type f; find dist -iname '*.exe')
-  )
+  (set -x; .upx/*/upx $(find dist -perm /+x -type f))
 fi
 
 # Display the result.
