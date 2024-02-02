@@ -5,12 +5,14 @@ echo
 echo -e "\033[1;33m[app]\033[0m"
 
 # Copy Jaunch binaries and configuration from dist folder.
-(
-  set -x;
-  cp -rp dist/* app &&
-  cp app/launcher app/jy &&
-  mv app/launcher app/parsy
-)
+(set -x; cp -rp dist/* app) &&
+for l in app/launcher*
+do (
+  suffix=${l#app/launcher}
+  set -x
+  cp "$l" "app/jy$suffix"
+  mv "$l" "app/parsy$suffix"
+) done
 
 # Install needed JAR files.
 copyDependency() {
