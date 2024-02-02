@@ -15,7 +15,10 @@ compile-all: compile-launcher compile-configurator
 dist: compile-all
 	@bin/dist.sh
 
-app: dist
+pack: dist
+	@bin/pack.sh
+
+app: pack
 	@bin/app.sh
 
 test: app

@@ -4,6 +4,8 @@ echo "Available targets:
 	compile-launcher     - compile the native launcher (C)
 	compile-configurator - compile the Jaunch configurator (Kotlin)
 	compile-all          - compile native launcher and Jaunch configurator
-	app                  - generate example application
+	dist                 - generate Jaunch distribution
+	pack                 - compress Jaunch executables
 	test                 - run automated test suite
+	app                  - generate example application
 "

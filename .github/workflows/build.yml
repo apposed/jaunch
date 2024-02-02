@@ -33,12 +33,35 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-build-konan-
 
-    - name: Build
-      run: make compile-all
+    - name: Build binaries and assemble distribution
+      run: make dist
 
-    - uses: actions/upload-artifact@v4
+    - name: Upload platform distribution
+      uses: actions/upload-artifact@v4
       with:
-        name: launcher-${{ matrix.os }}
-        path: |
-          build/launcher*
-          build/bin
+        name: jaunch-${{ matrix.os }}
+        path: dist
+
+  dist:
+    needs: [build]
+
+    steps:
+    - name: Cache UPX
+      id: cache-upx
+      uses: actions/cache@v4
+      with:
+        path: .upx
+        key: ${{ runner.os }}-dist-upx
+
+    - name: Download platform binaries
+      uses: actions/download-artifact@v4
+      merge-multiple: true
+
+    - name: Pack binaries with upx
+      run: bash bin/pack.sh
+
+    - name: Upload merged distribution
+      uses: actions/upload-artifact@v4
+      with:
+        name: jaunch
+        path: dist
