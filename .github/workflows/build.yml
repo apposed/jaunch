@@ -24,6 +24,15 @@ jobs:
         java-version: '21'
         cache: 'gradle'
 
+    - name: Cache Kotlin Native
+      id: cache-konan
+      uses: actions/cache@v4
+      with:
+        path: ~/.konan
+        key: ${{ runner.os }}-build-konan-${{ hashFiles('*gradle.*') }}
+        restore-keys: |
+          ${{ runner.os }}-build-konan-
+
     - name: Build
       run: make compile-all
 
