@@ -2,11 +2,9 @@ name: build
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
@@ -16,6 +14,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
     - uses: actions/checkout@v4
@@ -32,9 +34,6 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: launcher-${{ matrix.os }}
-        path: build/launcher*
-
-    - uses: actions/upload-artifact@v4
-      with:
-        name: jaunch-${{ matrix.os }}
-        path: build/bin/*/releaseExecutable/jaunch.k?exe
+        path: |
+          build/launcher*
+          build/bin
