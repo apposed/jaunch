@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 echo "Available targets:
 	clean            - remove build files and directories
 	compile-launcher - compile the native launcher (C)
