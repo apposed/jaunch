@@ -1,5 +1,7 @@
 #include <string.h>
 
+#define OS_NAME "linux"
+
 int isCommandAvailable(const char *command) {
     return access(command, X_OK) == 0;
 }

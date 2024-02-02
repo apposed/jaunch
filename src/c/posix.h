@@ -4,8 +4,7 @@
 #include "common.h"
 
 #define SLASH "/"
-
-const char* JAUNCH_EXE = "jaunch";
+#define JAUNCH_EXE "jaunch"
 
 int file_exists(const char *path) {
   return access(path, F_OK) == 0;

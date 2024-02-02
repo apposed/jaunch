@@ -44,6 +44,14 @@
 #include "posix.h"
 #endif
 
+#ifdef __x86_64__
+#define OS_ARCH "x64"
+#endif
+
+#ifdef __aarch64__
+#define OS_ARCH "aarch64"
+#endif
+
 // List of places to search for the jaunch configurator executable.
 //
 // NB: This list should align with the configDirs list in Jaunch.kt,
@@ -189,8 +197,16 @@ int main(const int argc, const char *argv[]) {
     char *command = NULL;
     size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
     for (size_t i = 0; i < search_path_count; i++) {
+      // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
+      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], JAUNCH_EXE"-"OS_NAME"-"OS_ARCH);
+      if (file_exists(command)) break;
+
+      // If not found, look for plain jaunch configurator with no suffix.
+      free(command);
       command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], JAUNCH_EXE);
       if (file_exists(command)) break;
+
+      // Nothing at this search path; clean up and move on to the next one.
       free(command);
       command = NULL;
     }

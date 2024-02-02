@@ -76,9 +76,17 @@ fun main(args: Array<String>) {
 
     // Load the configuration from the TOML file(s).
     var config = readConfig(configDir / "jaunch.toml")
+    config += readConfig(configDir / "jaunch-$$OS_NAME.toml")
+    config += readConfig(configDir / "jaunch-$$OS_NAME-$CPU_ARCH.toml")
     if (exeFile != null) {
-        // Parse and merge the app-specific TOML file as well.
-        config += readConfig(configDir / "${exeFile.base.name}.toml")
+        // Parse and merge the app-specific TOML file(s) as well.
+        var fileName = exeFile.base.name
+        while (true) {
+            config += readConfig(configDir / "$fileName.toml")
+            val dash = fileName.lastIndexOf("-")
+            if (dash < 0) break
+            fileName = fileName.substring(0, dash)
+        }
     }
 
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"

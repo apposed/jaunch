@@ -38,8 +38,9 @@ The build process will:
    * Three TOML configuration files, `jaunch.toml`, `jy.toml`, and `parsy.toml`;
    * The `Props.class` helper program.
 
-Then try running `app/jy` or `app/parsy` and watch the fireworks. If it doesn't
-work, try `app/parsy --debug`, which will show what's happening under the hood.
+Then run the `jy` or `parsy` binary in the `app` folder and watch the fireworks.
+If it doesn't work, try appending the `--debug` flag, which will show what's
+happening under the hood.
 
 Note that these `jy` and `parsy` launchers are binary identical&mdash;each is
 merely an illustration of how your native launcher could be named and work.

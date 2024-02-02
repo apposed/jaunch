@@ -1,6 +1,8 @@
 #include <objc/objc.h>
 #include <objc/NSObjCRuntime.h>
 
+#define OS_NAME "macos"
+
 void show_alert(const char *title, const char *message) {
 	/* TODO: Get this objc code working.
 	// Create an NSString from the C string

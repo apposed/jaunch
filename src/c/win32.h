@@ -2,9 +2,9 @@
 
 #include "common.h"
 
+#define OS_NAME "windows"
 #define SLASH "\\"
-
-const char* JAUNCH_EXE = "jaunch.exe";
+#define JAUNCH_EXE "jaunch.exe"
 
 void dlclose(void* library) { FreeLibrary(library); }
 char* dlerror() { return "error" /*TODO: GetLastError()*/; }
