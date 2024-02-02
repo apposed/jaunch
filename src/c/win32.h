@@ -4,7 +4,7 @@
 
 #define OS_NAME "windows"
 #define SLASH "\\"
-#define JAUNCH_EXE "jaunch.exe"
+#define EXE_SUFFIX ".exe"
 
 void dlclose(void* library) { FreeLibrary(library); }
 char* dlerror() { return "error" /*TODO: GetLastError()*/; }

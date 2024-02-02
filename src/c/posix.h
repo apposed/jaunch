@@ -4,7 +4,7 @@
 #include "common.h"
 
 #define SLASH "/"
-#define JAUNCH_EXE "jaunch"
+#define EXE_SUFFIX ""
 
 int file_exists(const char *path) {
   return access(path, F_OK) == 0;

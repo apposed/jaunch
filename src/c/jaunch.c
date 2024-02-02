@@ -198,13 +198,15 @@ int main(const int argc, const char *argv[]) {
     size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
     for (size_t i = 0; i < search_path_count; i++) {
       // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
-      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], JAUNCH_EXE"-"OS_NAME"-"OS_ARCH);
+      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX);
       if (file_exists(command)) break;
+      else debug("[JAUNCH] No configurator at %s", command);
 
       // If not found, look for plain jaunch configurator with no suffix.
       free(command);
-      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], JAUNCH_EXE);
+      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch" EXE_SUFFIX);
       if (file_exists(command)) break;
+      else debug("[JAUNCH] No configurator at %s", command);
 
       // Nothing at this search path; clean up and move on to the next one.
       free(command);
