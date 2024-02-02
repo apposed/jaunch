@@ -12,7 +12,10 @@ compile-configurator:
 
 compile-all: compile-launcher compile-configurator
 
-app: compile-all
+dist: compile-all
+	@bin/dist.sh
+
+app: dist
 	@bin/app.sh
 
 test: app

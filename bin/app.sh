@@ -4,50 +4,13 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[app]\033[0m"
 
-copyBinary() {
-  srcPath=$1
-  destDir=$2
-  destName=$3
-  makeExec=$4
-  if [ ! -f "$srcPath" ]; then return; fi
-  mkdir -p "$destDir"
-  (set -x; cp "$srcPath" "$destDir/$destName")
-  if [ "$makeExec" ]; then chmod +x "$destDir/$destName"; fi
-}
-
-# Copy native launcher executable.
-for app in parsy jy
-do
-  posixLauncherBinaryPath=build/launcher
-  posixLauncherBinaryType=$(file -b "$posixLauncherBinaryPath" 2>/dev/null)
-  case "$posixLauncherBinaryType" in
-    ELF*) copyBinary "$posixLauncherBinaryPath" app $app true ;;
-    Mach-O*) copyBinary "$posixLauncherBinaryPath" app/Contents/MacOS $app true ;;
-  esac
-  copyBinary build/launcher.exe app $app.exe
-done
-
-# Copy jaunch configurator executables.
-posixJaunchBinaryPath=build/bin/posix/releaseExecutable/jaunch.kexe
-posixJaunchBinaryType=$(file -b "$posixJaunchBinaryPath" 2>/dev/null)
-case "$posixJaunchBinaryType" in
-  ELF*) copyBinary "$posixJaunchBinaryPath" app/jaunch jaunch ;;
-  Mach-O*) copyBinary "$posixJaunchBinaryPath" app/Contents/MacOS jaunch ;;
-esac
-copyBinary build/bin/windows/releaseExecutable/jaunch.exe app/jaunch jaunch.exe
-
-# Copy TOML configuration files.
-if [ ! -f app/jaunch/jaunch.toml ]
-then
-  mkdir -p app/jaunch
-  (set -x; cp jaunch.toml app/jaunch/)
-fi
-
-# Copy Props.class helper program.
-if [ ! -f app/jaunch/Props.class ]
-then
-  (set -x; cp Props.class app/jaunch/)
-fi
+# Copy Jaunch binaries and configuration from dist folder.
+(
+  set -x;
+  cp -rp dist/* app &&
+  cp app/launcher app/jy &&
+  mv app/launcher app/parsy
+)
 
 # Install needed JAR files.
 copyDependency() {
