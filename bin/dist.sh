@@ -64,3 +64,6 @@ if [ ! -f dist/jaunch/Props.class ]
 then
   (set -x; cp Props.class dist/jaunch/)
 fi
+
+# Wrap it up into a tarball.
+tar czf jaunch.tar.gz dist

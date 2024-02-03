@@ -2,6 +2,7 @@
 /.upx/
 /app/
 /build/
+/jaunch.tar.gz
 
 ### IntelliJ IDEA ###
 /.idea/

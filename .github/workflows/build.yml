@@ -34,15 +34,13 @@ jobs:
           ${{ runner.os }}-build-konan-
 
     - name: Build binaries and assemble distribution
-      run: |
-        make dist &&
-        zip -r9 jaunch-${{ matrix.os }}.zip dist
+      run: make dist
 
     - name: Upload platform distribution
       uses: actions/upload-artifact@v4
       with:
         name: jaunch-${{ matrix.os }}
-        path: jaunch-${{ matrix.os }}.zip
+        path: jaunch.tar.gz
 
   dist:
     needs: [build]
@@ -63,15 +61,15 @@ jobs:
 
     - name: Merge platform distributions
       run: |
-        for z in jaunch-*/*.zip; do unzip "$z"; done
+        for tar in jaunch-*/jaunch.tar*; do tar xf "$tar"; done
 
     - name: Pack binaries and assemble distribution
       run: |
         bash bin/pack.sh
-        zip -r9 jaunch.zip dist
+        bash -c "tar czf jaunch.tar.gz dist"
 
     - name: Upload merged distribution
       uses: actions/upload-artifact@v4
       with:
         name: jaunch
-        path: jaunch.zip
+        path: jaunch.tar.gz
