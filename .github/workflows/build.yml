@@ -55,7 +55,8 @@ jobs:
 
     - name: Download platform binaries
       uses: actions/download-artifact@v4
-      merge-multiple: true
+      with:
+        merge-multiple: true
 
     - name: Pack binaries with upx
       run: bash bin/pack.sh
