@@ -29,7 +29,7 @@ fi
 # If possible, run upx to compress the available binaries.
 if [ -x .upx/*/upx ]
 then
-  (set -x; .upx/*/upx $(find dist -perm /+x -type f))
+  (set -x; .upx/*/upx --best --force-macos $(find dist -perm /+x -type f))
 fi
 
 # Display the result.
