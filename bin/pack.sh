@@ -11,18 +11,20 @@ if [ ! -d .upx ]
 then
   v=4.2.2
   case "$(uname -s)-$(uname -m)" in
-    Linux-x86_64)
+    Linux-x86_64) (
       mkdir .upx &&
       cd .upx &&
       curl -fsLO https://github.com/upx/upx/releases/download/v$v/upx-$v-amd64_linux.tar.xz &&
       tar xf upx-$v-amd64_linux.tar.xz
       ;;
-    MINGW*-x86_64)
+    )
+    MINGW*-x86_64) (
       mkdir .upx &&
       cd .upx &&
       curl -fsLO https://github.com/upx/upx/releases/download/v$v/upx-$v-win64.zip &&
       unzip upx-$v-win64.zip
       ;;
+    )
   esac
 fi
 
