@@ -25,7 +25,7 @@ os=$(uname -s)
 case "$os" in
   Linux) os=linux ;;
   Darwin) os=macos ;;
-  MINGW*) os=windows ;;
+  MINGW*|MSYS*) os=windows ;;
 esac
 arch=$(uname -m)
 case "$arch" in
