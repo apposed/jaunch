@@ -29,7 +29,12 @@ fi
 # If possible, run upx to compress the available binaries.
 if [ -x .upx/*/upx ]
 then
-  (set -x; .upx/*/upx --best --force-macos $(find dist -perm /+x -type f))
+  # NB: The `-maxdepth 2` intentionally excludes Contents/MacOS/* binaries,
+  # because upx complains that it does not support packing macOS executables.
+  # There is a flag `--force-macos`, but when I tested it, it mangled the
+  # Universal2 fat binary. Maybe we could pack each architecture, and only
+  # afterward combine them with lipo? But doing that would be more involved.
+  (set -x; .upx/*/upx --best $(find dist -maxdepth 2 -perm /+x -type f))
 fi
 
 # Display the result.
