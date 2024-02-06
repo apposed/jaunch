@@ -160,7 +160,7 @@ fun main(args: Array<String>) {
 
         if (arg == "--") {
             if (value != null) error("Divider symbol (--) does not accept a parameter")
-            if (i != divider) error("Divider symbol (--) may only be given once")
+            if (i - 1 != divider) error("Divider symbol (--) may only be given once")
         }
         else if (arg in supportedOptions) {
             // The argument is declared in Jaunch's configuration. Deal with it appropriately.
