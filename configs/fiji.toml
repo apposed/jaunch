@@ -157,12 +157,8 @@ jvm-args = [
 
     # TODO: is fiji.defaultLibPath property necessary for any reason?
 
-    'OS:LINUX|-Dfiji.executable=${app-dir}/fiji',
-    'OS:LINUX|-Dij.executable=${app-dir}/fiji',
-    'OS:MACOSX|-Dfiji.executable=${app-dir}/Contents/MacOS/fiji',
-    'OS:MACOSX|-Dij.executable=${app-dir}/Contents/MacOS/fiji',
-    'OS:WINDOWS|-Dfiji.executable=${app-dir}\fiji.exe',
-    'OS:WINDOWS|-Dij.executable=${app-dir}\fiji.exe',
+    '-Dfiji.executable=${executable}',
+    '-Dij.executable=${executable}',
 
     'OS:LINUX|ARCH:X64|-Djava.library.path=${app-dir}/lib/linux64',
     'OS:LINUX|ARCH:X86|-Djava.library.path=${app-dir}/lib/linux32',

@@ -129,6 +129,7 @@ fun main(args: Array<String>) {
         // Special variable containing path to the application.
         "app-dir" to appDir.path,
     )
+    if (executable != null) vars["executable"] = executable
 
     // Declare the authoritative lists of JVM arguments and main arguments.
     // At the end of the configuration process, we will emit these to stdout.
