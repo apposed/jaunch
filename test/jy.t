@@ -7,6 +7,11 @@ Test that the correct Java program actually runs.
   $ ./jy-linux-x64 -c 'print(1+2)'
   3
 
+Test system property assignment.
+
+  $ ./jy-linux-x64 -Dcake=chocolate -c 'from java.lang import System; print(System.getProperty("cake"))'
+  chocolate
+
 Test command line argument combinations.
 
   $ ./jy-linux-x64 --help

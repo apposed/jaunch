@@ -151,28 +151,28 @@ fun main(args: Array<String>) {
     val divider = inputArgs.indexOf("--")
     var i = 0
     while (i < inputArgs.size) {
-        val inputArg = inputArgs[i++]
+        val arg = inputArgs[i++]
 
         // Check for the --option=value kind of argument.
-        val equals = inputArg.indexOf("=")
-        val arg = if (equals >= 0) inputArg.substring(0, equals) else inputArg
-        val value = if (equals >= 0) inputArg.substring(equals + 1) else null
+        val equals = arg.indexOf("=")
+        val argKey = if (equals >= 0) arg.substring(0, equals) else arg
+        val argVal = if (equals >= 0) arg.substring(equals + 1) else null
 
-        if (arg == "--") {
-            if (value != null) error("Divider symbol (--) does not accept a parameter")
+        if (argKey == "--") {
+            if (argVal != null) error("Divider symbol (--) does not accept a parameter")
             if (i - 1 != divider) error("Divider symbol (--) may only be given once")
         }
-        else if (arg in supportedOptions) {
+        else if (argKey in supportedOptions) {
             // The argument is declared in Jaunch's configuration. Deal with it appropriately.
-            val option: JaunchOption = supportedOptions[arg]!!
+            val option: JaunchOption = supportedOptions[argKey]!!
             if (option.assignment == null) {
                 // standalone option
-                if (value != null) error("Option $arg does not accept a parameter")
+                if (argVal != null) error("Option $argKey does not accept a parameter")
             }
             else {
                 // option with value assignment
-                val v = value ?: if (i < inputArgs.size) inputArgs[i++] else
-                    error("No parameter value given for argument $arg")
+                val v = argVal ?: if (i < inputArgs.size) inputArgs[i++] else
+                    error("No parameter value given for argument $argKey")
 
                 // Normalize the argument to the primary flag on the comma-separated list.
                 // Then strip leading dashes: --class-path becomes class-path, -v becomes v, etc.
@@ -184,13 +184,13 @@ fun main(args: Array<String>) {
                 // and `--mem 52g` is given, it will store `"52g"` for the variable `heap`.
                 vars[varName] = v
             }
-            hints += arg
+            hints += argKey
         }
         else {
             // The argument is not a Jaunch one. Pass it through directly.
             if (divider < 0) {
                 // No dash-dash divider was given, so we need to guess: is this a JVM arg, or a main arg?
-                (if (config.recognizes(arg)) jvmArgs else mainArgs) += arg
+                (if (config.recognizes(argKey)) jvmArgs else mainArgs) += arg
             }
             else if (i < divider) {
                 // This argument is before the dash-dash divider, so must be treated as a JVM arg.
