@@ -12,6 +12,26 @@ Test system property assignment.
   $ ./jy-linux-x64 -Dcake=chocolate -c 'from java.lang import System; print(System.getProperty("cake"))'
   chocolate
 
+Test divider symbol handling.
+
+  $ ./jy-linux-x64 -- --dry-run 2>&1
+  Unknown option: -- or '--dry-run'
+  usage: jython [option] ... [-c cmd | -m mod | file | -] [arg] ...
+  Try 'jython -h' for more information.
+  [1]
+
+  $ ./jy-linux-x64 --dry-run --
+  /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Djava.class.path=/*/lib/jython-2.7.3.jar* -Xmx* org.python.util.jython (glob)
+
+  $ ./jy-linux-x64 --dry-run -Dfoo=before -- -Dfoo=after
+  /*/bin/java -Dfoo=before -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Djava.class.path=/*/lib/jython-2.7.3.jar* -Xmx* org.python.util.jython -Dfoo=after (glob)
+
+  $ ./jy-linux-x64 -Dfoo=before -- -Dfoo=after -c 'from java.lang import System; print(System.getProperty("foo"))'
+  after
+
+  $ ./jy-linux-x64 bad -- good 2>&1 | head -n1
+  kotlin.IllegalStateException: Unrecognized JVM argument: bad
+
 Test command line argument combinations.
 
   $ ./jy-linux-x64 --help

@@ -162,7 +162,7 @@ fun main(args: Array<String>) {
             if (argVal != null) error("Divider symbol (--) does not accept a parameter")
             if (i - 1 != divider) error("Divider symbol (--) may only be given once")
         }
-        else if (argKey in supportedOptions) {
+        else if ((divider < 0 || i <= divider) && argKey in supportedOptions) {
             // The argument is declared in Jaunch's configuration. Deal with it appropriately.
             val option: JaunchOption = supportedOptions[argKey]!!
             if (option.assignment == null) {
@@ -192,7 +192,7 @@ fun main(args: Array<String>) {
                 // No dash-dash divider was given, so we need to guess: is this a JVM arg, or a main arg?
                 (if (config.recognizes(argKey)) jvmArgs else mainArgs) += arg
             }
-            else if (i < divider) {
+            else if (i <= divider) {
                 // This argument is before the dash-dash divider, so must be treated as a JVM arg.
                 // But we only allow it through if it's a recognized JVM argument, or the
                 // allow-unrecognized-jvm-args configuration flag is set to true.
