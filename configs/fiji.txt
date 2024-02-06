@@ -17,3 +17,5 @@ However, the following features of the ImageJ Launcher are no longer supported:
   (released 2014-05-16) when the component+package structure was finalized.
 
 * TODO: Decide about all the various `net.imagej.launcher.*` features...
+
+See also https://github.com/scijava/jaunch/issues.

@@ -59,29 +59,29 @@ java-version-min = '8'
 
 modes = [
   # Decide which mode to launch: default, original-imagej, legacy-fiji, or custom-main.
-  '--dont-patch-ij1|original-imagej',
-  '--ij1|original-imagej',
-  '--ij2|!original-imagej',
-  '--legacy|legacy-fiji',
-  '--update|custom-main',
-  '--main-class|custom-main',
-  '--jar|custom-main',
+  '--dont-patch-ij1|MODE:original-imagej',
+  '--ij1|MODE:original-imagej',
+  '--ij2|!MODE:original-imagej',
+  '--legacy|MODE:legacy-fiji',
+  '--update|MODE:custom-main',
+  '--main-class|MODE:custom-main',
+  '--jar|MODE:custom-main',
 
   # TODO: the --update flag is a shorthand for the following IJL options:
   # --update --info --dont-patch-ij1 --full-classpath --main-class=net.imagej.updater.CommandLine
 
   # To start in ImageJ2 or Fiji mode, we must patch IJ1.
   # But when running the command-line Updater, we don't need to.
-  '--dont-patch-ij1|no-ij1-patching',
-  'custom-main|no-ij1-patching',
-  '--ij2|!no-ij1-patching',
+  '--dont-patch-ij1|MODE:no-ij1-patching',
+  'MODE:custom-main|MODE:no-ij1-patching',
+  '--ij2|!MODE:no-ij1-patching',
 
   # Disable the splash screen when running a different
   # main class, and/or when --no-splash option is given.
-  '--no-splash|no-splash',
-  '--headless|no-splash',
-  '--update|no-splash',
-  '--main-class|no-splash',
+  '--no-splash|MODE:no-splash',
+  '--headless|MODE:no-splash',
+  '--update|MODE:no-splash',
+  '--main-class|MODE:no-splash',
 ]
 
 directives = [
@@ -119,10 +119,10 @@ jvm-args = [
     '--debug-gc|-verbose:gc',
 
     # Handle --dont-patch-ij1 option.
-    'no-ij1-patching|-Dpatch.ij1=false',
+    'MODE:no-ij1-patching|-Dpatch.ij1=false',
 
     # Handle JVM args for ij1 mode.
-    'original-imagej|-Dsun.java.command=ImageJ',
+    'MODE:original-imagej|-Dsun.java.command=ImageJ',
 
     # Enable SciJava logging in updater mode.
     '--update|-Dscijava.log.level=info',
@@ -149,7 +149,7 @@ jvm-args = [
     '--plugins|-Dplugins.dir=${plugins}'
     '!--plugins|-Dplugins.dir=${app-dir}',
 
-    '!no-splash|-Dimagej.splash=true',
+    '!MODE:no-splash|-Dimagej.splash=true',
 
     '-Dimagej.dir=${app-dir}',
     '-Dij.dir=${app-dir}',
@@ -196,18 +196,18 @@ main-args = [
     # Go back through and put in the right -classpath stuff here.
 
     # Handle main args for the default main mode (neither original-imagej nor custom-main).
-    '!original-imagej|!custom-main|-ijjarpath',
-    '!original-imagej|!custom-main|jars',
-    '!original-imagej|!custom-main|-ijjarpath',
-    '!original-imagej|!custom-main|plugins',
-    '!original-imagej|!custom-main|net.imagej.Main',
+    '!MODE:original-imagej|!MODE:custom-main|-ijjarpath',
+    '!MODE:original-imagej|!MODE:custom-main|jars',
+    '!MODE:original-imagej|!MODE:custom-main|-ijjarpath',
+    '!MODE:original-imagej|!MODE:custom-main|plugins',
+    '!MODE:original-imagej|!MODE:custom-main|net.imagej.Main',
 
     # Handle main args for original-imagej mode.
-    'original-imagej|-classpath',
-    'original-imagej|jars/ij-*.jar',
-    'original-imagej|ij.ImageJ',
-    'original-imagej|--allow-multiple|-port0',
+    'MODE:original-imagej|-classpath',
+    'MODE:original-imagej|jars/ij-*.jar',
+    'MODE:original-imagej|ij.ImageJ',
+    'MODE:original-imagej|--allow-multiple|-port0',
 
     # The -batch flag is required when --headless is given.
-    '!custom-mode|-batch',
+    '--headless|!MODE:custom-main|-batch',
 ]
