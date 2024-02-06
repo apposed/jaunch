@@ -18,10 +18,10 @@ dist: compile-all
 pack: dist
 	@bin/pack.sh
 
-app: pack
-	@bin/app.sh
-
 test: app
 	@bin/test.sh
+
+app: pack
+	@bin/app.sh
 
 .PHONY: tests
