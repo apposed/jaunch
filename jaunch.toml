@@ -222,8 +222,10 @@ allow-unrecognized-jvm-args = false
 #   a small Java program that prints out all key=value pairs of System.getProperties(),
 #   paying particular attention to java.version, java.vendor, and java.vendor.version.
 #   This is the slowest but most reliable way to gather metadata about an installation.
+#   But it's not a guaranteed solution either: for example, JVMs bundled up by jpackage
+#   are placed in a lib/runtime directory without a bin folder! So no bin/java.
 #
-# Nonetheless, it is possible for all of Jaunch's efforts to be in vain, and to end up
+# As such, it is possible for all of Jaunch's efforts to be in vain, and to end up
 # trying to decide whether to launch with some mystery-flavored JVM. In such scenarios,
 # the allow-weird-jvms flag comes to the rescue, telling Jaunch whether to allow it
 # (true), or give up and complain (false). Hopefully, your users will never know the
