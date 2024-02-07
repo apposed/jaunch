@@ -521,7 +521,8 @@ jvm-root-paths = [
     'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',  # Java 8+
     'OS:WINDOWS|${ProgramFiles}\Java\*',
     'OS:WINDOWS|${ProgramFiles(x86)}\Java\*',
-    'OS:WINDOWS|~\scoop\apps\openjdk*\*',                           # Scoop
+    'OS:WINDOWS|~\scoop\apps\openjdk*\*',                           # Scoop openjdk
+    'OS:WINDOWS|~\scoop\apps\mambaforge\*\envs\*\Library\lib\jvm',  # Scoop mambaforge
 ]
 
 # ==============================================================================
