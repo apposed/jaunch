@@ -1,5 +1,7 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** Tests `java.kt` functions. */
 class JavaTest {
@@ -106,5 +108,28 @@ class JavaTest {
         expected.forEach {
             assertEquals(it.value, extractJavaVersion(it.key), it.key)
         }
+    }
+
+    @Test
+    fun testCompareVersions() {
+        assertEquals(0, compareVersions("1.8.0_255", "1.8"))
+        assertEquals(0, compareVersions("1.8.0_255", "8"))
+        assertTrue(compareVersions("1.8.0_255", "21") < 0)
+        assertTrue(compareVersions("1.8.0_255", "1.6") > 0)
+        assertTrue(compareVersions("1.8.0_255", "6") > 0)
+    }
+
+    @Test
+    fun testVersionOutOfBounds() {
+        // Test in-bounds versions.
+        assertFalse(versionOutOfBounds("1.8.0_255", "8", "21"))
+        assertFalse(versionOutOfBounds("1.8.0_255", "8", null))
+        assertFalse(versionOutOfBounds("1.8.0_255", "1.6", "8"))
+        // Test out-of-bounds versions.
+        assertTrue(versionOutOfBounds("1.8.0_255", "11", "21"))
+        assertTrue(versionOutOfBounds("1.8.0_255", "11", null))
+        assertTrue(versionOutOfBounds("1.8.0_92", "1.8.0_101", null))
+        assertTrue(versionOutOfBounds("1.8.0_255", null, "1.6"))
+        assertTrue(versionOutOfBounds("1.8.0_255", null, "6"))
     }
 }

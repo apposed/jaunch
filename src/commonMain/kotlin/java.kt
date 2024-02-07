@@ -184,9 +184,9 @@ class JavaInstallation(
             if (version == null && strict)
                 return fail("Version constraints exist, but version is unknown and weird JVMs are disallowed.")
             if (version != null) {
-                if (versionOutOfBounds(version!!, constraints.versionMin, constraints.versionMin))
+                if (versionOutOfBounds(version!!, constraints.versionMin, constraints.versionMax))
                     return fail("Version '$version' is outside specified bounds " +
-                            "[${constraints.versionMin}, ${constraints.versionMin}].")
+                            "[${constraints.versionMin}, ${constraints.versionMax}].")
             }
         }
 
@@ -302,7 +302,7 @@ fun cleanupVersion(v: String): String {
 }
 
 fun versionOutOfBounds(version: String, min: String?, max: String?): Boolean {
-    return compareVersions(version, min) >= 0 && compareVersions(version, max) <= 0
+    return compareVersions(version, min) < 0 || compareVersions(version, max) > 0
 }
 
 fun compareVersions(v1: String, v2: String?): Int {
@@ -317,5 +317,8 @@ fun compareVersions(v1: String, v2: String?): Int {
 }
 
 fun versionDigits(v: String): List<Int> {
-    return Regex("\\d+").findAll(v).map { it.value.toInt() }.toList()
+    // NB: Strip leading 1. prefix, as described in the jaunch.toml
+    // documentation's section on java-version-min & java-version-max.
+    val vv = if (v.startsWith("1.")) v.substring(2) else v
+    return Regex("\\d+").findAll(vv).map { it.value.toInt() }.toList()
 }
