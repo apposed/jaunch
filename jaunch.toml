@@ -502,12 +502,12 @@ arch-aliases = [
 jvm-root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
-    '!--system|OS:LINUX|ARCH:X64|java/linux64/*',
-    '!--system|OS:LINUX|ARCH:X86|java/linux32/*',
-    '!--system|OS:MACOSX|ARCH:ARM64|java/macosx-arm64/*',
-    '!--system|OS:MACOSX|ARCH:X64|java/macosx/*',
-    '!--system|OS:WINDOWS|ARCH:X64|java\win64\*',
-    '!--system|OS:WINDOWS|ARCH:X86|java\win32\*',
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',
+    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*',
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*',
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}/java\win64\*',
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}/java\win32\*',
     '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                        # Conda (openjdk 9+)
     '${CONDA_PREFIX}/pkgs/openjdk*',                                # Conda (openjdk 8)
     'OS:LINUX|/usr/lib/jvm/*',                                      # Linux distro package manager (e.g. apt)
