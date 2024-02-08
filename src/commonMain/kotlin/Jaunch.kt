@@ -125,7 +125,7 @@ fun main(args: Array<String>) {
 
     // Declare a set to store option parameter values.
     // It will be populated at argument parsing time.
-    val vars = mutableMapOf<String, String>(
+    val vars = mutableMapOf(
         // Special variable containing path to the application.
         "app-dir" to appDir.path,
     )
