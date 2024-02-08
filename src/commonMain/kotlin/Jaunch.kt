@@ -74,20 +74,28 @@ fun main(args: Array<String>) {
         error("Jaunch config directory not found. Please place config in one of: $configDirs")
     debug("configDir -> ", configDir)
 
-    // Load the configuration from the TOML file(s).
-    var config = readConfig(configDir / "jaunch.toml")
-    config += readConfig(configDir / "jaunch-$$OS_NAME.toml")
-    config += readConfig(configDir / "jaunch-$$OS_NAME-$CPU_ARCH.toml")
+    // Make a list of relevant configuration files to read.
+    val osName = OS_NAME.lowercase()
+    val cpuArch = CPU_ARCH.lowercase()
+    var config = JaunchConfig()
+    val configFiles = mutableListOf(
+        configDir / "jaunch.toml",
+        configDir / "jaunch-$osName.toml",
+        configDir / "jaunch-$osName-$cpuArch.toml",
+    )
     if (exeFile != null) {
-        // Parse and merge the app-specific TOML file(s) as well.
+        // Include the app-specific config file(s) as well.
+        val index = configFiles.size
         var fileName = exeFile.base.name
         while (true) {
-            config += readConfig(configDir / "$fileName.toml")
+            configFiles.add(index, configDir / "$fileName.toml")
             val dash = fileName.lastIndexOf("-")
             if (dash < 0) break
             fileName = fileName.substring(0, dash)
         }
     }
+    // Read and merge all the config files.
+    for (configFile in configFiles) config += readConfig(configFile)
 
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
