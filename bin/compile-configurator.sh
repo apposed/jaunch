@@ -30,7 +30,7 @@ case "$platform" in
       # Merge the macOS binaries into a Universal2 fat binary.
       outDir=build/bin/macosUniversal/releaseExecutable
       mkdir -p "$outDir"
-      (set -x; lipo -create -output "$outDir/jaunch.kexe" build/bin/macosArm64/releaseExecutable/jaunch.kexe build/bin/macosX64/jaunch.kexe)
+      (set -x; lipo -create -output "$outDir/jaunch.kexe" build/bin/macosArm64/releaseExecutable/jaunch.kexe build/bin/macosX64/releaseExecutable/jaunch.kexe)
       result=$?
     fi
     ;;
