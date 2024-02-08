@@ -450,13 +450,11 @@ private infix fun String.interpolate(vars: Map<String, String>): String = buildS
 
 private fun help(executable: String?, programName: String, supportedOptions: JaunchOptions) {
     // TODO: Glean Jaunch version and build hash somehow.
-    val jaunchVersion = "???"
-    val jaunchBuild = "???"
     val exeName = executable ?: "jaunch"
 
     printlnErr("Usage: $exeName [<Java options>.. --] [<main arguments>..]")
     printlnErr()
-    printlnErr("$programName launcher (Jaunch v$jaunchVersion / build $jaunchBuild)")
+    printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / build $JAUNCH_BUILD)")
     printlnErr("Java options are passed to the Java Runtime,")
     printlnErr("main arguments to the launched program ($programName).")
     printlnErr()

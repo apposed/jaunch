@@ -12,7 +12,7 @@ Test command line argument combinations.
   $ ./parsy-linux-x64 --help
   Usage: ./parsy-linux-x64 [<Java options>.. --] [<main arguments>..]
   
-  Parsy launcher (Jaunch v??? / build ???)
+  Parsy launcher (Jaunch v* / build *) (glob)
   Java options are passed to the Java Runtime,
   main arguments to the launched program (Parsy).
   

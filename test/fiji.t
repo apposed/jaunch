@@ -13,7 +13,7 @@ Test command line argument combinations.
   $ ./fiji-linux-x64 --help
   Usage: ./fiji-linux-x64 [<Java options>.. --] [<main arguments>..]
   
-  Fiji launcher (Jaunch v??? / build ???)
+  Fiji launcher (Jaunch v* / build *) (glob)
   Java options are passed to the Java Runtime,
   main arguments to the launched program (Fiji).
   
