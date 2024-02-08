@@ -11,6 +11,12 @@ class FileTest {
     }
 
     @Test
+    fun testExists() {
+        assertTrue(File(".").exists)
+        assertFalse(File("this-file-is-unlikely-to-exist").exists)
+    }
+
+    @Test
     fun testCwd() {
         for (p in listOf(".", "")) {
             val cwd = File(p)
