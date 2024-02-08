@@ -1,0 +1,44 @@
+# *** Welcome to the Icy launcher's configuration file! ***
+#
+# The Icy launcher is built on Jaunch (https://github.com/scijava/jaunch).
+#
+# There is a general layer of launcher configuration in the jaunch.toml file.
+# The contents below define Icy's particular launcher behavior and features,
+# on top of Jaunch's "sensible default" functionality.
+#
+# See that jaunch.toml file for more details about Jaunch configuration.
+
+jaunch-version = 1
+
+program-name = 'Icy'
+
+supported-options = [
+]
+
+java-version-min = '8'
+#java-version-max = '21'
+
+classpath = [
+    'updater.jar',
+#    'icy.jar',
+#    'lib/*.jar',
+#    'ij/*.jar',
+]
+
+max-heap = '25%'
+
+jvm-args = [
+    'OS:LINUX|ARCH:X64|-Djava.library.path=${app-dir}/lib/unix64',
+    'OS:LINUX|ARCH:X86|-Djava.library.path=${app-dir}/lib/unix32',
+    'OS:MACOSX|ARCH:ARM64|-Djava.library.path=${app-dir}/lib/maca64',
+    'OS:MACOSX|ARCH:X64|-Djava.library.path=${app-dir}/lib/mac64',
+    'OS:WINDOWS|ARCH:X64|-Djava.library.path=${app-dir}\lib\win64',
+    'OS:WINDOWS|ARCH:X86|-Djava.library.path=${app-dir}\lib\win32',
+]
+
+main-class-candidates = [
+    'icy.updater.Main',
+]
+
+main-args = [
+]

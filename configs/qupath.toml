@@ -1,0 +1,39 @@
+# *** Welcome to the QuPath launcher's configuration file! ***
+#
+# The QuPath launcher is built on Jaunch (https://github.com/scijava/jaunch).
+#
+# There is a general layer of launcher configuration in the jaunch.toml file.
+# The contents below define QuPath's particular launcher behavior and features,
+# on top of Jaunch's "sensible default" functionality.
+#
+# See that jaunch.toml file for more details about Jaunch configuration.
+
+jaunch-version = 1
+
+program-name = 'QuPath'
+
+supported-options = [
+]
+
+java-version-min = '21'
+#java-version-max = '21'
+
+classpath = [
+    '${app-dir}/lib/app/qupath-app-*.jar',
+    '${app-dir}/lib/app/*.jar',
+]
+
+max-heap = '70%'
+
+jvm-args = [
+    '!OS:WINDOWS|-Djava.library.path=${app-dir}/lib/app',
+    'OS:WINDOWS|-Djava.library.path=${app-dir}\lib\app',
+    '-Djpackage.app-version=0.5.0',
+]
+
+main-class-candidates = [
+    'qupath.QuPath',
+]
+
+main-args = [
+]
