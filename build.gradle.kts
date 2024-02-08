@@ -39,22 +39,21 @@ kotlin {
         val posixMain by creating {
             dependsOn(commonMain.get())
         }
-        @Suppress("UNUSED_PARAMETER")
         val macosArm64Main by getting {
             dependsOn(posixMain)
         }
-        @Suppress("UNUSED_PARAMETER")
         val macosX64Main by getting {
             dependsOn(posixMain)
         }
-        @Suppress("UNUSED_PARAMETER")
         val linuxArm64Main by getting {
             dependsOn(posixMain)
         }
-        @Suppress("UNUSED_PARAMETER")
         val linuxX64Main by getting {
             dependsOn(posixMain)
         }
+        // HACK: Prevent "Variable is never used" warnings.
+        // Unfortunately, @Suppress("UNUSED_PARAMETER") does not do the trick.
+        print("$macosArm64Main$macosX64Main$linuxArm64Main$linuxX64Main".substring(0, 0))
     }
 
     // Build the binaries for all activated native targets.
