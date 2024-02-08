@@ -37,7 +37,7 @@ Test command line argument combinations.
   $ ./jy-linux-x64 --help
   Usage: ./jy-linux-x64 [<Java options>.. --] [<main arguments>..]
   
-  Jy launcher (Jaunch v* / build *) (glob)
+  Jy launcher (Jaunch v* / * / *) (glob)
   Java options are passed to the Java Runtime,
   main arguments to the launched program (Jy).
   
