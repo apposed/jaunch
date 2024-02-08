@@ -462,7 +462,7 @@ private fun help(executable: String?, programName: String, supportedOptions: Jau
 
     printlnErr("Usage: $exeName [<Java options>.. --] [<main arguments>..]")
     printlnErr()
-    printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / build $JAUNCH_BUILD)")
+    printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / $JAUNCH_BUILD / $BUILD_TARGET)")
     printlnErr("Java options are passed to the Java Runtime,")
     printlnErr("main arguments to the launched program ($programName).")
     printlnErr()

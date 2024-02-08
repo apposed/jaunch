@@ -11,22 +11,59 @@ repositories {
 }
 
 kotlin {
+    // Initialize all target platforms.
+    // Incompatible targets will be automatically skipped with a warning;
+    // we suppress such warnings by adding a line to gradle.properties:
+    // kotlin.native.ignoreDisabledTargets=true
+    val linuxArm64 = linuxArm64()
+    val linuxX64 = linuxX64()
+    val macosArm64 = macosArm64()
+    val macosX64 = macosX64()
+    val windows = mingwX64("windows")
+
+    // Configure which native targets to build, based on current platform.
     val hostOs = System.getProperty("os.name")
-    val isArm64 = System.getProperty("os.arch") == "aarch64"
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" && isArm64 -> macosArm64("posix")
-        hostOs == "Mac OS X" && !isArm64 -> macosX64("posix")
-        hostOs == "Linux" && isArm64 -> linuxArm64("posix")
-        hostOs == "Linux" && !isArm64 -> linuxX64("posix")
-        isMingwX64 -> mingwX64("windows")
+    val nativeTargets = when {
+        hostOs == "Linux" -> listOf(linuxArm64, linuxX64)
+        hostOs == "Mac OS X" -> listOf(macosArm64, macosX64)
+        hostOs.startsWith("Windows") -> listOf(windows)
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
 
-    nativeTarget.apply {
-        binaries {
-            executable {
-                entryPoint = "main"
+    // Define dependencies between source sets.
+    // We declare an intermediate source set called posix, which
+    // the Linux and macOS sources extend, but Windows does not.
+    // For further details, see:
+    // https://kotlinlang.org/docs/multiplatform-advanced-project-structure.html#declaring-custom-source-sets
+    sourceSets {
+        val posixMain by creating {
+            dependsOn(commonMain.get())
+        }
+        @Suppress("UNUSED_PARAMETER")
+        val macosArm64Main by getting {
+            dependsOn(posixMain)
+        }
+        @Suppress("UNUSED_PARAMETER")
+        val macosX64Main by getting {
+            dependsOn(posixMain)
+        }
+        @Suppress("UNUSED_PARAMETER")
+        val linuxArm64Main by getting {
+            dependsOn(posixMain)
+        }
+        @Suppress("UNUSED_PARAMETER")
+        val linuxX64Main by getting {
+            dependsOn(posixMain)
+        }
+    }
+
+    // Build the binaries for all activated native targets.
+    nativeTargets.forEach {
+        it.apply {
+            binaries {
+                executable {
+                    entryPoint = "main"
+                }
             }
         }
     }

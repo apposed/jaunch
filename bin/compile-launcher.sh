@@ -13,7 +13,13 @@ test -d "$jdkdir" || jdkdir=$(test ! -x /usr/libexec/java_home || /usr/libexec/j
 mkdir -p build
 
 compile() {
-  (set -x; gcc \
+  compiler=$1
+  command -v "$compiler" >/dev/null 2>&1 || {
+    echo "[WARNING] Skipping invocation: $@"
+    return
+  }
+  shift
+  (set -x; "$compiler" \
     -I"$jdkdir/include" \
     -I"$jdkdir/include/linux" \
     -I"$jdkdir/include/darwin" \
@@ -23,10 +29,15 @@ compile() {
 }
 
 case "$(uname)" in
-  Darwin)
-    compile -o build/launcher-x86_64 -target x86_64-apple-macos10.12 &&
-    compile -o build/launcher-arm64 -target arm64-apple-macos11 &&
-    (set -x; lipo -create -output build/launcher build/launcher-x86_64 build/launcher-arm64)
+  Linux)
+    compile gcc -o build/launcher-linux-x64 &&
+    compile aarch64-linux-gnu-gcc -o build/launcher-linux-arm64
     ;;
-  *) compile -o build/launcher ;;
+  Darwin)
+    compile gcc -o build/launcher-macos-arm64 -target arm64-apple-macos11 &&
+    compile gcc -o build/launcher-macos-x64 -target x86_64-apple-macos10.12 &&
+    (set -x; lipo -create -output build/launcher build/launcher-macos-x64 build/launcher-macos-arm64)
+    ;;
+  MINGW*|MSYS*) compile -o build/launcher-windows-x64.exe ;;
+  *) compile gcc -o build/launcher ;;
 esac

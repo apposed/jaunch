@@ -15,42 +15,31 @@ copyBinary() {
   if [ ! -f "$srcPath" ]; then return; fi
   mkdir -p "$destDir"
   (set -x; cp "$srcPath" "$destDir/$destName")
-  if [ "$makeExec" ]; then chmod +x "$destDir/$destName"; fi
+  if [ "$makeExec" ]; then (set -x; chmod +x "$destDir/$destName"); fi
 }
 
 # Clear out previous dist directory.
 rm -rf dist
 
-os=$(uname -s)
-case "$os" in
-  Linux) os=linux ;;
-  Darwin) os=macos ;;
-  MINGW*|MSYS*) os=windows ;;
-esac
-arch=$(uname -m)
-case "$arch" in
-  x86_64|amd64) arch=x64 ;;
-  arm64) arch=aarch64 ;;
-esac
-suffix="$os-$arch"
-
-# Copy native launcher executable.
-posixLauncherBinaryPath=build/launcher
-posixLauncherBinaryType=$(file -b "$posixLauncherBinaryPath" 2>/dev/null)
-case "$posixLauncherBinaryType" in
-  ELF*) copyBinary "$posixLauncherBinaryPath" dist "$appName-$suffix" true ;;
-  Mach-O*) copyBinary "$posixLauncherBinaryPath" dist/Contents/MacOS "$appName-$suffix" true ;;
-esac
-copyBinary build/launcher.exe dist "$appName-$suffix".exe
+# Copy native launcher executables.
+for launcherBinary in build/launcher*
+do
+  targetFilename="$appName${launcherBinary#build/launcher}"
+  binaryType=$(file -b "$launcherBinary" 2>/dev/null)
+  case "$binaryType" in
+    ELF*) copyBinary "$launcherBinary" dist "$targetFilename" true ;;
+    Mach-O*) copyBinary "$launcherBinary" dist/Contents/MacOS "$targetFilename" true ;;
+    *) copyBinary "$launcherBinary" dist "$targetFilename" ;;
+  esac
+done
 
 # Copy jaunch configurator executables.
-posixJaunchBinaryPath=build/bin/posix/releaseExecutable/jaunch.kexe
-posixJaunchBinaryType=$(file -b "$posixJaunchBinaryPath" 2>/dev/null)
-case "$posixJaunchBinaryType" in
-  ELF*) copyBinary "$posixJaunchBinaryPath" dist/jaunch "jaunch-$suffix" ;;
-  Mach-O*) copyBinary "$posixJaunchBinaryPath" dist/Contents/MacOS "jaunch-$suffix" ;;
-esac
-copyBinary build/bin/windows/releaseExecutable/jaunch.exe dist/jaunch "jaunch-$suffix.exe"
+copyBinary build/bin/linuxArm64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-linux-arm64 true
+copyBinary build/bin/linuxX64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-linux-x64 true
+copyBinary build/bin/macosArm64/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos-arm64 true
+copyBinary build/bin/macosX64/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos-x64 true
+copyBinary build/bin/macosUniversal/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos true
+copyBinary build/bin/windows/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-x64.exe
 
 # Copy TOML configuration files.
 if [ ! -f dist/jaunch/jaunch.toml ]
