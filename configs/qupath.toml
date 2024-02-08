@@ -12,11 +12,7 @@ jaunch-version = 1
 
 program-name = 'QuPath'
 
-supported-options = [
-]
-
 java-version-min = '21'
-#java-version-max = '21'
 
 classpath = [
     '${app-dir}/lib/app/qupath-app-*.jar',
@@ -33,7 +29,4 @@ jvm-args = [
 
 main-class-candidates = [
     'qupath.QuPath',
-]
-
-main-args = [
 ]

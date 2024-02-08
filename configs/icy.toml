@@ -12,17 +12,10 @@ jaunch-version = 1
 
 program-name = 'Icy'
 
-supported-options = [
-]
-
 java-version-min = '8'
-#java-version-max = '21'
 
 classpath = [
     'updater.jar',
-#    'icy.jar',
-#    'lib/*.jar',
-#    'ij/*.jar',
 ]
 
 max-heap = '25%'
@@ -38,7 +31,4 @@ jvm-args = [
 
 main-class-candidates = [
     'icy.updater.Main',
-]
-
-main-args = [
 ]

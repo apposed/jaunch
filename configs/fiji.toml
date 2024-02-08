@@ -55,7 +55,6 @@ supported-options = [
 ]
 
 java-version-min = '8'
-#java-version-max = '21'
 
 modes = [
   # Decide which mode to launch: default, original-imagej, legacy-fiji, or custom-main.
