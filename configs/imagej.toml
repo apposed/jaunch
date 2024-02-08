@@ -1,0 +1,27 @@
+# *** Welcome to the ImageJ launcher's configuration file! ***
+#
+# The ImageJ launcher is built on Jaunch (https://github.com/scijava/jaunch).
+#
+# There is a general layer of launcher configuration in the jaunch.toml file.
+# The contents below define ImageJ's particular launcher behavior and features,
+# on top of Jaunch's "sensible default" functionality.
+#
+# See that jaunch.toml file for more details about Jaunch configuration.
+
+jaunch-version = 1
+
+program-name = 'ImageJ'
+
+jvm-root-paths = [
+    '${app-dir}',
+]
+
+java-version-min = '1.6'
+
+classpath = [
+    '${app-dir}/ij.jar',
+]
+
+max-heap = '75%'
+
+main-class = 'ij.ImageJ'
