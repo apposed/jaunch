@@ -51,9 +51,7 @@ Test command line argument combinations.
   $ ./parsy-linux-x64 --print-java-home
   /* (glob)
 
-  $ ./parsy-linux-x64 --print-java-info 2>&1 | grep -v '^\* \(java\|sun\|user\)\.' | LC_ALL=C sort
-  \* IMPLEMENTOR=* (glob)
-  \* IMPLEMENTOR_VERSION=* (glob)
+  $ ./parsy-linux-x64 --print-java-info 2>&1 | grep -v '^\* \(IMPLEMENTOR\|java\.\|jdk\.\|sun\.\|user\.\)' | LC_ALL=C sort
   \* JAVA_VERSION=* (glob)
   * OS_ARCH=amd64
   * OS_NAME=Linux
@@ -63,7 +61,6 @@ Test command line argument combinations.
   * file.encoding.pkg=sun.io
   \* file.encoding=* (glob)
   * file.separator=/
-  \* jdk.vendor.version=* (glob)
   * line.separator=
   * os.arch=amd64
   * os.name=Linux
