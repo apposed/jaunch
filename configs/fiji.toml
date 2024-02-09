@@ -54,6 +54,12 @@ supported-options = [
 # ./ImageJ-linux64 --ij2 --headless --console --run hello.py 'name="Mr Kraken"'
 ]
 
+jvm-root-paths = [
+    # Fiji used to ship versions of OpenJDK 8 with a mangled directory structure.
+    # The mangling was done to work around limitations of the old ImageJ Launcher.
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
+]
+
 java-version-min = '8'
 
 modes = [
