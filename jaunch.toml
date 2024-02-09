@@ -503,6 +503,7 @@ jvm-root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
     '!--system|${app-dir}/lib/runtime',                             # jpackage
+    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',  # bundled (Linux aarch64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',        # bundled (Linux x86-64)
     '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',        # bundled (Linux x86-32)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS aarch64)
