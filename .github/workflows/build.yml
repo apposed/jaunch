@@ -33,6 +33,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-build-konan-
 
+    - name: Install aarch64-linux-gnu-gcc
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+
     - name: Build binaries and assemble distribution
       run: make dist
 
