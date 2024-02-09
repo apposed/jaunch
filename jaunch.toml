@@ -502,28 +502,28 @@ arch-aliases = [
 jvm-root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
-    '!--system|${app-dir}/lib/runtime',                             # jpackage
-    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',  # bundled (Linux aarch64)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',        # bundled (Linux x86-64)
-    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',        # bundled (Linux x86-32)
+    '!--system|${app-dir}/lib/runtime',                              # jpackage
+    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux aarch64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',         # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',         # bundled (Linux x86-32)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS aarch64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*',        # bundled (macOS x86-64)
-    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}/java\win64\*',        # bundled (Windows x86-64)
-    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}/java\win32\*',        # bundled (Windows x86-32)
-    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                        # Conda (openjdk 9+)
-    '${CONDA_PREFIX}/pkgs/openjdk*',                                # Conda (openjdk 8)
-    'OS:LINUX|/usr/lib/jvm/*',                                      # Linux distro package manager (e.g. apt)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*',         # bundled (macOS x86-64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}/java\win64\*',         # bundled (Windows x86-64)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}/java\win32\*',         # bundled (Windows x86-32)
+    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                         # Conda (openjdk 9+)
+    '${CONDA_PREFIX}/pkgs/openjdk*',                                 # Conda (openjdk 8)
+    'OS:LINUX|/usr/lib/jvm/*',                                       # Linux distro package manager (e.g. apt)
     'OS:LINUX|/var/lib/flatpak/runtime/org.freedesktop.Sdk.Extension.openjdk*/*/*/*/files/jvm/*', # Flatpak
-    'OS:LINUX|/snap/openjdk/*/jdk',                                 # snap
-    'OS:LINUX|~/.sdkman/candidates/java/*',                         # sdkman.io
-    'OS:LINUX|~/.cache/cjdk/v*/jdks/*/*',                           # github.com/cachedjdk/cjdk
-    'OS:LINUX|~/.jdk/*',                                            # github.com/jyksnw/install-jdk
-    'OS:LINUX|~/.jre/*',                                            # github.com/jyksnw/install-jdk
-    'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',  # Java 8+
+    'OS:LINUX|/snap/openjdk/*/jdk',                                  # snap
+    'OS:LINUX|~/.sdkman/candidates/java/*',                          # sdkman.io
+    'OS:LINUX|~/.cache/cjdk/v*/jdks/*/*',                            # github.com/cachedjdk/cjdk
+    'OS:LINUX|~/.jdk/*',                                             # github.com/jyksnw/install-jdk
+    'OS:LINUX|~/.jre/*',                                             # github.com/jyksnw/install-jdk
+    'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',   # Java 8+
     'OS:WINDOWS|${ProgramFiles}\Java\*',
     'OS:WINDOWS|${ProgramFiles(x86)}\Java\*',
-    'OS:WINDOWS|~\scoop\apps\openjdk*\*',                           # Scoop openjdk
-    'OS:WINDOWS|~\scoop\apps\mambaforge\*\envs\*\Library\lib\jvm',  # Scoop mambaforge
+    'OS:WINDOWS|~\scoop\apps\openjdk*\*',                            # Scoop openjdk
+    'OS:WINDOWS|~\scoop\apps\mambaforge\*\envs\*\Library\lib\jvm',   # Scoop mambaforge
 ]
 
 # ==============================================================================
