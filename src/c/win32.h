@@ -31,7 +31,7 @@ void writeLine(HANDLE stdinWrite, const char *input) {
 }
 
 int file_exists(const char *path) {
-  return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
+    return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
 }
 
 int run_command(const char *command,
@@ -65,14 +65,14 @@ int run_command(const char *command,
     // from the stdin stream. We do this to avoid issues with quoting.
     char *commandPlusDash = malloc(strlen(command) + 3);
     if (commandPlusDash == NULL) {
-      error("Failed to allocate memory (command plus dash)");
-      return ERROR_MALLOC;
+        error("Failed to allocate memory (command plus dash)");
+        return ERROR_MALLOC;
     }
     strcpy(commandPlusDash, command);
     strcat(commandPlusDash, " -");
     if (!CreateProcess(NULL, (LPSTR)commandPlusDash, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-      free(commandPlusDash);
-      handleError("Error creating process");
+        free(commandPlusDash);
+        handleError("Error creating process");
     }
     free(commandPlusDash);
 
@@ -87,8 +87,8 @@ int run_command(const char *command,
     // those lines, even though the pipe is not yet closed. This avoids deadlocks.
     char *numInputString = (char *)malloc(21);
     if (numInputString == NULL) {
-      error("Failed to allocate memory (input line count)");
-      return ERROR_MALLOC;
+        error("Failed to allocate memory (input line count)");
+        return ERROR_MALLOC;
     }
     snprintf(numInputString, 21, "%zu", numInput);
     writeLine(stdinWrite, numInputString);
@@ -108,8 +108,8 @@ int run_command(const char *command,
     char *outputBuffer = malloc(bufferSize);
 
     if (outputBuffer == NULL) {
-      error("Failed to allocate memory (output buffer)");
-      return ERROR_MALLOC;
+        error("Failed to allocate memory (output buffer)");
+        return ERROR_MALLOC;
     }
 
     while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
@@ -117,8 +117,8 @@ int run_command(const char *command,
             bufferSize *= 2;
             outputBuffer = realloc(outputBuffer, bufferSize);
             if (outputBuffer == NULL) {
-              error("Failed to reallocate memory (output buffer)");
-              return ERROR_REALLOC;
+                error("Failed to reallocate memory (output buffer)");
+                return ERROR_REALLOC;
             }
         }
         memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
@@ -141,12 +141,12 @@ int run_command(const char *command,
 }
 
 int startup_jvm(
-	const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv,
-	const char *main_class_name, const size_t main_argc, const char *main_argv)
+    const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv,
+    const char *main_class_name, const size_t main_argc, const char *main_argv)
 {
-  return launch_jvm(
-    libjvm_path, jvm_argc, jvm_argv[],
-    main_class_name, main_argc, main_argv[]);
+    return launch_jvm(
+        libjvm_path, jvm_argc, jvm_argv[],
+        main_class_name, main_argc, main_argv[]);
 }
 
 void show_alert(const char *title, const char *message) {

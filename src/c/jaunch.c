@@ -65,12 +65,12 @@ static int launch_jvm(
 //
 // The trailing slashes make the math simpler in the path function logic.
 const char *JAUNCH_SEARCH_PATHS[] = {
-  "jaunch"SLASH,
-  ".jaunch"SLASH,
-  "config"SLASH"jaunch"SLASH,
-  ".config"SLASH"jaunch"SLASH,
-  "Contents"SLASH"MacOS"SLASH,
-  NULL,
+    "jaunch"SLASH,
+    ".jaunch"SLASH,
+    "config"SLASH"jaunch"SLASH,
+    ".config"SLASH"jaunch"SLASH,
+    "Contents"SLASH"MacOS"SLASH,
+    NULL,
 };
 
 /* result=$(dirname "$argv0")/$subdir$command */
@@ -203,20 +203,20 @@ int main(const int argc, const char *argv[]) {
     char *command = NULL;
     size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
     for (size_t i = 0; i < search_path_count; i++) {
-      // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
-      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX);
-      if (file_exists(command)) break;
-      else debug("[JAUNCH] No configurator at %s", command);
+        // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
+        command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX);
+        if (file_exists(command)) break;
+        else debug("[JAUNCH] No configurator at %s", command);
 
-      // If not found, look for plain jaunch configurator with no suffix.
-      free(command);
-      command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch" EXE_SUFFIX);
-      if (file_exists(command)) break;
-      else debug("[JAUNCH] No configurator at %s", command);
+        // If not found, look for plain jaunch configurator with no suffix.
+        free(command);
+        command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch" EXE_SUFFIX);
+        if (file_exists(command)) break;
+        else debug("[JAUNCH] No configurator at %s", command);
 
-      // Nothing at this search path; clean up and move on to the next one.
-      free(command);
-      command = NULL;
+        // Nothing at this search path; clean up and move on to the next one.
+        free(command);
+        command = NULL;
     }
     if (command == NULL) {
         error("Failed to locate the jaunch configurator program.");
