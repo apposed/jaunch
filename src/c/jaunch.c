@@ -30,6 +30,10 @@
 
 #include "jni.h"
 
+// NB: Declare launch_jvm function before importing platform-specific logic.
+static int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
+    const char *main_class_name, const size_t main_argc, const char *main_argv[]);
+
 #ifdef __linux__
 #include "linux.h"
 #endif
@@ -91,7 +95,7 @@ char *path(const char *argv0, const char *subdir, const char *command) {
     return result;
 }
 
-int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
+static int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
     const char *main_class_name, const size_t main_argc, const char *main_argv[])
 {
     // Load libjvm.
@@ -285,8 +289,10 @@ int main(const int argc, const char *argv[]) {
     // Perform the indicated directive.
 
     if (strcmp(directive, "LAUNCH") == 0) {
-        // Launch the JVM with the received arguments.
-        int launch_result = launch_jvm(
+        // Launch the JVM with the received arguments. We call the
+        // platform-specific startup_jvm function, which will delegate to
+        // the above launch_jvm function as appropriate for the platform.
+        int launch_result = startup_jvm(
             libjvm_path, jvm_argc, jvm_argv,
             main_class_name, main_argc, main_argv
         );

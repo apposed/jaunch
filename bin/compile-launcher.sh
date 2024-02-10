@@ -34,8 +34,8 @@ case "$(uname)" in
     compile aarch64-linux-gnu-gcc -o build/launcher-linux-arm64
     ;;
   Darwin)
-    compile gcc -o build/launcher-macos-arm64 -target arm64-apple-macos11 &&
-    compile gcc -o build/launcher-macos-x64 -target x86_64-apple-macos10.12 &&
+    compile gcc -o build/launcher-macos-arm64 -framework CoreFoundation -target arm64-apple-macos11 &&
+    compile gcc -o build/launcher-macos-x64 -framework CoreFoundation -target x86_64-apple-macos10.12 &&
     (set -x; lipo -create -output build/launcher build/launcher-macos-x64 build/launcher-macos-arm64)
     ;;
   MINGW*|MSYS*) compile gcc -o build/launcher-windows-x64.exe ;;

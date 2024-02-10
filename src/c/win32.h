@@ -140,6 +140,15 @@ int run_command(const char *command,
     return split_result;
 }
 
+int startup_jvm(
+	const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
+	const char *main_class_name, const size_t main_argc, const char *main_argv[])
+{
+  return launch_jvm(
+    libjvm_path, jvm_argc, jvm_argv[],
+    main_class_name, main_argc, main_argv[]);
+}
+
 void show_alert(const char *title, const char *message) {
     MessageBox(NULL, message, title, MB_ICONERROR);
 }
