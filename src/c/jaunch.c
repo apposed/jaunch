@@ -30,8 +30,10 @@
 
 #include "jni.h"
 
-// NB: Declare launch_jvm function before importing platform-specific logic.
-static int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
+// NB: Declare launch_jvm function before importing platform-specific logic,
+// so that the platform-specific startup_jvm functions can call it.
+static int launch_jvm(
+    const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
     const char *main_class_name, const size_t main_argc, const char *main_argv[]);
 
 #ifdef __linux__
