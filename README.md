@@ -1,5 +1,7 @@
 *Jaunch: Launch Java **Your** Way!™*
 
+[![](https://github.com/scijava/jaunch/actions/workflows/build.yml/badge.svg)](https://github.com/scijava/jaunch/actions/workflows/build.yml)
+
 Jaunch is a native launcher for applications that run on a Java Virtual Machine (JVM).
 
 ## Quick Start
