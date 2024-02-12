@@ -55,7 +55,7 @@ static int launch_jvm(
 #endif
 
 #ifdef __aarch64__
-#define OS_ARCH "aarch64"
+#define OS_ARCH "arm64"
 #endif
 
 // List of places to search for the jaunch configurator executable.

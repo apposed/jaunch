@@ -178,7 +178,7 @@ the launcher could be named `fizzbuzz.exe`.
 
 The configurator (2) is named `jaunch-<os>-<arch>.exe`, and placed in the `jaunch`
 subdirectory of your application. Examples: for ARM64 Linux it would be named
-`jaunch/jaunch-linux-aarch64`, whereas for x86-64 Windows it would be named
+`jaunch/jaunch-linux-arm64`, whereas for x86-64 Windows it would be named
 `jaunch/jaunch-windows-x64.exe`. The reason for the `<os>-<arch>` suffix is so that
 portable applications can ship with all needed jaunch configurator executables in
 the same `jaunch` folder, without any name clashes.
