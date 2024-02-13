@@ -7,7 +7,7 @@
 static void dummy_call_back(void *info) { }
 
 static int start_python() {
-    // Load libpython3.10 dynamically
+    // Load libpython dynamically.
     const char *libpython_path =
         "/usr/local/Caskroom/mambaforge/base/envs/pyimagej-dev/lib/libpython3.10.dylib";
     void *libpython = dlopen(libpython_path, RTLD_LAZY);
@@ -16,34 +16,17 @@ static int start_python() {
         return 1;
     }
 
-    typedef void (*Py_InitializeFunc)();
-    Py_InitializeFunc Py_Initialize = (Py_InitializeFunc)dlsym(libpython, "Py_Initialize");
-    if (!Py_Initialize) {
-        fprintf(stderr, "Error finding Py_Initialize function: %s\n", dlerror());
-        dlclose(libpython);
-        return 1;
-    }
-    typedef int (*PyRun_SimpleStringFunc)(const char *);
-    PyRun_SimpleStringFunc PyRun_SimpleString = (PyRun_SimpleStringFunc)dlsym(libpython, "PyRun_SimpleString");
-    if (!PyRun_SimpleString) {
-        fprintf(stderr, "Error finding PyRun_SimpleString function: %s\n", dlerror());
+    typedef int (*Py_MainFunc)(int, char **);
+    Py_MainFunc Py_Main = (Py_MainFunc)dlsym(libpython, "Py_Main");
+    if (!Py_Main) {
+        fprintf(stderr, "Error finding Py_Main function: %s\n", dlerror());
         dlclose(libpython);
         return 1;
     }
 
-    // Initialize Python interpreter
-    Py_Initialize();
+    const char *args[] = {};
+    int result = Py_Main(0, (char **)args);
 
-    // Do something with Python...
-    const char *script =
-      "print('Hello, Python from C!')\n"
-      "import imagej\n"
-      "ij = imagej.init(mode='interactive')\n"
-      "print(ij.getVersion())\n"
-      "ij.ui().showUI()\n"
-      "print('We did it! \\^_^/')\n"
-      "";
-    int result = PyRun_SimpleString(script);
     if (result != 0) {
       fprintf(stderr, "Error running Python script: %d\n", result);
       dlclose(libpython);
