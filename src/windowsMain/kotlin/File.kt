@@ -8,6 +8,10 @@ actual class File actual constructor(private val rawPath: String) {
 
     actual val exists: Boolean get() = GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES
 
+    //actual val canRead: Boolean get() = ...
+    //actual val canWrite: Boolean get() = ...
+    //actual val canExecute: Boolean get() = ...
+
     actual val isFile: Boolean get() = isMode(FILE_ATTRIBUTE_NORMAL)
 
     actual val isDirectory: Boolean get() = isMode(FILE_ATTRIBUTE_DIRECTORY)

@@ -3,6 +3,9 @@
 expect class File(rawPath: String) {
     val path: String
     val exists: Boolean
+    //val canRead: Boolean
+    //val canWrite: Boolean
+    //val canExecute: Boolean
     val isFile: Boolean
     val isDirectory: Boolean
     val isRoot: Boolean
