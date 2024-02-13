@@ -13,14 +13,14 @@ actual class File actual constructor(private val rawPath: String) {
     actual val isDirectory: Boolean get() = isMode(S_IFDIR)
     actual val isRoot: Boolean = path == SLASH
 
-    @OptIn(ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
     private fun isMode(modeBits: Int): Boolean {
-        val statResult = memScoped {
+        val statMode = memScoped {
             val statResult = alloc<stat>()
             stat(path, statResult.ptr)
-            statResult
+            statResult.st_mode.toInt()
         }
-        return (statResult.st_mode.toInt() and modeBits) != 0
+        return (statMode and modeBits) != 0
     }
 
     @OptIn(ExperimentalForeignApi::class)
