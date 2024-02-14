@@ -141,8 +141,9 @@ jvm-args = [
     'JAVA:9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
     # org.scijava.util.SizeableArrayList uses ArrayList.size
     'JAVA:9+|--add-opens=java.base/java.util=ALL-UNNAMED',
+    # com.jogamp.nativewindow.awt.AppContextInfo uses sun.awt.AppContext
+    'JAVA:9+|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',
     # sc.fiji.compat.DefaultFijiService uses XToolkit.awtAppClassName
-    #'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 
     'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED', 
     # TODO: document where this happens on macOS.
     'JAVA:9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',
