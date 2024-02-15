@@ -701,7 +701,7 @@ jvm-args = [
 # line with matching rules becomes the main class, with subsequent lines ignored.
 #
 # This field is useful if you want to launch a different main class depending on
-# criteria such as OS, CPU architecture, or which Jaunch options are given on the CLI.
+# criteria such as OS, CPU architecture, or which options are given on the CLI.
 #main-class-candidates = [
 #    '--fizzbuzz|org.fizzbuzz.FizzBuzz'
 #    '--main-class|${main-class}',
@@ -712,9 +712,11 @@ jvm-args = [
 # Arguments to pass to the main class on the Java side.
 #
 # This is the other half of the magic sauce, along with jvm-args above:
-# Jaunch options and other criteria get translated into main arguments here.
+# Options and other criteria get translated into main arguments here.
 # See the 'jvm-root-paths' section above for a thorough explanation.
 #main-args = [
-#    '--fizz|-Dfizzbuzz.mode=fizz',
-#    '--buzz|-Dfizzbuzz.mode=buzz',
+#    '!--fizz|!--buzz|--mode=number',
+#    '--fizz|!--buzz|--mode=fizz',
+#    '--buzz|!--fizz|--mode=buzz',
+#    '--fizz|--buzz|--mode=fizzbuzz',
 #]
