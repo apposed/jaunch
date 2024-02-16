@@ -1,8 +1,11 @@
-*Jaunch: Launch Java **Your** Way!™*
+*Jaunch: Launch Programs **Your** Way!™*
 
 [![](https://github.com/scijava/jaunch/actions/workflows/build.yml/badge.svg)](https://github.com/scijava/jaunch/actions/workflows/build.yml)
 
-Jaunch is a native launcher for applications that run on a Java Virtual Machine (JVM).
+Jaunch is a native launcher for applications that run inside non-native runtimes.
+
+Jaunch currently supports two such runtimes:
+the **Java Virtual Machine (JVM)** and the **Python interpreter**.
 
 ## Quick Start
 
@@ -31,9 +34,11 @@ Jaunch is a native launcher for applications that run on a Java Virtual Machine 
 
 The build process will:
 
-1. Build the native C code, generating a binary named `build/launcher` (`build\launcher.exe` on Windows).
+1. Build the native C code, generating a binary named `build/launcher`
+   (`build\launcher.exe` on Windows).
 
-2. Build the Kotlin code, generating a binary named `jaunch` (`jaunch.exe` on Windows).
+2. Build the Kotlin code, generating a binary named `jaunch`
+   (`jaunch.exe` on Windows).
 
 3. Copy the needed files to the `app` directory, including:
    * The two native binaries (1) and (2);
@@ -70,17 +75,16 @@ Or you can customize the allowed configuration directory names by editing the
 `JAUNCH_SEARCH_PATHS` list in [jaunch.c](src/c/jaunch.c) and
 matching `configDirs` list in [Jaunch.kt](src/commonMain/kotlin/Jaunch.kt).
 
-## Why Jaunch
+## Why Jaunch for Java
 
 Do you have a desktop application that runs on the Java Virtual Machine? You probably
 want a friendly native launcher, for example a .exe file in the case of Windows, that
 launches your program, right?
 
-To accomplish that, you can use
-[jpackage](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jpackage.html) to
-generate one for every platform you want to support&mdash;typically Linux, macOS, and
-Windows. The jpackage tool is part of the Java Development Kit (JDK), so you might think
-there is no need for another Java native launcher.
+To accomplish that, you can use [jpackage] to generate one for every platform you want
+to support&mdash;typically Linux, macOS, and Windows. The jpackage tool is part of the
+Java Development Kit (JDK), so you might think there is no need for another Java native
+launcher.
 
 But jpackage is inflexible:
 
@@ -124,26 +128,36 @@ But jpackage is inflexible:
 All of that said, jpackage is a very nice tool, and if it works for you, use it! But if you
 want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then read on.
 
+## Why Jaunch for Python
+
+Jaunch began as a tool to launch [Fiji], a rather complex application for the JVM. But
+Fiji also needed the ability to be launched *via Python* (i.e. start Python which then
+starts Java using [JPype]), to make its in-process Python integration as convenient as
+possible for users to access. And I figured hey, Jaunch knows how to link to libpython
+now, so why not support standalone Python apps as well? I do not know of an existing
+tool in the Python ecosystem that fills this niche of launching Python without
+necessarily *bundling* Python.
+
 ## Design Goals
 
-### Run Java in the same process as the launcher
+### Run your program in the same process as the launcher
 
 * Be a good citizen of our native environment.
 * Integrate properly with application docks, system trays, and taskbars.
 
-### Discover Java installations already on the system
+### Discover runtime installations already on the system
 
-* Link to the best libjvm on demand.
-* Search beneath specified JVM directory roots.
-* Recognize system-wide installations as well as bundled Java runtimes.
+* Link to the best native library (libjvm and/or libpython) on demand.
+* Search beneath specified runtime directory roots.
+* Recognize system-wide installations as well as bundled runtimes.
 * Define rules for deciding which installations meet application requirements.
-* If no appropriate Java installation is found, show an informative error message.
+* If no appropriate runtime installation is found, show an informative error message.
 
-### Support runtime customization of Java launch parameters
+### Support runtime customization of runtime launch parameters
 
-* Customize at runtime which arguments are passed to the JVM.
+* Customize at runtime which arguments are passed to the runtime itself.
 * Customize at runtime which arguments are passed to the main class.
-* Customize at runtime which Java main class is run.
+* Customize at runtime which program (Java main class or Python script) is run.
 
 ### Customize launcher behavior without recompiling native binaries
 
@@ -157,6 +171,11 @@ want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then
   in favor of most code being written in a more maintainable high-level language.
 * On the off-chance that the TOML-based configuration is not flexible enough for your
   application's needs, your next layer of customization is the Kotlin codebase, not C.
+
+### Keep the binary size of the native launcher as small as possible
+
+* As few dependencies as possible&mdash;right now Jaunch has none at all
+  besides standard platform libraries.
 
 ## License
 
@@ -188,29 +207,47 @@ list to the appropriate `jaunch` program via a pipe to stdin. The jaunch configu
 then responsible for outputting the following things via its stdout:
 
 1. Number of lines of output.
-2. Directive for the native launcher to perform (LAUNCH, CANCEL, or an error message).
-3. Path to libjvm native library.
-4. Number of arguments to the JVM.
-5. List of JVM arguments, one per line.
-6. Main class to run, in slash-separated (not dot-separated) format.
-7. Number of arguments to the main class.
+2. Directive for the native launcher to perform, or else an error message to display.
+   - `LIBJVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
+   - `LIBPYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
+   - `CANCEL` to launch nothing.
+3. Path to runtime native library (libjvm or libpython).
+4. Number of arguments to the runtime (Python or JVM).
+5. List of arguments to the runtime, one per line.
+6. Main program to run.
+   - For Python programs: path to Python script on the file system.
+   - For JVM programs: Fully qualified main class name in slash-separated (not dot-separated) format.
+7. Number of arguments to the main program.
 8. List of main arguments, one per line.
 
 To deliver this output, the configurator must do the following things:
 
-* Decide which Java to use.
-* Decide which main class to run.
-* Decide how to transform the user arguments into JVM and/or main arguments.
+* Decide which runtime installation to use.
+* Decide which main program to run.
+* Decide how to transform the user arguments into runtime and/or main arguments.
 
-If your application's needs along these lines are relatively minimal&mdash;e.g. if you bundle a JDK in a known location, and always pass all user arguments as main arguments&mdash;you would likely not even need Jaunch's Kotlin/configurator code at all; you could write your own simple jaunch configurator as a shell script and/or batch file.
+If your application's needs along these lines are relatively minimal&mdash;e.g. if you
+bundle a JDK in a known location, and always pass all user arguments as main
+arguments&mdash;you would likely not even need Jaunch's Kotlin/configurator code at all;
+you could write your own simple jaunch configurator as a shell script and/or batch file.
 
-However, Jaunch was designed to satisfy the needs of applications with more complex command line functionality, which is where the Kotlin configurator comes in. It reads declarative TOML configuration files, which define how Jaunch will make the above decisions. The TOML configuration is its own layer of the architecture, which is best learned by reading the [jaunch.toml](jaunch.toml) file directly. With this design, the behavior of Jaunch can be heavily customized without needing to modify source code and rebuild. And for applications that need it, there can be multiple different native launchers in the application base directory that all share the same jaunch configurator native binaries with different TOML configurations.
+However, Jaunch was designed to satisfy the needs of applications with more complex
+command line functionality, which is where the Kotlin configurator comes in. It reads
+declarative TOML configuration files, which define how Jaunch will make the above
+decisions. The TOML configuration is its own layer of the architecture, which is best
+learned by reading the [jaunch.toml](jaunch.toml) file directly. With this design, the
+behavior of Jaunch can be heavily customized without needing to modify source code and
+rebuild. And for applications that need it, there can be multiple different native
+launchers in the application base directory that all share the same jaunch configurator
+native binaries with different TOML configurations.
 
 ## Alternatives
 
 As so often in technology, there are so many. And yet nothing that does what this program does!
 
-### Executable JAR file
+### Other Java launching approaches
+
+#### Executable JAR file
 
 * Pros:
   * Simple: double-click the JAR.
@@ -219,7 +256,7 @@ As so often in technology, there are so many. And yet nothing that does what thi
   * Encourages creation of uber-JARs over modular applications.
   * Does not integrate well with native OS application mechanisms.
 
-### jpackage
+#### jpackage
 
 * Pros:
   * [Official tooling](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jpackage.html) supported by the OpenJDK project.
@@ -231,7 +268,7 @@ As so often in technology, there are so many. And yet nothing that does what thi
   * The [QuPath](https://qupath.readthedocs.io/) project uses jpackage for its launcher.
     * QuPath provides a configuration dialog to modify the Java maximum heap size, which it handles by editing the jpackage .cfg file on the user's behalf.
 
-### Call `java` in its own separate process
+#### Call `java` in its own separate process
 
 E.g., via shell scripts such as `Contents/MacOS/JavaApplicationStub`.
 
@@ -245,7 +282,7 @@ E.g., via shell scripts such as `Contents/MacOS/JavaApplicationStub`.
     * For macOS, the `java` given by `/usr/libexec/java_home -v 1.8` is used.
     * In both cases, no arguments can be passed to the program (neither to the JVM nor to the Icy application).
 
-### Lean on command-line tools
+#### Lean on command-line tools
 
 E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk), [install-jdk](https://github.com/jyksnw/install-jdk), [jgo](https://github.com/scijava/jgo).
 
@@ -254,7 +291,7 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
 * Cons:
   * Unfriendly to require non-technical users to run terminal commands to launch a GUI-based application.
 
-### Use a general-purpose Java launcher
+#### Use a general-purpose Java launcher
 
 [install4j](https://www.ej-technologies.com/products/install4j/overview.html) by ej Technologies.
 * You can pass parameters to the JVM at runtime [via the `-J` argument prefix](https://stackoverflow.com/a/63318626/1207769).
@@ -269,7 +306,7 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
 * Windows only.
 * [Unmaintained](https://github.com/poidasmith/winrun4j/issues/102) since 2018.
 
-### Build your own native launcher
+#### Build your own native launcher for Java
 
 [JavaCall.jl](https://github.com/JuliaInterop/JavaCall.jl)
 * Written in Julia, permissively licensed.
@@ -284,7 +321,7 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
 * Does not use `dlopen`/`dlsym`, but rather links to libjvm. See my [post on Kotlin Discuss](https://discuss.kotlinlang.org/t/27756).
 * Also links to libpthread, unlike other native launchers on this list.
 
-#### Examples
+#### Example Java launchers
 
 [ImageJ Launcher](https://github.com/imagej/imagej-launcher)
 * Written in C.
@@ -306,6 +343,30 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
 * Project clearly targets Windows only; I had to modify the `Cargo.toml` and `file_handler.rs` in order to compile it for Linux.
 * No stated license.
 
+### Other Python launching approaches
+
+#### PyInstaller
+
+From [the PyInstaller website](https://pyinstaller.org/):
+> PyInstaller bundles a Python application and all its dependencies into a single package. The user can run the packaged app without installing a Python interpreter or any modules.
+
+#### Briefcase
+
+From [the Briefcase website](https://beeware.org/project/projects/tools/briefcase/):
+> Briefcase is a tool for converting a Python project into a standalone native application."
+
+#### constructor
+
+From [the constructor website](https://conda.github.io/constructor/):
+> `constructor` is a tool which allows constructing an installer for a collection of conda packages.
+
 ------------------------------------------------------------------------------
 
 [1]: https://docs.oracle.com/en/java/javase/20/jpackage/support-application-features.html#GUID-B350A40C-3239-4C20-B5E3-79B4F81F1CEE
+[Fiji]: https://fiji.sc/
+[JNI]: https://en.wikipedia.org/wiki/Java_Native_Interface
+[JPype]: https://jpype.readthedocs.io/
+[Stable ABI]: https://docs.python.org/3/c-api/stable.html#stable-abi
+[`JNI_CreateJavaVM`]: https://docs.oracle.com/en/java/javase/21/docs/specs/jni/invocation.html#creating-the-vm
+[`Py_BytesMain`]: https://docs.python.org/3/c-api/veryhigh.html#c.Py_BytesMain
+[jpackage]: https://docs.oracle.com/en/java/javase/21/docs/specs/jni/invocation.html#creating-the-vm

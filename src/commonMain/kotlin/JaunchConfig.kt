@@ -56,7 +56,7 @@ data class JaunchConfig (
     /** List of additional hints to enable or disable based on other hints. */
     val modes: Array<String> = emptyArray(),
 
-    /** Commands that override Jaunch's usual behavior of launching Java. */
+    /** Commands that override Jaunch's usual launching behavior. */
     val directives: Array<String> = emptyArray(),
 
     /** Runtime classpath elements (e.g. JAR files) to pass to Java. */

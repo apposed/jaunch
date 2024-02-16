@@ -1,5 +1,5 @@
 /*
- * This is the C portion of Jaunch, the configurable Java launcher.
+ * This is the C portion of Jaunch, the configurable native launcher.
  *
  * Its primary function is:
  *

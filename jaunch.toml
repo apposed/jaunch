@@ -601,13 +601,13 @@ libjvm-suffixes = [
 modes = []
 
 # ==============================================================================
-# Commands that override Jaunch's usual behavior of launching Java.
+# Commands that override Jaunch's usual launching behavior.
 #
 # Each one runs at a particular (hardcoded) time during configuration.
 # Directives unsupported by the configurator program are ignored.
 #
-# This may seem confusingly abstract, but the basic idea is this: maybe you
-# want Jaunch *not* to launch Java this time, but rather to do something else!
+# This may seem confusingly abstract, but the basic idea is this: maybe you want
+# Jaunch *not* to launch the usual program this time, but rather to do something else!
 #
 # What sorts of other things? you might ask. And how can we possibly define
 # such open-ended behavior in a mere TOML configuration file? Well, the short
