@@ -143,6 +143,8 @@ jvm-args = [
     'JAVA:9+|--add-opens=java.base/java.util=ALL-UNNAMED',
     # com.jogamp.nativewindow.awt.AppContextInfo uses sun.awt.AppContext
     'JAVA:9+|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',
+    #  ini.trakem2.Project.openFSProject uses javax.swing.JTree.expandedState
+    'JAVA:9+|--add-opens=java.desktop/javax.swing=ALL-UNNAMED',
     # sc.fiji.compat.DefaultFijiService uses XToolkit.awtAppClassName
     'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED', 
     # TODO: document where this happens on macOS.
