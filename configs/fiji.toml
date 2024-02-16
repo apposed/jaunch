@@ -139,14 +139,27 @@ jvm-args = [
     # net.imagej.patcher.LegacyInjector uses ClassLoader.findLoadedClass
     # javassist.util.proxy.SecurityActions uses ClassLoader.defineClass
     'JAVA:9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
+
+    # For org.apache.arrow - TODO: document exactly why
+    'JAVA:9+|--add-opens=java.base/java.nio=ALL-UNNAMED',
+
     # org.scijava.util.SizeableArrayList uses ArrayList.size
     'JAVA:9+|--add-opens=java.base/java.util=ALL-UNNAMED',
+
     # com.jogamp.nativewindow.awt.AppContextInfo uses sun.awt.AppContext
     'JAVA:9+|--add-opens=java.desktop/sun.awt=ALL-UNNAMED',
+
     #  ini.trakem2.Project.openFSProject uses javax.swing.JTree.expandedState
     'JAVA:9+|--add-opens=java.desktop/javax.swing=ALL-UNNAMED',
+
+    # HACK: For fiji.debugging.Object_Inspector
+    # The Object_Inspector could end up reflecting anything, so this doesn't
+    # make it work in all cases, but it helps for inspecting AWT/Swing windows.
+    'JAVA:9+|--add-opens=java.desktop/java.awt=ALL-UNNAMED',
+
     # sc.fiji.compat.DefaultFijiService uses XToolkit.awtAppClassName
     'JAVA:9+|OS:LINUX|--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED', 
+
     # TODO: document where this happens on macOS.
     'JAVA:9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',
 
