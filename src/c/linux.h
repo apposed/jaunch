@@ -13,12 +13,12 @@ int startup_jvm(
         main_class_name, main_argc, main_argv);
 }
 
-int isCommandAvailable(const char *command) {
+int is_command_available(const char *command) {
     return access(command, X_OK) == 0;
 }
 
 void show_alert(const char *title, const char *message) {
-    if (isCommandAvailable("zenity")) {
+    if (is_command_available("zenity")) {
         char *titleArg = malloc(strlen(title) + 9);  // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
@@ -29,14 +29,14 @@ void show_alert(const char *title, const char *message) {
         free(titleArg);
         free(textArg);
     }
-    else if (isCommandAvailable("kdialog")) {
+    else if (is_command_available("kdialog")) {
         char *titleArg = malloc(strlen(title) + 9);  // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
         execlp("kdialog", "--sorry", titleArg, message, (char *)NULL);
         free(titleArg);
     }
-    else if (isCommandAvailable("notify-send")) {
+    else if (is_command_available("notify-send")) {
         execlp("notify-send", "-a", title, "-c", "im.error",
             /*"-i", iconPath,*/ message, (char *)NULL);
     }

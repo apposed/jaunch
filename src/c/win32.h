@@ -9,12 +9,12 @@
 void dlclose(void* library) { FreeLibrary(library); }
 char* dlerror() { return "error" /*TODO: GetLastError()*/; }
 
-void handleError(const char* errorMessage) {
+void handle_error(const char* errorMessage) {
     fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
     exit(1);
 }
 
-void writeLine(HANDLE stdinWrite, const char *input) {
+void write_line(HANDLE stdinWrite, const char *input) {
     // Copy the input string and add a newline
     size_t inputLength = strlen(input);
     char *line = (char *)malloc(inputLength + 2);  // +1 for newline, +1 for null terminator
@@ -24,7 +24,7 @@ void writeLine(HANDLE stdinWrite, const char *input) {
     // Write the string with newline to the pipe
     DWORD bytesWritten;
     if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL))
-        handleError("Error writing to stdin");
+        handle_error("Error writing to stdin");
 
     // Free allocated memory
     free(line);
@@ -46,7 +46,7 @@ int run_command(const char *command,
     if (!CreatePipe(&stdinRead, &stdinWrite, &sa, 0) ||
         !CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0))
     {
-        handleError("Error creating pipes");
+        handle_error("Error creating pipes");
     }
 
     // Set the properties of the process to start
@@ -72,7 +72,7 @@ int run_command(const char *command,
     strcat(commandPlusDash, " -");
     if (!CreateProcess(NULL, (LPSTR)commandPlusDash, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
         free(commandPlusDash);
-        handleError("Error creating process");
+        handle_error("Error creating process");
     }
     free(commandPlusDash);
 
@@ -91,10 +91,10 @@ int run_command(const char *command,
         return ERROR_MALLOC;
     }
     snprintf(numInputString, 21, "%zu", numInput);
-    writeLine(stdinWrite, numInputString);
+    write_line(stdinWrite, numInputString);
     free(numInputString);
     for (size_t i = 0; i < numInput; i++)
-        writeLine(stdinWrite, input[i]);
+        write_line(stdinWrite, input[i]);
 
     // Close the stdin write handle to signal end of input
     CloseHandle(stdinWrite);
