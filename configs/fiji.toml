@@ -163,6 +163,17 @@ jvm-args = [
     # TODO: document where this happens on macOS.
     'JAVA:9+|OS:MACOSX|--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED',
 
+    # For scenery - TODO: document exactly why
+    #'JAVA:9+|--add-opens=java.base/java.lang=ALL-UNNAMED',
+    'JAVA:9+|--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
+    'JAVA:9+|--add-opens=java.base/java.net=ALL-UNNAMED',
+    #'JAVA:9+|--add-opens=java.base/java.nio=ALL-UNNAMED',
+    'JAVA:9+|--add-opens=java.base/java.time=ALL-UNNAMED',
+    #'JAVA:9+|--add-opens=java.base/java.util=ALL-UNNAMED',
+    'JAVA:9+|--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED',
+    'JAVA:9+|--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+    'JAVA:9+|--add-opens=java.base/sun.util.calendar=ALL-UNNAMED',
+
     # Avoid Jython's huge startup cost.
     '-Dpython.cachedir.skip=true',
 
