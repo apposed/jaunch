@@ -224,27 +224,27 @@ int main(const int argc, const char *argv[]) {
     }
     debug("[JAUNCH] configurator command = %s", command);
 
-    char **outputLines;
-    size_t numOutput;
+    char **output_lines;
+    size_t num_output;
 
     // Run external command to process the command line arguments.
 
-    int run_result = run_command((const char *)command, argv, argc, &outputLines, &numOutput);
+    int run_result = run_command((const char *)command, argv, argc, &output_lines, &num_output);
     free(command);
     if (run_result != SUCCESS) return run_result;
 
-    debug("[JAUNCH] numOutput = %zu", numOutput);
-    for (size_t i = 0; i < numOutput; i++) {
-        debug("[JAUNCH] outputLines[%zu] = %s", i, outputLines[i]);
+    debug("[JAUNCH] num_output = %zu", num_output);
+    for (size_t i = 0; i < num_output; i++) {
+        debug("[JAUNCH] output_lines[%zu] = %s", i, output_lines[i]);
     }
-    if (numOutput < 5) {
-        error("Expected at least 5 lines of output but got %d", numOutput);
+    if (num_output < 5) {
+        error("Expected at least 5 lines of output but got %d", num_output);
         return ERROR_OUTPUT;
     }
 
     // Parse the command's output.
 
-    char **ptr = outputLines;
+    char **ptr = output_lines;
     const char *directive = *ptr++;
     debug("[JAUNCH] directive = %s", directive);
 
@@ -257,7 +257,7 @@ int main(const int argc, const char *argv[]) {
         error("jvm_argc value is too small: %d", jvm_argc);
         return ERROR_JVM_ARGC_TOO_SMALL;
     }
-    if (numOutput < 5 + jvm_argc) {
+    if (num_output < 5 + jvm_argc) {
         error("jvm_argc value is too large: %d", jvm_argc);
         return ERROR_JVM_ARGC_TOO_LARGE;
     }
@@ -277,7 +277,7 @@ int main(const int argc, const char *argv[]) {
         error("main_argc value is too small: %d", main_argc);
         return ERROR_MAIN_ARGC_TOO_SMALL;
     }
-    if (numOutput < 5 + jvm_argc + main_argc) {
+    if (num_output < 5 + jvm_argc + main_argc) {
         error("main_argc value is too large: %d", main_argc);
         return ERROR_MAIN_ARGC_TOO_LARGE;
     }
@@ -299,10 +299,10 @@ int main(const int argc, const char *argv[]) {
             main_class_name, main_argc, main_argv
         );
         // Clean up.
-        for (size_t i = 0; i < numOutput; i++) {
-            free(outputLines[i]);
+        for (size_t i = 0; i < num_output; i++) {
+            free(output_lines[i]);
         }
-        free(outputLines);
+        free(output_lines);
 
         return launch_result;
     }
