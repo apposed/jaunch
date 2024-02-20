@@ -1,5 +1,7 @@
 #include <string.h>
 
+#include "common.h"
+
 #define OS_NAME "linux"
 
 int startup_jvm(

@@ -3,6 +3,8 @@
 //#include <objc/NSObjCRuntime.h>
 #include <pthread.h>
 
+#include "common.h"
+
 #define OS_NAME "macos"
 
 void show_alert(const char *title, const char *message) {
