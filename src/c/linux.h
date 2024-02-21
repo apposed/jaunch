@@ -4,15 +4,6 @@
 
 #define OS_NAME "linux"
 
-int startup_jvm(
-    const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
-    const char *main_class_name, const size_t main_argc, const char *main_argv[])
-{
-    return launch_jvm(
-        libjvm_path, jvm_argc, jvm_argv,
-        main_class_name, main_argc, main_argv);
-}
-
 int is_command_available(const char *command) {
     return access(command, X_OK) == 0;
 }
@@ -43,4 +34,15 @@ void show_alert(const char *title, const char *message) {
     else {
         printf("%s\n", message);
     }
+}
+
+/*
+ * The Linux way of launching a runtime.
+ *
+ * It calls the given launch function directly. The epitome of elegance. ^_^
+ */
+int launch(const LaunchFunc launch_runtime,
+    const size_t argc, const char **argv)
+{
+    return launch_runtime(argc, argv);
 }

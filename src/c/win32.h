@@ -34,6 +34,12 @@ int file_exists(const char *path) {
     return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
 }
 
+/*
+ * Windows-style function to launch a command in a separate process,
+ * and harvest its output from the standard output stream.
+ *
+ * As opposed to the POSIX (Linux and macOS) implementation in posix.h.
+ */
 int run_command(const char *command,
     const char *input[], size_t numInput,
     char ***output, size_t *numOutput)
@@ -140,15 +146,17 @@ int run_command(const char *command,
     return split_result;
 }
 
-int startup_jvm(
-    const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
-    const char *main_class_name, const size_t main_argc, const char *main_argv[])
-{
-    return launch_jvm(
-        libjvm_path, jvm_argc, jvm_argv,
-        main_class_name, main_argc, main_argv);
-}
-
 void show_alert(const char *title, const char *message) {
     MessageBox(NULL, message, title, MB_ICONERROR);
+}
+
+/*
+ * The Windows way of launching a runtime.
+ *
+ * It simply calls the given launch function directly. Easy peasy.
+ */
+int launch(const LaunchFunc launch_runtime,
+    const size_t argc, const char **argv)
+{
+    return launch_runtime(argc, argv);
 }

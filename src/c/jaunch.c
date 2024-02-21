@@ -1,34 +1,53 @@
 /*
  * This is the C portion of Jaunch, the configurable native launcher.
  *
- * Its primary function is:
+ * Its primary function is to launch a non-native runtime plus main program
+ * in the same process, by dynamically loading the runtime library.
  *
- *   launch_jvm:
- *     1. path to libjvm
- *     2. argc + argv for the jvm
- *     3. main class to run
- *     4. argc + argv for the main invocation
+ * Currently supported runtimes include Python and the Java Virtual Machine.
  *
- * To invoke this function in a configurable way, it uses a secondary function:
+ * - For Python logic, see python.h.
+ * - For JVM logic, see jvm.h.
  *
- *   run_command:
- *     1. path to configurator executable
- *     2. argv list, to be passed to the configurator via stdin, one per line
+ * The C portion of Jaunch is empowered by a so-called "configurator" program,
+ * which is the more sophisticated portion of Jaunch. The C launcher invokes
+ * the configurator program in a separate process, using the function:
  *
- * This function is used to invoke Jaunch, a.k.a. the configurator executable,
- * in its own process. The C code waits for the Jaunch process to complete,
- * then passes the outputs given by Jaunch to the `launch_jvm` function above.
+ *     int run_command(const char *command,
+ *         const char *input[], size_t numInput,
+ *         char ***output, size_t *numOutput)
  *
- * In this way, Java is launched in the same process by C, but in a way that
- * is fuily customizable from the Jaunch code written in a high-level language.
+ * The C code waits for the Jaunch configurator process to complete, then
+ * passes the outputs given by the configurator to the appropriate `launch`
+ * function.
+ *
+ * In this way, the non-native runtime is launched in the same process by C,
+ * but in a way that is fuily customizable from the Jaunch code written in a
+ * high-level language.
+ *
+ * For example, a command line invocation of:
+ *
+ *   fizzbuzz Hello --verbose=2 --min 100 --max 200
+ *
+ * might be translated by the configurator into a Python invocation:
+ *
+ *     python -vv fizzbuzz.py Hello 100..200
+ *
+ * or a Java invocation:
+ *
+ *     java -DverboseLevel=2 -Xmx128m com.fizzbuzz.FizzBuzz Hello 100..200
+ *
+ * depending on the way Jaunch is configured via its jaunch.toml file.
+ *
+ * See the jaunch.toml file for a walkthrough of how the configurator
+ * can be flexibly configured to decide how arguments are transformed.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 
-#include "jni.h"
+#include "common.h"
+#include "jvm.h"
+#include "python.h"
 
 #ifdef __linux__
 #include "linux.h"
@@ -91,104 +110,6 @@ char *path(const char *argv0, const char *subdir, const char *command) {
     return result;
 }
 
-static int launch_jvm(const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
-    const char *main_class_name, const size_t main_argc, const char *main_argv[])
-{
-    // Load libjvm.
-    debug("[JAUNCH] LOADING LIBJVM");
-#ifdef WIN32
-    HMODULE jvm_library = LoadLibrary(libjvm_path);
-#else
-    void *jvm_library = dlopen(libjvm_path, RTLD_NOW | RTLD_GLOBAL);
-#endif
-    if (!jvm_library) { error("Error loading libjvm: %s", dlerror()); return ERROR_DLOPEN; }
-
-    // Load JNI_CreateJavaVM function.
-    debug("[JAUNCH] LOADING JNI_CreateJavaVM");
-#ifdef WIN32
-    FARPROC JNI_CreateJavaVM = GetProcAddress(jvm_library, "JNI_CreateJavaVM");
-#else
-    static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
-    JNI_CreateJavaVM = dlsym(jvm_library, "JNI_CreateJavaVM");
-#endif
-    if (!JNI_CreateJavaVM) {
-        error("Error finding JNI_CreateJavaVM: %s", dlerror());
-        dlclose(jvm_library);
-        return ERROR_DLSYM;
-    }
-
-    // Populate VM options.
-    debug("[JAUNCH] POPULATING VM OPTIONS");
-    JavaVMOption vmOptions[jvm_argc + 1];
-    for (size_t i = 0; i < jvm_argc; i++) {
-        vmOptions[i].optionString = (char *)jvm_argv[i];
-    }
-    vmOptions[jvm_argc].optionString = NULL;
-
-    // Populate VM init args.
-    debug("[JAUNCH] POPULATING VM INIT ARGS");
-    JavaVMInitArgs vmInitArgs;
-    vmInitArgs.version = JNI_VERSION_1_8;
-    vmInitArgs.options = vmOptions;
-    vmInitArgs.nOptions = jvm_argc;
-    vmInitArgs.ignoreUnrecognized = JNI_FALSE;
-
-    // Create the JVM.
-    debug("[JAUNCH] CREATING JVM");
-    JavaVM *jvm;
-    JNIEnv *env;
-    if (JNI_CreateJavaVM(&jvm, (void **)&env, &vmInitArgs) != JNI_OK) {
-        error("Error creating Java Virtual Machine");
-        dlclose(jvm_library);
-        return ERROR_CREATE_JAVA_VM;
-    }
-
-    // Find the main class.
-    debug("[JAUNCH] FINDING MAIN CLASS");
-    jclass mainClass = (*env)->FindClass(env, main_class_name);
-    if (mainClass == NULL) {
-        error("Error finding class %s", main_class_name);
-        (*jvm)->DestroyJavaVM(jvm);
-        dlclose(jvm_library);
-        return ERROR_FIND_CLASS;
-    }
-
-    // Find the main method.
-    debug("[JAUNCH] FINDING MAIN METHOD");
-    jmethodID mainMethod = (*env)->GetStaticMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
-    if (mainMethod == NULL) {
-        error("Error finding main method of class %s", main_class_name);
-        (*jvm)->DestroyJavaVM(jvm);
-        dlclose(jvm_library);
-        return ERROR_GET_STATIC_METHOD_ID;
-    }
-
-    // Populate main method arguments.
-    debug("[JAUNCH] FINDING MAIN METHOD ARGUMENTS");
-    jobjectArray javaArgs = (*env)->NewObjectArray(env, main_argc, (*env)->FindClass(env, "java/lang/String"), NULL);
-    for (size_t i = 0; i < main_argc; i++) {
-        (*env)->SetObjectArrayElement(env, javaArgs, i, (*env)->NewStringUTF(env, main_argv[i]));
-    }
-
-    // Invoke the main method.
-    debug("[JAUNCH] INVOKING MAIN METHOD");
-    (*env)->CallStaticVoidMethodA(env, mainClass, mainMethod, (jvalue *)&javaArgs);
-
-    debug("[JAUNCH] DETACHING CURRENT THREAD");
-    if ((*jvm)->DetachCurrentThread(jvm)) {
-        error("Could not detach current thread from JVM");
-    }
-
-    // Clean up.
-    debug("[JAUNCH] DESTROYING JAVA VM");
-    (*jvm)->DestroyJavaVM(jvm);
-    debug("[JAUNCH] CLOSING LIBJVM");
-    dlclose(jvm_library);
-    debug("[JAUNCH] GOODBYE");
-
-    return SUCCESS;
-}
-
 int main(const int argc, const char *argv[]) {
     // Enable debug mode when --debug is an argument.
     for (size_t i = 0; i < argc; i++)
@@ -198,13 +119,21 @@ int main(const int argc, const char *argv[]) {
     size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
     for (size_t i = 0; i < search_path_count; i++) {
         // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
-        command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX);
+        command = path(
+            argc == 0 ? NULL : argv[0],
+            JAUNCH_SEARCH_PATHS[i],
+            "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX
+        );
         if (file_exists(command)) break;
         else debug("[JAUNCH] No configurator at %s", command);
 
         // If not found, look for plain jaunch configurator with no suffix.
         free(command);
-        command = path(argc == 0 ? NULL : argv[0], JAUNCH_SEARCH_PATHS[i], "jaunch" EXE_SUFFIX);
+        command = path(
+            argc == 0 ? NULL : argv[0],
+            JAUNCH_SEARCH_PATHS[i],
+            "jaunch" EXE_SUFFIX
+        );
         if (file_exists(command)) break;
         else debug("[JAUNCH] No configurator at %s", command);
 
@@ -218,91 +147,57 @@ int main(const int argc, const char *argv[]) {
     }
     debug("[JAUNCH] configurator command = %s", command);
 
-    char **output_lines;
-    size_t num_output;
+    char **output_argv;
+    size_t output_argc;
 
     // Run external command to process the command line arguments.
 
-    int run_result = run_command((const char *)command, argv, argc, &output_lines, &num_output);
+    int run_result = run_command((const char *)command, argv, argc, &output_argv, &output_argc);
     free(command);
     if (run_result != SUCCESS) return run_result;
 
-    debug("[JAUNCH] num_output = %zu", num_output);
-    for (size_t i = 0; i < num_output; i++) {
-        debug("[JAUNCH] output_lines[%zu] = %s", i, output_lines[i]);
+    debug("[JAUNCH] output_argc = %zu", output_argc);
+    for (size_t i = 0; i < output_argc; i++) {
+        debug("[JAUNCH] output_argv[%zu] = %s", i, output_argv[i]);
     }
-    if (num_output < 5) {
-        error("Expected at least 5 lines of output but got %d", num_output);
+    if (output_argc < 1) {
+        error("Expected at least 1 line of output but got %d", output_argc);
         return ERROR_OUTPUT;
-    }
-
-    // Parse the command's output.
-
-    char **ptr = output_lines;
-    const char *directive = *ptr++;
-    debug("[JAUNCH] directive = %s", directive);
-
-    const char *libjvm_path = *ptr++;
-    debug("[JAUNCH] libjvm_path = %s", libjvm_path);
-
-    const int jvm_argc = atoi(*ptr++);
-    debug("[JAUNCH] jvm_argc = %d", jvm_argc);
-    if (jvm_argc < 0) {
-        error("jvm_argc value is too small: %d", jvm_argc);
-        return ERROR_JVM_ARGC_TOO_SMALL;
-    }
-    if (num_output < 5 + jvm_argc) {
-        error("jvm_argc value is too large: %d", jvm_argc);
-        return ERROR_JVM_ARGC_TOO_LARGE;
-    }
-
-    const char **jvm_argv = (const char **)ptr;
-    ptr += jvm_argc;
-    for (size_t i = 0; i < jvm_argc; i++) {
-        debug("[JAUNCH] jvm_argv[%zu] = %s", i, jvm_argv[i]);
-    }
-
-    const char *main_class_name = *ptr++;
-    debug("[JAUNCH] main_class_name = %s", main_class_name);
-
-    const int main_argc = atoi(*ptr++);
-    debug("[JAUNCH] main_argc = %d", main_argc);
-    if (main_argc < 0) {
-        error("main_argc value is too small: %d", main_argc);
-        return ERROR_MAIN_ARGC_TOO_SMALL;
-    }
-    if (num_output < 5 + jvm_argc + main_argc) {
-        error("main_argc value is too large: %d", main_argc);
-        return ERROR_MAIN_ARGC_TOO_LARGE;
-    }
-
-    const char **main_argv = (const char **)ptr;
-    ptr += main_argc;
-    for (size_t i = 0; i < main_argc; i++) {
-        debug("[JAUNCH] main_argv[%zu] = %s", i, main_argv[i]);
     }
 
     // Perform the indicated directive.
 
-    if (strcmp(directive, "LAUNCH") == 0) {
-        // Launch the JVM with the received arguments. We call the
-        // platform-specific startup_jvm function, which will delegate to
-        // the above launch_jvm function as appropriate for the platform.
-        int launch_result = startup_jvm(
-            libjvm_path, jvm_argc, jvm_argv,
-            main_class_name, main_argc, main_argv
-        );
-        // Clean up.
-        for (size_t i = 0; i < num_output; i++) {
-            free(output_lines[i]);
-        }
-        free(output_lines);
+    const char *directive = output_argv[0];
+    debug("[JAUNCH] directive = %s", directive);
 
-        return launch_result;
+    int launch_result = SUCCESS;
+
+    if (strcmp(directive, "JVM") == 0) {
+        launch_result = launch(launch_jvm,
+            output_argc, (const char **)output_argv);
+    }
+    else if (strcmp(directive, "PYTHON") == 0) {
+        launch_result = launch(launch_python,
+            output_argc, (const char **)output_argv);
+    }
+    else if (strcmp(directive, "CANCEL") == 0) {
+      launch_result = SUCCESS;
+    }
+    else {
+        // If directive is ERROR, show subsequent lines.
+        // If directive is anything else, show ALL lines.
+        size_t i0 = strcmp(directive, "ERROR") == 0 ? 1 : 0;
+        for (size_t i = i0; i < output_argc; i++) {
+            error(output_argv[i]);
+        }
+        // TODO: show_alert(title, message);
     }
 
-    if (strcmp(directive, "CANCEL") == 0) return SUCCESS;
+    // Clean up.
+    for (size_t i = 0; i < output_argc; i++) {
+        free(output_argv[i]);
+    }
+    free(output_argv);
 
-    error("Unknown directive: %s", directive);
-    return ERROR_UNKNOWN_DIRECTIVE;
+    return launch_result;
 }

@@ -22,46 +22,38 @@ void show_alert(const char *title, const char *message) {
     */
 }
 
-struct JVMConfiguration {
-    const char *libjvm_path;
-    size_t jvm_argc;
-    const char **jvm_argv;
-    const char *main_class_name;
-    size_t main_argc;
-    const char **main_argv;
+struct LaunchConfiguration {
+    LaunchFunc launch_runtime;
+    size_t argc;
+    const char **argv;
 };
 
-static struct JVMConfiguration config = {
-    .libjvm_path = NULL,
-    .jvm_argc = 0,
-    .jvm_argv = NULL,
-    .main_class_name = NULL,
-    .main_argc = 0,
-    .main_argv = NULL
+static struct LaunchConfiguration config = {
+    .launch_runtime = NULL,
+    .argc = 0,
+    .argv = NULL
 };
 
 static void dummy_call_back(void *info) { }
 
-static void *startup_jvm_macos(void *dummy) {
-    exit(launch_jvm(
-        config.libjvm_path, config.jvm_argc, config.jvm_argv,
-        config.main_class_name, config.main_argc, config.main_argv
-    ));
+static void *launch_on_macos(void *dummy) {
+    exit(config.launch_runtime(config.argc, config.argv));
 }
 
-int startup_jvm(
-    const char *libjvm_path, const size_t jvm_argc, const char *jvm_argv[],
-    const char *main_class_name, const size_t main_argc, const char *main_argv[])
-{
+/*
+ * The macOS way of launching a runtime.
+ *
+ * It starts a new thread using pthread_create, which calls the launch function.
+ * Meanwhile, on this thread (main), the CoreFoundation event loop is run.
+ * All so that Java's AWT subsystem can work without freezing up the process.
+ */
+int launch(const LaunchFunc launch_runtime, const size_t argc, const char **argv) {
     // Save arguments into global struct, for later retrieval.
-    config.libjvm_path = libjvm_path;
-    config.jvm_argc = jvm_argc;
-    config.jvm_argv = jvm_argv;
-    config.main_class_name = main_class_name;
-    config.main_argc = main_argc;
-    config.main_argv = main_argv;
+    config.launch_runtime = launch_runtime;
+    config.argc = argc;
+    config.argv = argv;
 
-    // Start the JVM on a dedicated thread.
+    // Call the launch function on a dedicated thread.
     pthread_t thread;
     pthread_attr_t attr;
     pthread_attr_init(&attr);

@@ -29,7 +29,7 @@ Now test stuff.
   [1]
 
   $ jaunch/jaunch-linux-x64 parsy a b c
-  LAUNCH
+  JVM
   /*/libjvm.so (glob)
   2
   -Djava.class.path=/*/lib/parsington-3.1.0.jar* (glob)

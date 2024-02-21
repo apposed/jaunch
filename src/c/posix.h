@@ -10,6 +10,12 @@ int file_exists(const char *path) {
   return access(path, F_OK) == 0;
 }
 
+/*
+ * POSIX-style function to launch a command in a separate process,
+ * and harvest its output from the standard output stream.
+ *
+ * As opposed to the Windows implementation in win32.h.
+ */
 int run_command(const char *command,
     const char *input[], size_t numInput,
     char ***output, size_t *numOutput)

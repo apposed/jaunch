@@ -238,7 +238,7 @@ fun main(args: Array<String>) {
 
     // Discern directives to perform.
     val directives = calculate(config.directives, hints, vars).toSet()
-    val nativeDirective = if (directives.isEmpty()) "LAUNCH" else "CANCEL"
+    val nativeDirective = if (directives.isEmpty()) "JVM" else "CANCEL"
 
     debug()
     debug("Directives parsed:")
