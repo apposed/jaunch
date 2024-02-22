@@ -155,6 +155,10 @@ private class Pos(val base: String, var start: Int) : CharSequence {
         start += v[0].length
         return if (groupNo < 0) v.last() else v[groupNo]
     }
+
+    override fun toString(): String {
+      return base.substring(start)
+    }
 }
 
 private fun appendTokens(line: String, tokens: MutableList<Any>) {
