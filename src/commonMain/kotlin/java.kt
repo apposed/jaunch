@@ -1,7 +1,7 @@
-data class JavaConstraints(
+data class JvmConstraints(
     val configDir: File,
-    val libjvmSuffixes: List<String>,
-    val allowWeirdJvms: Boolean,
+    val libSuffixes: List<String>,
+    val allowWeirdRuntimes: Boolean,
     val versionMin: String?,
     val versionMax: String?,
     val distrosAllowed: List<String>,
@@ -44,7 +44,7 @@ data class JavaConstraints(
  */
 class JavaInstallation(
     val rootPath: String,
-    val constraints: JavaConstraints,
+    val constraints: JvmConstraints,
 ) {
     val libjvmPath: String? by lazy { findLibjvm() }
     val binJava: String? by lazy { findBinJava() }
@@ -95,7 +95,7 @@ class JavaInstallation(
     // -- Lazy evaluation functions --
 
     private fun findLibjvm(): String? {
-        return constraints.libjvmSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
+        return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
     }
 
     private fun findBinJava(): String? {
@@ -164,7 +164,7 @@ class JavaInstallation(
     }
 
     private fun checkConstraints(): Boolean {
-        val strict = !constraints.allowWeirdJvms
+        val strict = !constraints.allowWeirdRuntimes
 
         // Ensure libjvm is present.
         if (libjvmPath == null) return fail("No JVM library found.")

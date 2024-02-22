@@ -8,32 +8,40 @@ const val BUFFER_SIZE = 65536
 // Therefore, to belittle the launcher, Jaunch now does its own minimal parsing.
 
 fun readConfig(tomlFile: File): JaunchConfig {
-    debug("Reading config file: $tomlFile");
+    debug("Reading config file: $tomlFile")
     if (!tomlFile.exists) return JaunchConfig()
 
     // Declare Jaunch config fields.
     var jaunchVersion: Int? = null
     var programName: String? = null
     var supportedOptions: List<String>? = null
-    var recognizedJvmArgs: List<String>? = null
-    var allowUnrecognizedJvmArgs: Boolean? = null
-    var allowWeirdJvms: Boolean? = null
-    var javaVersionMin: String? = null
-    var javaVersionMax: String? = null
-    var javaDistrosAllowed: List<String>? = null
-    var javaDistrosBlocked: List<String>? = null
     var osAliases: List<String>? = null
     var archAliases: List<String>? = null
-    var jvmRootPaths: List<String>? = null
-    var libjvmSuffixes: List<String>? = null
     var modes: List<String>? = null
     var directives: List<String>? = null
-    var classpath: List<String>? = null
-    var maxHeap: String? = null
-    var jvmArgs: List<String>? = null
-    var mainClass: String? = null
-    var mainClassCandidates: List<String>? = null
-    var mainArgs: List<String>? = null
+    var pythonRecognizedArgs: List<String>? = null
+    var pythonRootPaths: List<String>? = null
+    var pythonLibSuffixes: List<String>? = null
+    var pythonVersionMin: String? = null
+    var pythonVersionMax: String? = null
+    var pythonPackages: List<String>? = null
+    var pythonRuntimeArgs: List<String>? = null
+    var pythonScriptPath: List<String>? = null
+    var pythonMainArgs: List<String>? = null
+    var jvmRecognizedArgs: List<String>? = null
+    var jvmAllowUnrecognizedArgs: Boolean? = null
+    var jvmAllowWeirdRuntimes: Boolean? = null
+    var jvmVersionMin: String? = null
+    var jvmVersionMax: String? = null
+    var jvmDistrosAllowed: List<String>? = null
+    var jvmDistrosBlocked: List<String>? = null
+    var jvmRootPaths: List<String>? = null
+    var jvmLibSuffixes: List<String>? = null
+    var jvmClasspath: List<String>? = null
+    var jvmMaxHeap: String? = null
+    var jvmRuntimeArgs: List<String>? = null
+    var jvmMainClass: List<String>? = null
+    var jvmMainArgs: List<String>? = null
 
     // Parse TOML file lines into tokens.
     val tokens = mutableListOf<Any>()
@@ -45,36 +53,47 @@ fun readConfig(tomlFile: File): JaunchConfig {
     val processedTokens = processLists(tokens).filter { it !in listOf(',', '\n') }
 
     // The expected pattern at this point is VarAssign, value, VarAssign, value, ...
+    // Maybe with a TablePrefix in there occasionally.
     // If we encounter a value outside this pattern, issue a warning and ignore it.
     var i = 0
+    var tablePrefix = ""
     while (i < processedTokens.size) {
         when (val token = processedTokens[i++]) {
+            is TablePrefix -> tablePrefix = token.prefix
             is VarAssign -> {
-                val name = token.name
+                val name = tablePrefix + token.name
                 val value = if (i < processedTokens.size) processedTokens[i++] else null
                 when (name) {
                     "jaunch-version" -> jaunchVersion = asInt(value)
                     "program-name" -> programName = asString(value)
                     "supported-options" -> supportedOptions = asList(value)
-                    "recognized-jvm-args" -> recognizedJvmArgs = asList(value)
-                    "allow-unrecognized-jvm-args" -> allowUnrecognizedJvmArgs = asBoolean(value)
-                    "allow-weird-jvms" -> allowWeirdJvms = asBoolean(value)
-                    "java-version-min" -> javaVersionMin = asString(value)
-                    "java-version-max" -> javaVersionMax = asString(value)
-                    "java-distros-allowed" -> javaDistrosAllowed = asList(value)
-                    "java-distros-blocked" -> javaDistrosBlocked = asList(value)
                     "os-aliases" -> osAliases = asList(value)
                     "arch-aliases" -> archAliases = asList(value)
-                    "jvm-root-paths" -> jvmRootPaths = asList(value)
-                    "libjvm-suffixes" -> libjvmSuffixes = asList(value)
                     "modes" -> modes = asList(value)
                     "directives" -> directives = asList(value)
-                    "classpath" -> classpath = asList(value)
-                    "max-heap" -> maxHeap = asString(value)
-                    "jvm-args" -> jvmArgs = asList(value)
-                    "main-class" -> mainClass = asString(value)
-                    "main-class-candidates" -> mainClassCandidates = asList(value)
-                    "main-args" -> mainArgs = asList(value)
+                    "python.recognized-args" -> pythonRecognizedArgs = asList(value)
+                    "python.root-paths" -> pythonRootPaths = asList(value)
+                    "python.lib-suffixes" -> pythonLibSuffixes = asList(value)
+                    "python.version-min" -> pythonVersionMin = asString(value)
+                    "python.version-max" -> pythonVersionMax = asString(value)
+                    "python.packages" -> pythonPackages = asList(value)
+                    "python.runtime-args" -> pythonRuntimeArgs = asList(value)
+                    "python.script-path" -> pythonScriptPath = asList(value)
+                    "python.main-args" -> pythonMainArgs = asList(value)
+                    "jvm.recognized-args" -> jvmRecognizedArgs = asList(value)
+                    "jvm.allow-unrecognized-args" -> jvmAllowUnrecognizedArgs = asBoolean(value)
+                    "jvm.allow-weird-runtimes" -> jvmAllowWeirdRuntimes = asBoolean(value)
+                    "jvm.version-min" -> jvmVersionMin = asString(value)
+                    "jvm.version-max" -> jvmVersionMax = asString(value)
+                    "jvm.distros-allowed" -> jvmDistrosAllowed = asList(value)
+                    "jvm.distros-blocked" -> jvmDistrosBlocked = asList(value)
+                    "jvm.root-paths" -> jvmRootPaths = asList(value)
+                    "jvm.lib-suffixes" -> jvmLibSuffixes = asList(value)
+                    "jvm.classpath" -> jvmClasspath = asList(value)
+                    "jvm.max-heap" -> jvmMaxHeap = asString(value)
+                    "jvm.runtime-args" -> jvmRuntimeArgs = asList(value)
+                    "jvm.main-class" -> jvmMainClass = asList(value)
+                    "jvm.main-args" -> jvmMainArgs = asList(value)
                 }
             }
             else -> warn("[TOML] Ignoring extraneous token: '$token' [${token::class.simpleName}]")
@@ -86,25 +105,33 @@ fun readConfig(tomlFile: File): JaunchConfig {
         jaunchVersion = jaunchVersion,
         programName = programName,
         supportedOptions = asArray(supportedOptions),
-        recognizedJvmArgs = asArray(recognizedJvmArgs),
-        allowUnrecognizedJvmArgs = allowUnrecognizedJvmArgs,
-        allowWeirdJvms = allowWeirdJvms,
-        javaVersionMin = javaVersionMin,
-        javaVersionMax = javaVersionMax,
-        javaDistrosAllowed = asArray(javaDistrosAllowed),
-        javaDistrosBlocked = asArray(javaDistrosBlocked),
         osAliases = asArray(osAliases),
         archAliases = asArray(archAliases),
-        jvmRootPaths = asArray(jvmRootPaths),
-        libjvmSuffixes = asArray(libjvmSuffixes),
         modes = asArray(modes),
         directives = asArray(directives),
-        classpath = asArray(classpath),
-        maxHeap = maxHeap,
-        jvmArgs = asArray(jvmArgs),
-        mainClass = mainClass,
-        mainClassCandidates = asArray(mainClassCandidates),
-        mainArgs = asArray(mainArgs),
+        pythonRecognizedArgs = asArray(pythonRecognizedArgs),
+        pythonRootPaths = asArray(pythonRootPaths),
+        pythonLibSuffixes = asArray(pythonLibSuffixes),
+        pythonVersionMin = pythonVersionMin,
+        pythonVersionMax = pythonVersionMax,
+        pythonPackages = asArray(pythonPackages),
+        pythonRuntimeArgs = asArray(pythonRuntimeArgs),
+        pythonScriptPath = asArray(pythonScriptPath),
+        pythonMainArgs = asArray(pythonMainArgs),
+        jvmRecognizedArgs = asArray(jvmRecognizedArgs),
+        jvmAllowUnrecognizedArgs = jvmAllowUnrecognizedArgs,
+        jvmAllowWeirdRuntimes = jvmAllowWeirdRuntimes,
+        jvmVersionMin = jvmVersionMin,
+        jvmVersionMax = jvmVersionMax,
+        jvmDistrosAllowed = asArray(jvmDistrosAllowed),
+        jvmDistrosBlocked = asArray(jvmDistrosBlocked),
+        jvmRootPaths = asArray(jvmRootPaths),
+        jvmLibSuffixes = asArray(jvmLibSuffixes),
+        jvmClasspath = asArray(jvmClasspath),
+        jvmMaxHeap = jvmMaxHeap,
+        jvmRuntimeArgs = asArray(jvmRuntimeArgs),
+        jvmMainClass = asArray(jvmMainClass),
+        jvmMainArgs = asArray(jvmMainArgs),
     )
 }
 
@@ -134,9 +161,10 @@ private val stringPattern1 = Regex("('([^']*)')\\s*")
 private val stringPattern2 = Regex("(\"([^\"]*)\")\\s*")
 private val booleanPattern = Regex("(true|false)\\s*")
 private val integerPattern = Regex("(-?\\d+)\\s*")
-private val varAssignPattern = Regex("([\\w-]+)\\s*=\\s*")
+private val varAssignPattern = Regex("([\\w.-]+)\\s*=\\s*")
 private val symbolPattern = Regex("([\\[\\],])\\s*")
 
+private data class TablePrefix(val prefix: String)
 private data class VarAssign(val name: String)
 
 /** A string with mutable start position. */
@@ -163,6 +191,15 @@ private class Pos(val base: String, var start: Int) : CharSequence {
 
 private fun appendTokens(line: String, tokens: MutableList<Any>) {
     val s = Pos(line.trim(), 0)
+    // Parse table headers as entire lines.
+    if (s.isNotEmpty() && s[0] == '[') {
+        val rBracket = s.indexOf(']')
+        if (rBracket >= 0) {
+            appendToken(tokens, TablePrefix(s.substring(1, rBracket) + "."))
+            return
+        }
+    }
+    // Parse other things token by token.
     while (s.isNotEmpty()) {
         if (s[0] == '#') break // comment
         appendToken(tokens, s.match(symbolPattern)?.get(0)) ?: continue

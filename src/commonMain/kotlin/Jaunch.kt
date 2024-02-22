@@ -139,10 +139,13 @@ fun main(args: Array<String>) {
     )
     if (exeFile?.exists == true) vars["executable"] = exeFile.path
 
-    // Declare the authoritative lists of JVM arguments and main arguments.
+    // Declare the authoritative lists of runtime arguments and main arguments,
+    // one pair of variables for each supported runtime (Python and the JVM).
     // At the end of the configuration process, we will emit these to stdout.
-    val jvmArgs = mutableListOf<String>()
-    val mainArgs = mutableListOf<String>()
+    val pythonRuntimeArgs = mutableListOf<String>()
+    val pythonMainArgs = mutableListOf<String>()
+    val jvmRuntimeArgs = mutableListOf<String>()
+    val jvmMainArgs = mutableListOf<String>()
 
     // Parse the configurator's input arguments.
     //
@@ -154,8 +157,7 @@ fun main(args: Array<String>) {
     // So e.g. `--sigmas=5` would add the `--sigma` hint, and add `"5"` as the value for the `sigma` variable.
     // Variable values will be interpolated into argument strings later in the configuration process.
     //
-    // Non-matching input arguments will be passed through directly,
-    // either to the JVM or to the main method on the Java side.
+    // Non-matching input arguments will be passed through directly, either to the runtime or to the main program.
     // The exact behavior will depend on whether the `--` separator was provided.
     val divider = inputArgs.indexOf("--")
     var i = 0
@@ -198,21 +200,23 @@ fun main(args: Array<String>) {
         else {
             // The argument is not a Jaunch one. Pass it through directly.
             if (divider < 0) {
-                // No dash-dash divider was given, so we need to guess: is this a JVM arg, or a main arg?
-                (if (config.recognizes(argKey)) jvmArgs else mainArgs) += arg
+                // No dash-dash divider was given, so we need to guess: is this a runtime arg, or a main arg?
+                (if (config.recognizes(argKey, config.pythonRecognizedArgs)) pythonRuntimeArgs else pythonMainArgs) += arg
+                (if (config.recognizes(argKey, config.jvmRecognizedArgs)) jvmRuntimeArgs else jvmMainArgs) += arg
             }
             else if (i <= divider) {
-                // This argument is before the dash-dash divider, so must be treated as a JVM arg.
-                // But we only allow it through if it's a recognized JVM argument, or the
-                // allow-unrecognized-jvm-args configuration flag is set to true.
-                if (config.allowUnrecognizedJvmArgs != true && !config.recognizes(arg)) {
+                // This argument is before the dash-dash divider, so must be treated as a runtime arg.
+                // But we only allow it through if it's a recognized runtime argument, or the
+                // <X>-allow-unrecognized-args configuration flag is set to true.
+                if (config.jvmAllowUnrecognizedArgs != true && !config.recognizes(arg, config.jvmRecognizedArgs)) {
+                    // FIXME
                     error("Unrecognized JVM argument: $arg")
                 }
-                jvmArgs += arg
+                jvmRuntimeArgs += arg
             }
             else {
                 // This argument is after the dash-dash divider, so we treat it as a main arg.
-                mainArgs += arg
+                jvmMainArgs += arg
             }
         }
     }
@@ -221,8 +225,10 @@ fun main(args: Array<String>) {
     debug("Input arguments parsed:")
     debug("* hints -> ", hints)
     debug("* vars -> ", vars)
-    debug("* jvmArgs -> ", jvmArgs)
-    debug("* mainArgs -> ", mainArgs)
+    debug("* pythonRuntimeArgs -> ", pythonRuntimeArgs)
+    debug("* pythonMainArgs -> ", pythonMainArgs)
+    debug("* jvmRuntimeArgs -> ", jvmRuntimeArgs)
+    debug("* jvmMainArgs -> ", jvmMainArgs)
 
     // Apply mode hints.
     for (mode in calculate(config.modes, hints, vars)) {
@@ -238,15 +244,51 @@ fun main(args: Array<String>) {
 
     // Discern directives to perform.
     val directives = calculate(config.directives, hints, vars).toSet()
-    val nativeDirective = if (directives.isEmpty()) "JVM" else "CANCEL"
 
     debug()
     debug("Directives parsed:")
     debug("* directives -> ", directives)
-    debug("* nativeDirective -> ", nativeDirective)
 
     // Execute the help directive.
     if ("help" in directives) help(executable, programName, supportedOptions)
+
+    // TODO -- How to find Python stuff?
+    //
+    // # TODO: Polish this list.
+    // pythonRootPaths = [
+    //     '~/miniforge3/envs/*',
+    //     '~/mambaforge/envs/*',
+    //     '${app-dir}/python',
+    //     '${app-dir}/lib/runtime',
+    // ]
+    //
+    // # TODO: Verify this list for all platforms.
+    // pythonLibSuffixes = [
+    //     'LINUX:lib/libpython3.so',
+    //     'MACOSX:lib/libpython3.dylib',
+    //     'WINDOWS:lib\libpython3.dll',
+    // ]
+    //
+    // For system Python on Linux:
+    //     $ find /usr/lib -name 'libpython*'                                                                                                                                                        #  0 {2024-02-22 13:35:10}
+    //     /usr/lib/x86_64-linux-gnu/libpeas-1.0/loaders/libpython3loader.so
+    //     /usr/lib/x86_64-linux-gnu/libpython3.11.so.1
+    //     /usr/lib/x86_64-linux-gnu/libpython3.11.so.1.0
+    //     /usr/lib/python3.11/config-3.11-x86_64-linux-gnu/libpython3.11.so
+    //     /usr/lib/libreoffice/program/libpythonloaderlo.so
+    //
+    // val sitePackagesPath = "$pythonRootPath/lib/python$pythonVersion/site-packages"
+    // Two possible formats:
+    // - "$sitePackagesPath/*.dist-info/METADATA"
+    // - "$sitePackagesPath/*.egg-info/PKG-INFO"
+    // Extract info from these, perhaps.
+    // But the naming is also very structured: $packageName-$packageVersion.(dist|egg)-info
+    // So we could probably avoid even reading the metadata files, in favor of dir existence.
+
+    // START HERE -- This begins the search for Java.
+    // But we only do this if the directive is going to be JVM.
+    // Except... for the Java-via-Python thing, we *do* need to find a
+    // libjvm and pass it as one of the arguments to the Python program! Oof!
 
     // Calculate all the places to search for Java.
     val jvmRootPaths = calculate(config.jvmRootPaths, hints, vars).
@@ -257,20 +299,20 @@ fun main(args: Array<String>) {
     jvmRootPaths.forEach { debug("* ", it) }
 
     // Calculate all the places to look for the JVM library.
-    val libjvmSuffixes = calculate(config.libjvmSuffixes, hints, vars)
+    val libjvmSuffixes = calculate(config.jvmLibSuffixes, hints, vars)
 
     debug()
     debug("Suffixes to check for libjvm:")
     libjvmSuffixes.forEach { debug("* ", it) }
 
     // Calculate Java distro and version constraints.
-    val allowWeirdJvms = config.allowWeirdJvms ?: false
-    val distrosAllowed = calculate(config.javaDistrosAllowed, hints, vars)
-    val distrosBlocked = calculate(config.javaDistrosBlocked, hints, vars)
+    val allowWeirdJvms = config.jvmAllowWeirdRuntimes ?: false
+    val distrosAllowed = calculate(config.jvmDistrosAllowed, hints, vars)
+    val distrosBlocked = calculate(config.jvmDistrosBlocked, hints, vars)
     val osAliases = calculate(config.osAliases, hints, vars)
     val archAliases = calculate(config.archAliases, hints, vars)
-    val constraints = JavaConstraints(configDir, libjvmSuffixes,
-        allowWeirdJvms, config.javaVersionMin, config.javaVersionMax,
+    val constraints = JvmConstraints(configDir, libjvmSuffixes,
+        allowWeirdJvms, config.jvmVersionMin, config.jvmVersionMax,
         distrosAllowed, distrosBlocked, osAliases, archAliases)
 
     // Discover Java.
@@ -306,7 +348,7 @@ fun main(args: Array<String>) {
     if ("print-java-info" in directives) printlnErr(java.toString())
 
     // Calculate classpath.
-    val rawClasspath = calculate(config.classpath, hints, vars)
+    val rawClasspath = calculate(config.jvmClasspath, hints, vars)
     debugList("Classpath to calculate:", rawClasspath)
     val classpath = rawClasspath.flatMap { glob(it) }
     debugList("Classpath calculated:", classpath)
@@ -315,59 +357,60 @@ fun main(args: Array<String>) {
     if ("print-class-path" in directives) classpath.forEach { printlnErr(it) }
 
     // Calculate JVM arguments.
-    jvmArgs += calculate(config.jvmArgs, hints, vars)
-    debugList("JVM arguments calculated:", jvmArgs)
+    jvmRuntimeArgs += calculate(config.jvmRuntimeArgs, hints, vars)
+    debugList("JVM arguments calculated:", jvmRuntimeArgs)
 
     // Append or amend argument declaring classpath elements.
     if (classpath.isNotEmpty()) {
         val classpathString = classpath.joinToString(COLON)
-        val cpIndex = jvmArgs.indexOfFirst { it.startsWith("-Djava.class.path=") }
+        val cpIndex = jvmRuntimeArgs.indexOfFirst { it.startsWith("-Djava.class.path=") }
         if (cpIndex >= 0) {
             // Append to existing `-Djava.class.path` argument.
-            jvmArgs[cpIndex] += "$COLON$classpathString"
-            debug("Extended classpath arg: ${jvmArgs[cpIndex]}")
+            jvmRuntimeArgs[cpIndex] += "$COLON$classpathString"
+            debug("Extended classpath arg: ${jvmRuntimeArgs[cpIndex]}")
         }
         else {
             // No `-Djava.class.path` argument, so we add one.
-            jvmArgs += "-Djava.class.path=$classpathString"
-            debug("Added classpath arg: ${jvmArgs.last()}")
+            jvmRuntimeArgs += "-Djava.class.path=$classpathString"
+            debug("Added classpath arg: ${jvmRuntimeArgs.last()}")
         }
     }
 
     // If not already declared, calculate and declare the max heap size.
-    val mxIndex = jvmArgs.indexOfFirst { it.startsWith("-Xmx") }
+    val mxIndex = jvmRuntimeArgs.indexOfFirst { it.startsWith("-Xmx") }
     if (mxIndex < 0) {
-        val maxHeap = calculateMaxHeap(config.maxHeap)
-        jvmArgs += "-Xmx${maxHeap}"
-        debug("Added maxHeap arg: ${jvmArgs.last()}")
+        val maxHeap = calculateMaxHeap(config.jvmMaxHeap)
+        jvmRuntimeArgs += "-Xmx${maxHeap}"
+        debug("Added maxHeap arg: ${jvmRuntimeArgs.last()}")
     }
 
     // Calculate main class.
     debug()
     debug("Calculating main class name...")
-    val mainClassNames = calculate(config.mainClasses, hints, vars)
+    val mainClassNames = calculate(config.jvmMainClass, hints, vars)
     val mainClassName = if (mainClassNames.isEmpty()) null else mainClassNames.first()
     debug("mainClassName -> ", mainClassName ?: "<null>")
     if (mainClassName == null)
         error("No matching main class name")
 
     // Calculate main args.
-    mainArgs += calculate(config.mainArgs, hints, vars)
-    debugList("Main arguments calculated:", mainArgs)
+    jvmMainArgs += calculate(config.jvmMainArgs, hints, vars)
+    debugList("Main arguments calculated:", jvmMainArgs)
 
     // Execute the dry-run directive.
-    if ("dry-run" in directives) dryRun(java, jvmArgs, mainClassName, mainArgs)
+    if ("dry-run" in directives) dryRun(java, jvmRuntimeArgs, mainClassName, jvmMainArgs)
 
     // Emit final configuration.
     debug()
     debug("Emitting final configuration to stdout...")
+    val nativeDirective = if (directives.isEmpty()) "JVM" else "CANCEL" // FIXME
     println(nativeDirective)
     println(java.libjvmPath!!)
-    println(jvmArgs.size)
-    for (jvmArg in jvmArgs) println(jvmArg)
+    println(jvmRuntimeArgs.size)
+    for (jvmArg in jvmRuntimeArgs) println(jvmArg)
     println(mainClassName.replace(".", "/"))
-    println(mainArgs.size)
-    for (mainArg in mainArgs) println(mainArg)
+    println(jvmMainArgs.size)
+    for (mainArg in jvmMainArgs) println(mainArg)
 }
 
 // -- Helper functions --

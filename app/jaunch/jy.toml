@@ -12,24 +12,21 @@ jaunch-version = 1
 
 program-name = 'Jy'
 
-java-version-min = '8'
-#java-version-max = '21'
+jvm.version-min = '8'
+#jvm.version-max = '21'
 
-classpath = [
+jvm.classpath = [
     '${app-dir}/lib/*.jar',
 ]
 
-max-heap = '75%'
+jvm.max-heap = '75%'
 
-jvm-args = [
+jvm.runtime-args = [
     '-Dpython.import.site=false',
     '-Dpython.cachedir.skip=true',
     '-Dpython.console.encoding=UTF-8',
 ]
 
-main-class-candidates = [
-    'org.python.util.jython',
-]
+jvm.main-class = ['org.python.util.jython']
 
-main-args = [
-]
+jvm.main-args = []

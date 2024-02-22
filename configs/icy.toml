@@ -12,15 +12,15 @@ jaunch-version = 1
 
 program-name = 'Icy'
 
-java-version-min = '8'
+jvm.version-min = '8'
 
-classpath = [
+jvm.classpath = [
     'updater.jar',
 ]
 
-max-heap = '25%'
+jvm.max-heap = '25%'
 
-jvm-args = [
+jvm.runtime-args = [
     'OS:LINUX|ARCH:X64|-Djava.library.path=${app-dir}/lib/unix64',
     'OS:LINUX|ARCH:X86|-Djava.library.path=${app-dir}/lib/unix32',
     'OS:MACOSX|ARCH:ARM64|-Djava.library.path=${app-dir}/lib/maca64',
@@ -29,6 +29,6 @@ jvm-args = [
     'OS:WINDOWS|ARCH:X86|-Djava.library.path=${app-dir}\lib\win32',
 ]
 
-main-class-candidates = [
+jvm.main-class = [
     'icy.updater.Main',
 ]
