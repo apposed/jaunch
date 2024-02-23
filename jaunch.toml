@@ -203,6 +203,41 @@ directives = [
 ]
 
 # ==============================================================================
+# Whether to allow unrecognized arguments to be passed to the runtime.
+#
+# FIXME
+# When the minus-minus divider is absent, the only args that end up as JVM args will be
+# ones from the list above. But if the minus-minus divider *is* given, it becomes
+# possible to force a particular argument to be construed as a JVM argument, even when
+# it does not appear on the list. Depending on your application, it might not be
+# desirable for such unrecognized JVM args to be allowed through to the Java launch.
+#
+# If you want to allow all user-specified JVM args through to the Java launch, set this
+# value to true.
+#
+# If you want full control over what arguments the user can pass to the JVM, set this
+# value to false, and edit the jvm.recognized-args list above according to your needs.
+# Then Jaunch will fail fast when told to pass an unrecognized option to Java.
+#
+# For example, suppose the user invokes:
+#
+#     ./fizzbuzz -ZZ:SuperSecretOption -- 1 2 3 4 5
+#
+# Jaunch would translate this into something like:
+#
+#     java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
+#
+# You and I both know that Java will barf when confronted with an argument like
+# -ZZ:SuperSecretOption. But maybe you are using a custom build of OpenJDK produced by
+# your organization's new superintelligent AI, which actually *does* have this option!
+# Who is Jaunch to judge? (In that case, I would argue you should really just add
+# '-ZZ:*' to your list of recognized JVM args above, but then I would be judging.)
+# Or maybe you just want to trust your users as OpenJDK evolves, rather than dealing
+# with the bureaucracy of updating the TOML file every time OpenJDK changes its
+# supported options. In such cases, this option is here for you.
+allow-unrecognized-args = false
+
+# ==============================================================================
 # Here begins the fields for controlling the launch of Python-based programs.
 # For JVM-specific fields, skip to the `jvm` section below.
 # ==============================================================================
@@ -287,40 +322,6 @@ jvm.recognized-args = [
 ]
 
 # ==============================================================================
-# Whether to allow unrecognized arguments to be passed to the JVM.
-#
-# When the minus-minus divider is absent, the only args that end up as JVM args will be
-# ones from the list above. But if the minus-minus divider *is* given, it becomes
-# possible to force a particular argument to be construed as a JVM argument, even when
-# it does not appear on the list. Depending on your application, it might not be
-# desirable for such unrecognized JVM args to be allowed through to the Java launch.
-#
-# If you want to allow all user-specified JVM args through to the Java launch, set this
-# value to true.
-#
-# If you want full control over what arguments the user can pass to the JVM, set this
-# value to false, and edit the jvm.recognized-args list above according to your needs.
-# Then Jaunch will fail fast when told to pass an unrecognized option to Java.
-#
-# For example, suppose the user invokes:
-#
-#     ./fizzbuzz -ZZ:SuperSecretOption -- 1 2 3 4 5
-#
-# Jaunch would translate this into something like:
-#
-#     java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
-#
-# You and I both know that Java will barf when confronted with an argument like
-# -ZZ:SuperSecretOption. But maybe you are using a custom build of OpenJDK produced by
-# your organization's new superintelligent AI, which actually *does* have this option!
-# Who is Jaunch to judge? (In that case, I would argue you should really just add
-# '-ZZ:*' to your list of recognized JVM args above, but then I would be judging.)
-# Or maybe you just want to trust your users as OpenJDK evolves, rather than dealing
-# with the bureaucracy of updating the TOML file every time OpenJDK changes its
-# supported options. In such cases, this option is here for you.
-jvm.allow-unrecognized-args = false
-
-# ==============================================================================
 # Whether to attempt to launch with mysterious flavors of the JVM.
 #
 # When Jaunch discovers a Java installation on the user's system, it tries very hard
@@ -354,11 +355,11 @@ jvm.allow-unrecognized-args = false
 #
 # As such, it is possible for all of Jaunch's efforts to be in vain, and to end up
 # trying to decide whether to launch with some mystery-flavored JVM. In such scenarios,
-# the allow-weird-jvms flag comes to the rescue, telling Jaunch whether to allow it
-# (true), or give up and complain (false). Hopefully, your users will never know the
+# the jvm.allow-weird-runtimes flag comes to the rescue, telling Jaunch whether to allow
+# it (true), or give up and complain (false). Hopefully, your users will never know the
 # difference, as long as they have well-behaved distros, and/or you ship a good distro
 # with your application. But just in case, give a think to how you want this to behave.
-allow-weird-jvms = true
+jvm.allow-weird-runtimes = true
 
 # ==============================================================================
 # Acceptable range of Java versions to match.
@@ -368,7 +369,7 @@ allow-weird-jvms = true
 # system for appropriate JVM installations. If a JVM is successfully discovered, but
 # then found to be outside these constraints, it is discarded and the search continues.
 # For installations whose version cannot be determined, what Jaunch does will depend on
-# the allow-weird-jvms boolean setting above.
+# the jvm.allow-weird-runtimes boolean setting above.
 #
 # The most common use of these fields is to specify major versions alone (e.g.
 # "java-version-min = 11"), but Jaunch does make a best effort to compare version
@@ -456,7 +457,7 @@ allow-weird-jvms = true
 #
 # These two fields let you constrain which Java distributions are OK to use and which
 # are not, respectively. For distros matching neither the allowlist nor blocklist,
-# what Jaunch does will depend on the allow-weird-jvms boolean setting above.
+# what Jaunch does will depend on the jvm.allow-weird-runtimes boolean setting above.
 #
 # As of this writing, the following Java distributions have been tested:
 #

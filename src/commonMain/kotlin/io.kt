@@ -19,6 +19,7 @@ fun readConfig(tomlFile: File): JaunchConfig {
     var archAliases: List<String>? = null
     var modes: List<String>? = null
     var directives: List<String>? = null
+    var allowUnrecognizedArgs: Boolean? = null
     var pythonRecognizedArgs: List<String>? = null
     var pythonRootPaths: List<String>? = null
     var pythonLibSuffixes: List<String>? = null
@@ -29,7 +30,6 @@ fun readConfig(tomlFile: File): JaunchConfig {
     var pythonScriptPath: List<String>? = null
     var pythonMainArgs: List<String>? = null
     var jvmRecognizedArgs: List<String>? = null
-    var jvmAllowUnrecognizedArgs: Boolean? = null
     var jvmAllowWeirdRuntimes: Boolean? = null
     var jvmVersionMin: String? = null
     var jvmVersionMax: String? = null
@@ -71,6 +71,7 @@ fun readConfig(tomlFile: File): JaunchConfig {
                     "arch-aliases" -> archAliases = asList(value)
                     "modes" -> modes = asList(value)
                     "directives" -> directives = asList(value)
+                    "allow-unrecognized-args" -> allowUnrecognizedArgs = asBoolean(value)
                     "python.recognized-args" -> pythonRecognizedArgs = asList(value)
                     "python.root-paths" -> pythonRootPaths = asList(value)
                     "python.lib-suffixes" -> pythonLibSuffixes = asList(value)
@@ -81,7 +82,6 @@ fun readConfig(tomlFile: File): JaunchConfig {
                     "python.script-path" -> pythonScriptPath = asList(value)
                     "python.main-args" -> pythonMainArgs = asList(value)
                     "jvm.recognized-args" -> jvmRecognizedArgs = asList(value)
-                    "jvm.allow-unrecognized-args" -> jvmAllowUnrecognizedArgs = asBoolean(value)
                     "jvm.allow-weird-runtimes" -> jvmAllowWeirdRuntimes = asBoolean(value)
                     "jvm.version-min" -> jvmVersionMin = asString(value)
                     "jvm.version-max" -> jvmVersionMax = asString(value)
@@ -109,6 +109,7 @@ fun readConfig(tomlFile: File): JaunchConfig {
         archAliases = asArray(archAliases),
         modes = asArray(modes),
         directives = asArray(directives),
+        allowUnrecognizedArgs = allowUnrecognizedArgs,
         pythonRecognizedArgs = asArray(pythonRecognizedArgs),
         pythonRootPaths = asArray(pythonRootPaths),
         pythonLibSuffixes = asArray(pythonLibSuffixes),
@@ -119,7 +120,6 @@ fun readConfig(tomlFile: File): JaunchConfig {
         pythonScriptPath = asArray(pythonScriptPath),
         pythonMainArgs = asArray(pythonMainArgs),
         jvmRecognizedArgs = asArray(jvmRecognizedArgs),
-        jvmAllowUnrecognizedArgs = jvmAllowUnrecognizedArgs,
         jvmAllowWeirdRuntimes = jvmAllowWeirdRuntimes,
         jvmVersionMin = jvmVersionMin,
         jvmVersionMax = jvmVersionMax,

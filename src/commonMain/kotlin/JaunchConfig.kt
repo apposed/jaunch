@@ -31,6 +31,9 @@ data class JaunchConfig (
     /** Commands that control Jaunch's launching behavior. */
     val directives: Array<String> = emptyArray(),
 
+    /** Whether to allow unrecognized arguments to be passed to the runtime. */
+    val allowUnrecognizedArgs: Boolean? = null,
+
     // -- Python-specific configuration fields --
 
     /**
@@ -71,9 +74,6 @@ data class JaunchConfig (
      * as opposed to the application's main method.
      */
     val jvmRecognizedArgs: Array<String> = emptyArray(),
-
-    /** Whether to allow unrecognized arguments to be passed to the JVM. */
-    val jvmAllowUnrecognizedArgs: Boolean? = null,
 
     /** Whether to attempt to launch with mysterious flavors of the JVM. */
     val jvmAllowWeirdRuntimes: Boolean? = null,
@@ -143,6 +143,7 @@ data class JaunchConfig (
             archAliases = config.archAliases + archAliases,
             modes = config.modes + modes,
             directives = config.directives + directives,
+            allowUnrecognizedArgs = config.allowUnrecognizedArgs ?: allowUnrecognizedArgs,
 
             pythonRecognizedArgs = config.pythonRecognizedArgs + pythonRecognizedArgs,
             pythonRootPaths = config.pythonRootPaths + pythonRootPaths,
@@ -155,7 +156,6 @@ data class JaunchConfig (
             pythonMainArgs = config.pythonMainArgs + pythonMainArgs,
 
             jvmRecognizedArgs = config.jvmRecognizedArgs + jvmRecognizedArgs,
-            jvmAllowUnrecognizedArgs = config.jvmAllowUnrecognizedArgs ?: jvmAllowUnrecognizedArgs,
             jvmAllowWeirdRuntimes = config.jvmAllowWeirdRuntimes ?: jvmAllowWeirdRuntimes,
             jvmVersionMin = config.jvmVersionMin ?: jvmVersionMin,
             jvmVersionMax = config.jvmVersionMax ?: jvmVersionMax,

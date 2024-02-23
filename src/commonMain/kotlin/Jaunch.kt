@@ -35,11 +35,6 @@ fun main(args: Array<String>) {
     // If a sole `-` argument was given on the CLI, read the arguments from stdin.
     val theArgs = if (args.size == 1 && args[0] == "-") stdinLines() else args
 
-    // TODO - make it so that the "else" case for directives is an error message,
-    //  which will be shown in a dialog box on a best effort basis on the C side.
-    //  Weeelll... do we want to complexify the C code? Probably not,
-    //  UNLESS we fail to run the jaunch configurator at all...
-
     // The first argument is the path to the calling executable.
     val executable = theArgs.getOrNull(0)
 
@@ -139,13 +134,23 @@ fun main(args: Array<String>) {
     )
     if (exeFile?.exists == true) vars["executable"] = exeFile.path
 
+    // Define the list of supported runtimes, for use as keys to data structures.
+    // Must match the launch directives expected by the C-based native launcher.
+    val recognizedArgs = mapOf(
+        "PYTHON" to config.pythonRecognizedArgs,
+        "JVM" to config.jvmRecognizedArgs,
+    )
+    val runtimes = recognizedArgs.keys
+
     // Declare the authoritative lists of runtime arguments and main arguments,
-    // one pair of variables for each supported runtime (Python and the JVM).
+    // one pair of variables for each supported runtime.
     // At the end of the configuration process, we will emit these to stdout.
-    val pythonRuntimeArgs = mutableListOf<String>()
-    val pythonMainArgs = mutableListOf<String>()
-    val jvmRuntimeArgs = mutableListOf<String>()
-    val jvmMainArgs = mutableListOf<String>()
+    val runtimeArgs = mutableMapOf<String, MutableList<String>>()
+    val mainArgs = mutableMapOf<String, MutableList<String>>()
+    for (runtime in runtimes) {
+        runtimeArgs[runtime] = mutableListOf()
+        mainArgs[runtime] = mutableListOf()
+    }
 
     // Parse the configurator's input arguments.
     //
@@ -201,22 +206,17 @@ fun main(args: Array<String>) {
             // The argument is not a Jaunch one. Pass it through directly.
             if (divider < 0) {
                 // No dash-dash divider was given, so we need to guess: is this a runtime arg, or a main arg?
-                (if (config.recognizes(argKey, config.pythonRecognizedArgs)) pythonRuntimeArgs else pythonMainArgs) += arg
-                (if (config.recognizes(argKey, config.jvmRecognizedArgs)) jvmRuntimeArgs else jvmMainArgs) += arg
+                for (r in runtimes) {
+                    (if (config.recognizes(argKey, recognizedArgs[r]!!)) runtimeArgs[r]!! else mainArgs[r]!!) += arg
+                }
             }
             else if (i <= divider) {
                 // This argument is before the dash-dash divider, so must be treated as a runtime arg.
-                // But we only allow it through if it's a recognized runtime argument, or the
-                // <X>-allow-unrecognized-args configuration flag is set to true.
-                if (config.jvmAllowUnrecognizedArgs != true && !config.recognizes(arg, config.jvmRecognizedArgs)) {
-                    // FIXME
-                    error("Unrecognized JVM argument: $arg")
-                }
-                jvmRuntimeArgs += arg
+                for (r in runtimes) runtimeArgs[r]!! += arg
             }
             else {
                 // This argument is after the dash-dash divider, so we treat it as a main arg.
-                jvmMainArgs += arg
+                for (r in runtimes) mainArgs[r]!! += arg
             }
         }
     }
@@ -225,10 +225,10 @@ fun main(args: Array<String>) {
     debug("Input arguments parsed:")
     debug("* hints -> ", hints)
     debug("* vars -> ", vars)
-    debug("* pythonRuntimeArgs -> ", pythonRuntimeArgs)
-    debug("* pythonMainArgs -> ", pythonMainArgs)
-    debug("* jvmRuntimeArgs -> ", jvmRuntimeArgs)
-    debug("* jvmMainArgs -> ", jvmMainArgs)
+    for (r in runtimes) {
+        debug("* $r.runtimeArgs -> ", runtimeArgs[r]!!)
+        debug("* $r.mainArgs -> ", mainArgs[r]!!)
+    }
 
     // Apply mode hints.
     for (mode in calculate(config.modes, hints, vars)) {
@@ -241,16 +241,6 @@ fun main(args: Array<String>) {
     debug()
     debug("Modes applied:")
     debug("* hints -> ", hints)
-
-    // Discern directives to perform.
-    val directives = calculate(config.directives, hints, vars).toSet()
-
-    debug()
-    debug("Directives parsed:")
-    debug("* directives -> ", directives)
-
-    // Execute the help directive.
-    if ("help" in directives) help(executable, programName, supportedOptions)
 
     // TODO -- How to find Python stuff?
     //
@@ -343,18 +333,11 @@ fun main(args: Array<String>) {
     }
     debug("* hints -> ", hints)
 
-    // Execute the print-java-home and/or print-java-info directive.
-    if ("print-java-home" in directives) printlnErr(java.rootPath)
-    if ("print-java-info" in directives) printlnErr(java.toString())
-
     // Calculate classpath.
     val rawClasspath = calculate(config.jvmClasspath, hints, vars)
     debugList("Classpath to calculate:", rawClasspath)
     val classpath = rawClasspath.flatMap { glob(it) }
     debugList("Classpath calculated:", classpath)
-
-    // Execute the print-class-path directive.
-    if ("print-class-path" in directives) classpath.forEach { printlnErr(it) }
 
     // Calculate JVM arguments.
     jvmRuntimeArgs += calculate(config.jvmRuntimeArgs, hints, vars)
@@ -397,20 +380,54 @@ fun main(args: Array<String>) {
     jvmMainArgs += calculate(config.jvmMainArgs, hints, vars)
     debugList("Main arguments calculated:", jvmMainArgs)
 
-    // Execute the dry-run directive.
-    if ("dry-run" in directives) dryRun(java, jvmRuntimeArgs, mainClassName, jvmMainArgs)
+    // Discern directives to perform.
+    val directives = calculate(config.directives, hints, vars).toSet()
+
+    debug()
+    debug("Directives parsed:")
+    debug("* directives -> ", directives)
+
+    // Execute directives
+    var launchDirective = "CANCEL"
+    for (directive in directives) {
+        when (directive) {
+            "help" -> help(executable, programName, supportedOptions)
+            "print-java-home" -> printlnErr(java.rootPath)
+            "print-java-info" -> printlnErr(java.toString())
+            "print-class-path" -> classpath.forEach { printlnErr(it) }
+            "dry-run" -> dryRun(java, jvmRuntimeArgs, mainClassName, jvmMainArgs)
+            else -> {
+                if (directive in runtimes) launchDirective = directive
+                else error("Invalid directive: $directive")
+            }
+        }
+    }
+
+    val chosenRuntimeArgs = runtimeArgs.get(launchDirective) ?: emptyList()
+    val chosenMainArgs = mainArgs.get(launchDirective) ?: emptyList()
+
+    // Validate runtime args.
+    if (config.allowUnrecognizedArgs != true && launchDirective in recognizedArgs) {
+        // Check that the computed runtime args are all valid.
+        val chosenRecognizedArgs = recognizedArgs[launchDirective]!!
+        for (arg in chosenRuntimeArgs) {
+            if (!config.recognizes(arg, chosenRecognizedArgs)) {
+                error("Unrecognized $launchDirective argument: $arg")
+            }
+        }
+    }
 
     // Emit final configuration.
     debug()
     debug("Emitting final configuration to stdout...")
-    val nativeDirective = if (directives.isEmpty()) "JVM" else "CANCEL" // FIXME
-    println(nativeDirective)
+    println(launchDirective)
+    if (launchDirective == "CANCEL") return
     println(java.libjvmPath!!)
-    println(jvmRuntimeArgs.size)
-    for (jvmArg in jvmRuntimeArgs) println(jvmArg)
+    println(chosenRuntimeArgs.size)
+    for (arg in chosenRuntimeArgs) println(arg)
     println(mainClassName.replace(".", "/"))
-    println(jvmMainArgs.size)
-    for (mainArg in jvmMainArgs) println(mainArg)
+    println(chosenMainArgs.size)
+    for (mainArg in chosenMainArgs) println(mainArg)
 }
 
 // -- Helper functions --
