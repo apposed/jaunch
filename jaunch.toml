@@ -166,8 +166,6 @@ modes = []
 # answer is: we can't. The configurator program that ships with Jaunch has some
 # built-in directives, and that's it. As of this writing, those are:
 #
-# * PYTHON             - Launches a program in the Python interpreter.
-# * JVM                - Launches a program in the Java Virtual Machine.
 # * CANCEL             - Abort the launch without displaying an error message.
 # * ERROR              - Abort the launch and display an error message to the user.
 #
@@ -176,10 +174,14 @@ modes = []
 #                        Useful to see what would happen, without it actually happening.
 # * print-app-dir      - Print out the path to the application. Typically, this will be
 #                        the folder containing the launcher.
+
+# * PYTHON             - Launches the program using the Python interpreter.
 # * print-python-home  - Print out the path to the chosen Python installation.
 # * print-python-info  - Print out all the details of the chosen Python installation,
 #                        including not only its path, but also the distro, version,
 #                        operating system, CPU architecture, and other metadata fields.
+
+# * JVM                - Launches the program using the Java Virtual Machine.
 # * print-java-home    - Print out the path to the chosen Java installation.
 # * print-java-info    - Print out all the details of the chosen Java installation,
 #                        including not only its path, but also the distro, version,
@@ -205,33 +207,33 @@ directives = [
 # ==============================================================================
 # Whether to allow unrecognized arguments to be passed to the runtime.
 #
-# FIXME
-# When the minus-minus divider is absent, the only args that end up as JVM args will be
-# ones from the list above. But if the minus-minus divider *is* given, it becomes
-# possible to force a particular argument to be construed as a JVM argument, even when
-# it does not appear on the list. Depending on your application, it might not be
-# desirable for such unrecognized JVM args to be allowed through to the Java launch.
+# When the minus-minus divider is absent, the only args that end up as runtime args
+# will be ones from the `recognized-args` lists below. But if the minus-minus divider
+# *is* given, it becomes possible to force a particular argument to be construed as
+# an argument to the runtime, even when it does not appear on the list.
+# Depending on your application, it might not be desirable for such unrecognized args
+# to be allowed through to the program launch.
 #
-# If you want to allow all user-specified JVM args through to the Java launch, set this
-# value to true.
+# If you want to allow all user-specified JVM args through to the program launch,
+# set this value to true.
 #
-# If you want full control over what arguments the user can pass to the JVM, set this
-# value to false, and edit the jvm.recognized-args list above according to your needs.
-# Then Jaunch will fail fast when told to pass an unrecognized option to Java.
+# If you want full control over what arguments the user can pass to the runtime, set
+# this value to false, and edit the recognized-args list below according to your needs.
+# Then Jaunch will fail fast when told to pass an unrecognized option to the runtime.
 #
-# For example, suppose the user invokes:
+# For example, suppose for a JVM-based application called JFizzBuzz the user invokes:
 #
-#     ./fizzbuzz -ZZ:SuperSecretOption -- 1 2 3 4 5
+#     ./jfb -ZZ:SuperSecretOption -- 1 2 3 4 5
 #
 # Jaunch would translate this into something like:
 #
-#     java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
+#     .../bin/java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
 #
 # You and I both know that Java will barf when confronted with an argument like
 # -ZZ:SuperSecretOption. But maybe you are using a custom build of OpenJDK produced by
 # your organization's new superintelligent AI, which actually *does* have this option!
 # Who is Jaunch to judge? (In that case, I would argue you should really just add
-# '-ZZ:*' to your list of recognized JVM args above, but then I would be judging.)
+# '-ZZ:*' to the `jvm.recognized-args` list below, but then I would be judging.)
 # Or maybe you just want to trust your users as OpenJDK evolves, rather than dealing
 # with the bureaucracy of updating the TOML file every time OpenJDK changes its
 # supported options. In such cases, this option is here for you.
@@ -242,19 +244,141 @@ allow-unrecognized-args = false
 # For JVM-specific fields, skip to the `jvm` section below.
 # ==============================================================================
 
-python.root-paths = []
+python.recognized-args = [
+    '-b',
+    '-B',
+    '-c cmd',
+    '-d',
+    '-E',
+    '-h',
+    '-i',
+    '-I',
+    '-m mod',
+    '-O',
+    '-OO',
+    '-q',
+    '-s',
+    '-S',
+    '-u',
+    '-v',
+    '-V',
+    '-W arg',
+    '-x',
+    '-X opt',
+]
 
-python.lib-suffixes = []
+# ==============================================================================
+# Paths to check for Python installations.
+#
+# This is a list of directories where Jaunch might hope to find a Python installation.
+# Directories are checked sequentially until one is found that matches all criteria.
+#
+# This is also the first field where we see Jaunch's hints/rules system in action.
+# Each entry on the root-dirs list may be prefixed with string separated by pipes.
+# Each segment is a *hint* for Jaunch regarding a flag that must be set for that
+# particular line to be considered. Jaunch sets hint flags based on a few sources:
+#
+# * Active operating system: OS:LINUX, OS:MACOSX, OS:WINDOWS,
+#   OS:IOS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS, or OS:UNKNOWN.
+#
+# * Active CPU architecture: ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64,
+#   ARCH:MIPS32, ARCH:MIPSEL32, ARCH:WASM32, or ARCH:UNKNOWN.
 
+# * Option hints, set from arguments passed to Jaunch, each of which sets a matching
+#   hint. For example, passing the --headless option will set a hint '--headless'.
+#
+# * Mode hints, set from evaluation of the modes field (see below).
+#
+# * Python hints, based on the Python installation selected:
+#   - PYTHON:3.9 if the selected Python installation is version 3.9.
+#   - PYTHON:3.9+ if the selected Python installation is version 3.9 or later.
+#   - PYTHON:3.10 if the selected Python installation is version 3.10.
+#   - PYTHON:3.10+ if the selected Python installation is version 3.10 or later.
+#   - and so on.
+#   Of course, Python hints will only be set after a Python installation matches,
+#   so they won't work here in python.root-paths, nor in python.lib-suffixes.
+#   But they can be useful in the python.runtime-args section to ensure Jaunch
+#   passes runtime args only to those versions of Python that support them,
+#   such as the -P flag which was introduced in Python 3.11.
+#
+# Finally, a segment prefixed by a bang symbol (!) negates the hint,
+# making that line match only when that particular hint is *not* set.
+#
+# For example, consider the following python.root-paths line:
+#
+#     '!--system|OS:LINUX|ARCH:X64|python/linux64',
+#
+# The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path
+# of java/linux64 will only be considered on 64-bit Linux systems, and only
+# when the --system option was *not* given as part of the launcher invocation.
+#
+# This is also the first field where we see Jaunch's variables in use:
+#
+#     '${app-dir}/python'
+#
+# Thanks to the above line, FIXME
+python.root-paths = [
+    '~/miniforge3/envs/*',
+    '~/mambaforge/envs/*',
+    '${app-dir}/python',
+    '${app-dir}/lib/runtime',
+]
+
+# TODO: Verify this list for all platforms.
+python.lib-suffixes = [
+    'LINUX:lib/libpython3.so',
+    'MACOSX:lib/libpython3.dylib',
+    'WINDOWS:lib\libpython3.dll',
+]
+
+# ==============================================================================
+# Acceptable range of Python versions to match.
+#
+# These two fields let you constrain the minimum and maximum Python versions
+# respectively that your application supports. This information will be used when
+# searching the system for appropriate Python installations. If a Python installation
+# is successfully discovered, but then found to be outside these constraints, it is
+# discarded and the search continues.
+#
+# The most common use of these fields is to specify a major.minor version pair
+# (e.g. `python.version-min = '3.9'`), but Jaunch does compare version strings digit by
+# digit, so you could write `python.version-min = '3.8.5' if you need to be specific.
 python.version-min = '3.8'
 #python.version-max = '3.12'
 
+# ==============================================================================
+# Packages that must be present in the Python installation.
+#
+# TODO
 python.packages = []
 
+# ==============================================================================
+# Arguments to pass to Python.
+#
+# This is the magic sauce where Jaunch options and other criteria get translated
+# into Python arguments. See 'python.root-paths' above for a thorough explanation.
 python.runtime-args = []
 
-python.script-path = []
+# ==============================================================================
+# A list of paths to candidate main scripts, one of which will get launched.
+#
+# Jaunch evaluates the rules attached to each candidate main script. The first
+# line with matching rules becomes the main script, with subsequent lines ignored.
+#
+# This field is useful if you want to launch a different main script depending on
+# criteria such as OS, CPU architecture, or which options are given on the CLI.
+#python.main-script = [
+#    '--fizzbuzz|fizzbuzz.py'
+#    '--main-script|${main-script}',
+#    'main.py', # default behavior
+#]
 
+# ==============================================================================
+# Arguments to pass to the main class on the Python side.
+#
+# This is the other half of the magic sauce, along with python.runtime-args above:
+# Options and other criteria get translated into main arguments here.
+# See the 'python.root-paths' section above for a thorough explanation.
 python.main-args = []
 
 # ==============================================================================
@@ -272,9 +396,6 @@ python.main-args = []
 # The asterisk wildcard symbol (*) is allowed as a suffix,
 # if you want to match all arguments with a particular prefix.
 #
-# All values on this list are assumed to be given with at least one dash symbol
-# prepended, maybe two. (Heck, go nuts and put three or four! But Java won't like it.)
-#
 # About main method arguments: Jaunch's philosophy is to remain agnostic of the options
 # your application supports, rather than trying to constrain them in its configuration
 # and checking them itself. As such, it is your application's responsibility to emit
@@ -284,7 +405,7 @@ python.main-args = []
 #
 #     ./fizzbuzz 1 2 3 4 5 -Xms1g 
 #
-# Because 'X' is on the jvm.recognized-args list out of the box, Jaunch will translate
+# Because '-X' is on the jvm.recognized-args list out of the box, Jaunch will translate
 # this invocation to:
 #
 #     java -Xms1g org.fizzbuzz.FizzBuzz 1 2 3 4 5
@@ -326,7 +447,7 @@ jvm.recognized-args = [
 #
 # When Jaunch discovers a Java installation on the user's system, it tries very hard
 # to understand the details of that installation, including Java version, distribution
-# (see `java-distros-allowed` and `java-distros-blocked` below), operating system, and
+# (see `jvm.distros-allowed` and `jvm.distros-blocked` below), operating system, and
 # CPU architecture, so that it can respect the constraints defined in this config file.
 #
 # However, the variability across JVM distributions is actually quite a lot:
@@ -372,8 +493,8 @@ jvm.allow-weird-runtimes = true
 # the jvm.allow-weird-runtimes boolean setting above.
 #
 # The most common use of these fields is to specify major versions alone (e.g.
-# "java-version-min = 11"), but Jaunch does make a best effort to compare version
-# strings digit by digit, so you could try "java-version-min = 1.8.0.101" if you
+# `jvm.version-min = '11'`), but Jaunch does make a best effort to compare version
+# strings digit by digit, so you could try `jvm.version-min = '1.8.0.101'` if you
 # like to live dangerously. YMMV, though.
 #
 # "But what syntax exactly should I use to specify these versions?" you might wonder.
@@ -444,7 +565,7 @@ jvm.allow-weird-runtimes = true
 # If you want 11.0.8, write '11.0.8', not '1.11.0.8'.
 #
 # As a kindness, when Jaunch sees a major version digit less than 9, it prepends the
-# '1.' prefix on your behalf. So you can write e.g. "java-version-min = '8'" if you
+# '1.' prefix on your behalf. So you can write e.g. `jvm.version-min = '8'` if you
 # really want to. Jaunch also strips the '1.' leading digit when the subsequent minor
 # version digit is 9 or more. So write '1.11.0.8' if you must! But know that in doing
 # so, you stand opposed to the hallowed official versioning scheme, a heretic in the

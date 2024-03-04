@@ -1,3 +1,5 @@
+const val BUFFER_SIZE = 65536
+
 /** Abstract representation of file and directory pathnames. Always canonical! */
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 expect class File(rawPath: String) {
