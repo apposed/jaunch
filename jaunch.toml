@@ -245,12 +245,12 @@ allow-unrecognized-args = false
 # ==============================================================================
 
 python.recognized-args = [
-    '-b',
+    '-b', '-bb',
     '-B',
     '-c cmd',
     '-d',
     '-E',
-    '-h',
+    '-h', '-?', # --help is reserved for Jaunch
     '-i',
     '-I',
     '-m mod',
@@ -261,10 +261,11 @@ python.recognized-args = [
     '-S',
     '-u',
     '-v',
-    '-V',
+    '-V', # --version is reserved for Jaunch
     '-W arg',
     '-x',
     '-X opt',
+    '--check-hash-based-pycs always|default|never',
 ]
 
 # ==============================================================================
@@ -379,7 +380,12 @@ python.runtime-args = []
 # This is the other half of the magic sauce, along with python.runtime-args above:
 # Options and other criteria get translated into main arguments here.
 # See the 'python.root-paths' section above for a thorough explanation.
-python.main-args = []
+#python.main-args = [
+#    '!--fizz|!--buzz|--mode=number',
+#    '--fizz|!--buzz|--mode=fizz',
+#    '--buzz|!--fizz|--mode=buzz',
+#    '--fizz|--buzz|--mode=fizzbuzz',
+#]
 
 # ==============================================================================
 # Now come the fields for controlling the launch of JVM-based programs.

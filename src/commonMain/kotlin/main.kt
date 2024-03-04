@@ -256,6 +256,45 @@ fun main(args: Array<String>) {
     debug("Directives parsed:")
     debug("* directives -> ", directives)
 
+    // CTR START HERE: split directives into two lists: launchDirectives and configDirectives.
+    // But there are questions:
+    //
+    // - Does the TOML need to explicitly activate JVM and PYTHON launch directives?
+    //   If so, on what criteria should it activate them? Do we need RUNTIME:jvm and RUNTIME:python
+    //   special hints that get added when those runtimes are successfully discovered?
+    //   And if a runtime is *not* discovered, I think right now Jaunch errors out... but we need
+    //   to be more flexible about this. Probably in jaunch.toml there should be a default directive
+    //   like `!RUNTIME:jvm|ERROR` although how should the configurator know what error message to request?
+    //
+    // - How does order work? And what if multiple launch directives appear in the calculated directives list?
+    //   Does the last one overwrite earlier ones? Or should we fail fast if multiple launch directives are there?
+    //   I'm leaning toward fail-fast.
+    //
+    // - CANCEL is not really the same thing as JVM and PYTHON... because you might want to select a particular
+    //   runtime for the purposes of a configurator-side directive here, but then cancel the launch afterward.
+    //   So CANCEL should not *replace* JVM/PYTHON.
+    //
+    // - Instead of the term "launch directive", maybe the term "launch mode" is better? But then we need a
+    //   new name for the `modes` thing in JaunchConfig. Worth it? Or too much trouble to change?
+    //
+    // - Instead of trying to generalize the directives below across both types of runtime, it might be
+    //   simpler to just have a handleDirective(String) in RuntimeConfig base class, and then Java and Python
+    //   runtime config subclasses can each provide their own implementation of each supported directive.
+    //   I don't think this would result in too much boilerplate, and in cases where it does, we can use a
+    //   common helper method. For example, the help directive could lean on a generalized help function.
+    //
+    // Other things going on right now:
+    //
+    // - python.recognized-args has some space-separated two-argument pairs, which Java doesn't have.
+    //   To support this, maybe all these runtime-specific arguments should also appear in `supported-options`?
+    //   But does that mean we need to *union* the Python and JVM ones? Yuck. It needs to be runtime-specific still.
+    //
+    // - There is also no way to make these recognized-args contingent on version of Java/Python selected, is there?
+    //   Because we parse arguments *before* discovering the runtimes.
+    //   To get around that, we could potentially do two-pass argument processing: the first just to set hints & vars,
+    //   and then the second AFTER discovering runtimes, to actually sort the arguments into runtime vs main args.
+    //   Would that work...?
+
     val runtime: RuntimeConfig? = runtimes[1] // FIXME: Actually decide based on directives.
 
     runtimes[0].directive
