@@ -59,7 +59,7 @@ int launch(const LaunchFunc launch_runtime, const size_t argc, const char **argv
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&thread, &attr, startup_jvm_macos, NULL);
+    pthread_create(&thread, &attr, launch_on_macos, NULL);
     pthread_attr_destroy(&attr);
 
     // Run the AppKit event loop here on the main thread.
