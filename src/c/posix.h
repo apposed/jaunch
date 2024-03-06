@@ -6,6 +6,8 @@
 #define SLASH "/"
 #define EXE_SUFFIX ""
 
+void *dlopen(const char *path) { return dlopen(path, RTLD_NOW | RTLD_GLOBAL); /* TODO: or RTLD_LAZY? */ }
+
 int file_exists(const char *path) {
   return access(path, F_OK) == 0;
 }

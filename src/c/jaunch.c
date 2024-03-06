@@ -46,30 +46,27 @@
 #include <unistd.h>
 
 #include "common.h"
-#include "jvm.h"
-#include "python.h"
 
 #ifdef __linux__
-#include "linux.h"
+    #include "linux.h"
 #endif
-
 #ifdef __APPLE__
-#include "macos.h"
+    #include "macos.h"
 #endif
-
 #ifdef WIN32
-#include "win32.h"
+    #include "win32.h"
 #else
-#include "posix.h"
+    #include "posix.h"
 #endif
-
 #ifdef __x86_64__
-#define OS_ARCH "x64"
+    #define OS_ARCH "x64"
+#endif
+#ifdef __aarch64__
+    #define OS_ARCH "arm64"
 #endif
 
-#ifdef __aarch64__
-#define OS_ARCH "arm64"
-#endif
+#include "jvm.h"
+#include "python.h"
 
 // List of places to search for the jaunch configurator executable.
 //

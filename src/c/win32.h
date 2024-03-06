@@ -6,8 +6,24 @@
 #define SLASH "\\"
 #define EXE_SUFFIX ".exe"
 
-void dlclose(void* library) { FreeLibrary(library); }
-char* dlerror() { return "error" /*TODO: GetLastError()*/; }
+void *dlopen(const char *path) { return LoadLibrary(path); }
+void *dlsym(void *library, const char *symbol) { return GetProcAddress(library, symbol); }
+void dlclose(void *library) { FreeLibrary(library); }
+char *dlerror() {
+    DWORD errorMessageID = GetLastError();
+    if (errorMessageID == 0) return NULL; // No error
+    LPSTR message = NULL;
+    FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorMessageID,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&message,
+        0,
+        NULL
+    );
+    return message;
+}
 
 void handle_error(const char* errorMessage) {
     fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());

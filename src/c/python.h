@@ -1,8 +1,6 @@
 #ifndef _JAUNCH_PYTHON_H
 #define _JAUNCH_PYTHON_H
 
-#include <dlfcn.h>
-
 /*
  * This is the logic implementing Jaunc's PYTHON directive.
  * 
@@ -49,17 +47,13 @@ static int launch_python(const size_t argc, const char **argv) {
 
     // Load libpython.
     debug("[JAUNCH-PYTHON] LOADING LIBPYTHON");
-#ifdef WIN32
-    HMODULE python_library = LoadLibrary(libpython_path);
-#else
-    void *python_library = dlopen(libpython_path, RTLD_NOW | RTLD_GLOBAL); /* or RTLD_LAZY? */
-#endif
+    void *python_library = dlopen(libpython_path);
     if (!python_library) { error("Error loading libpython: %s", dlerror()); return ERROR_DLOPEN; }
 
     // Load Py_BytesMain function.
     debug("[JAUNCH-PYTHON] LOADING Py_BytesMain");
-    typedef int (*Py_BytesMainFunc)(int, char **);
-    Py_BytesMainFunc Py_BytesMain = (Py_BytesMainFunc)dlsym(python_library, "Py_BytesMain");
+    static int (*Py_BytesMain)(int, char **);
+    Py_BytesMain = dlsym(python_library, "Py_BytesMain");
     if (!Py_BytesMain) {
         error("Error finding Py_BytesMain function: %s", dlerror());
         dlclose(python_library);

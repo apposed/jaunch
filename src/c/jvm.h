@@ -1,8 +1,6 @@
 #ifndef _JAUNCH_JVM_H
 #define _JAUNCH_JVM_H
 
-#include <dlfcn.h>
-
 #include "jni.h"
 
 #include "common.h"
@@ -77,28 +75,18 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
     // Load libjvm.
     debug("[JAUNCH-JVM] LOADING LIBJVM");
-#ifdef WIN32
-    HMODULE jvm_library = LoadLibrary(libjvm_path);
-#else
-    void *jvm_library = dlopen(libjvm_path, RTLD_NOW | RTLD_GLOBAL);
-#endif
+    void *jvm_library = dlopen(libjvm_path);
     if (!jvm_library) { error("Error loading libjvm: %s", dlerror()); return ERROR_DLOPEN; }
 
     // Load JNI_CreateJavaVM function.
     debug("[JAUNCH-JVM] LOADING JNI_CreateJavaVM");
-#ifdef WIN32
-    FARPROC JNI_CreateJavaVM = GetProcAddress(jvm_library, "JNI_CreateJavaVM");
-#else
     static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
     JNI_CreateJavaVM = dlsym(jvm_library, "JNI_CreateJavaVM");
-#endif
     if (!JNI_CreateJavaVM) {
         error("Error finding JNI_CreateJavaVM: %s", dlerror());
         dlclose(jvm_library);
         return ERROR_DLSYM;
     }
-
-    // TODO: Somehow purge the above platform-specific preprocessor tweaks.
 
     // Populate VM options.
     debug("[JAUNCH-JVM] POPULATING VM OPTIONS");
