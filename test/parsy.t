@@ -64,7 +64,7 @@ Test command line argument combinations.
   * line.separator=
   * os.arch=amd64
   * os.name=Linux
-  * os.version=6.5.0-15-generic
+  \* os.version=* (glob)
   * path.separator=:
   CPU arch: X64
   OS name: LINUX
