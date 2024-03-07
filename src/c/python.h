@@ -47,7 +47,7 @@ static int launch_python(const size_t argc, const char **argv) {
 
     // Load libpython.
     debug("[JAUNCH-PYTHON] LOADING LIBPYTHON");
-    void *python_library = dlopen(libpython_path);
+    void *python_library = loadlib(libpython_path);
     if (!python_library) { error("Error loading libpython: %s", dlerror()); return ERROR_DLOPEN; }
 
     // Load Py_BytesMain function.

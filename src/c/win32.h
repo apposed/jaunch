@@ -6,7 +6,7 @@
 #define SLASH "\\"
 #define EXE_SUFFIX ".exe"
 
-void *dlopen(const char *path) { return LoadLibrary(path); }
+void *loadlib(const char *path) { return LoadLibrary(path); }
 void *dlsym(void *library, const char *symbol) { return GetProcAddress(library, symbol); }
 void dlclose(void *library) { FreeLibrary(library); }
 char *dlerror() {

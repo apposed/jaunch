@@ -75,7 +75,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
     // Load libjvm.
     debug("[JAUNCH-JVM] LOADING LIBJVM");
-    void *jvm_library = dlopen(libjvm_path);
+    void *jvm_library = loadlib(libjvm_path);
     if (!jvm_library) { error("Error loading libjvm: %s", dlerror()); return ERROR_DLOPEN; }
 
     // Load JNI_CreateJavaVM function.
