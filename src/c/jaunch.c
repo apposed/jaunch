@@ -47,6 +47,7 @@
 
 #include "common.h"
 
+// -- PLATFORMS --
 #ifdef __linux__
     #include "linux.h"
 #endif
@@ -65,6 +66,7 @@
     #define OS_ARCH "arm64"
 #endif
 
+// -- DIRECTIVES --
 #include "jvm.h"
 #include "python.h"
 
