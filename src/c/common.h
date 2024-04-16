@@ -29,6 +29,10 @@
 // For implementations, see linux.h, macos.h, posix.h, win32.h
 // ===========================================================
 
+// used for calling XInitThreads on Linux/X11, empty on
+// Windows and macOS, defined in linux.h, win32.h, macos.h
+void initThreads();
+
 // run_command implementations in posix.h, win32.h
 int run_command(const char *command,
     const char *input[], size_t numInput,

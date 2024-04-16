@@ -1,8 +1,27 @@
 #include <string.h>
+#include <dlfcn.h>
 
 #include "common.h"
 
 #define OS_NAME "linux"
+
+void (*xinit_threads_reference)();
+
+void initThreads() {
+    void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
+    if(libX11Handle != NULL) {
+        debug("Running XInitThreads\n");
+    	xinit_threads_reference = dlsym(libX11Handle, "XInitThreads");
+
+    	if(xinit_threads_reference != NULL) {
+    	    xinit_threads_reference();
+    	} else {
+    	    error("Could not find XInitThreads in X11 library: %s\n", dlerror());
+    	}
+    } else {
+        error("Could not find X11 library, not running XInitThreads.\n");
+    }
+}
 
 int is_command_available(const char *command) {
     return access(command, X_OK) == 0;
