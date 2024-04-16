@@ -146,57 +146,76 @@ int main(const int argc, const char *argv[]) {
     }
     debug("[JAUNCH] configurator command = %s", command);
 
-    char **output_argv;
-    size_t output_argc;
-
     // Run external command to process the command line arguments.
-
-    int run_result = run_command((const char *)command, argc, argv, &output_argc, &output_argv);
+    char **out_argv;
+    size_t out_argc;
+    int run_result = run_command((const char *)command, argc, argv, &out_argc, &out_argv);
     free(command);
     if (run_result != SUCCESS) return run_result;
 
-    debug("[JAUNCH] output_argc = %zu", output_argc);
-    for (size_t i = 0; i < output_argc; i++) {
-        debug("[JAUNCH] output_argv[%zu] = %s", i, output_argv[i]);
-    }
-    if (output_argc < 1) {
-        error("Expected at least 1 line of output but got %d", output_argc);
-        return ERROR_OUTPUT;
-    }
+    CHECK_ARGS("JAUNCH", "out", out_argc, 2, 99999, out_argv);
+    // Maximum # of lines to treat as valid. ^^^^^
+    // We could of course leave this unbounded, but pragmatically, the value
+    // will probably never exceed this size -- it is more likely that a
+    // programming error in the configurator yields a much-too-large argc
+    // value, and it is better to fail fast than to access invalid memory.
 
-    // Perform the indicated directive.
+    // Perform the indicated directive(s).
 
-    const char *directive = output_argv[0];
-    debug("[JAUNCH] directive = %s", directive);
-
-    int launch_result = SUCCESS;
-
-    if (strcmp(directive, "JVM") == 0) {
-        launch_result = launch(launch_jvm,
-            output_argc, (const char **)output_argv);
-    }
-    else if (strcmp(directive, "PYTHON") == 0) {
-        launch_result = launch(launch_python,
-            output_argc, (const char **)output_argv);
-    }
-    else if (strcmp(directive, "CANCEL") == 0) {
-      launch_result = SUCCESS;
-    }
-    else {
-        // If directive is ERROR, show subsequent lines.
-        // If directive is anything else, show ALL lines.
-        size_t i0 = strcmp(directive, "ERROR") == 0 ? 1 : 0;
-        for (size_t i = i0; i < output_argc; i++) {
-            error(output_argv[i]);
+    int exit_code = SUCCESS;
+    size_t index = 0;
+    while (index < out_argc) {
+        // Prepare the (argc, argv) for the next directive.
+        const char *directive = (const char *)(out_argv[index]);
+        if (index == out_argc - 1) {
+            error("Invalid trailing directive: %s", directive);
+            break;
         }
-        // TODO: show_alert(title, message);
+        const size_t dir_argc = atoi(out_argv[index + 1]);
+        const char **dir_argv = (const char **)(out_argv + index + 2);
+        CHECK_ARGS("JAUNCH", "dir", dir_argc, 0, out_argc - index, dir_argv);
+        index += 2 + dir_argc; // Advance index past this directive block.
+
+        // Call the directive's associated function.
+        if (strcmp(directive, "STOP") == 0) {
+            if (dir_argc > 0) error("Ignoring %zu extra STOP lines.", dir_argc);
+            const size_t extra = out_argc - index;
+            if (extra > 0) error("Ignoring %zu trailing output lines.", extra);
+            break;
+        }
+        else if (strcmp(directive, "JVM") == 0) {
+            exit_code = launch(launch_jvm, dir_argc, dir_argv);
+            if (exit_code != SUCCESS) break;
+        }
+        else if (strcmp(directive, "PYTHON") == 0) {
+            exit_code = launch(launch_python, dir_argc, dir_argv);
+            if (exit_code != SUCCESS) break;
+        }
+        else if (strcmp(directive, "ERROR") == 0) {
+            // =======================================================================
+            // Parse the arguments, which must conform to the following structure:
+            //
+            // 1. Exit code to use after issuing the error message.
+            // 2. The error message, which may span multiple lines.
+            // =======================================================================
+            exit_code = atoi(dir_argv[0]);
+            if (exit_code < 20) exit_code = 20;
+            if (exit_code > 255) exit_code = 255;
+            for (size_t i = 1; i < dir_argc; i++) error(dir_argv[i]);
+            // TODO: show_alert(title, message);
+        }
+        else {
+            // Mysterious directive! Fail fast.
+            error("Unknown directive: %s", directive);
+            return ERROR_UNKNOWN_DIRECTIVE;
+        }
     }
 
     // Clean up.
-    for (size_t i = 0; i < output_argc; i++) {
-        free(output_argv[i]);
+    for (size_t i = 0; i < out_argc; i++) {
+        free(out_argv[i]);
     }
-    free(output_argv);
+    free(out_argv);
 
-    return launch_result;
+    return exit_code;
 }

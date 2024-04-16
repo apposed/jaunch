@@ -238,12 +238,12 @@ fun main(args: Array<String>) {
 
     // Discern directives to perform.
     val directives = calculate(config.directives, hints, vars).toSet()
-    val nativeDirective = if (directives.isEmpty()) "JVM" else "CANCEL"
+    val launchDirectives = listOf(if (directives.isEmpty()) "JVM" else "STOP")
 
     debug()
     debug("Directives parsed:")
     debug("* directives -> ", directives)
-    debug("* nativeDirective -> ", nativeDirective)
+    debug("* launchDirectives -> ", launchDirectives)
 
     // Execute the help directive.
     if ("help" in directives) help(executable, programName, supportedOptions)
@@ -358,16 +358,27 @@ fun main(args: Array<String>) {
     // Execute the dry-run directive.
     if ("dry-run" in directives) dryRun(java, jvmArgs, mainClassName, mainArgs)
 
-    // Emit final configuration.
+    // Construct and emit final configuration.
     debug()
     debug("Emitting final configuration to stdout...")
-    println(nativeDirective)
-    println(java.libjvmPath!!)
-    println(jvmArgs.size)
-    for (jvmArg in jvmArgs) println(jvmArg)
-    println(mainClassName.replace(".", "/"))
-    println(mainArgs.size)
-    for (mainArg in mainArgs) println(mainArg)
+    for (launchDirective in launchDirectives) {
+        debug("-> $launchDirective")
+        val dirLines = mutableListOf<String>()
+        when (launchDirective) {
+            "JVM" -> {
+                dirLines += java.libjvmPath!!
+                dirLines += jvmArgs.size.toString()
+                dirLines += jvmArgs
+                dirLines += mainClassName.replace(".", "/")
+                dirLines += mainArgs
+            }
+            "STOP" -> {}
+            else -> error("Unknown launch directive: $launchDirective")
+        }
+        println(launchDirective)
+        println(dirLines.size.toString())
+        dirLines.forEach { println(it) }
+    }
 }
 
 // -- Helper functions --

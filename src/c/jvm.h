@@ -16,58 +16,32 @@ static int launch_jvm(const size_t argc, const char **argv) {
     // =======================================================================
     // Parse the arguments, which must conform to the following structure:
     //
-    // 1. Directive, which must be `JVM`.
-    // 2. Path to the runtime native library (libjvm).
-    // 3. Number of arguments to the JVM.
-    // 4. List of arguments to the JVM, one per line.
-    // 5. Fully qualified main class name in slash-separated (not dot-separated) format.
-    // 6. Number of arguments to the main program.
-    // 7. List of main arguments, one per line.
+    // 1. Path to the runtime native library (libjvm).
+    // 2. Number of arguments to the JVM.
+    // 3. List of arguments to the JVM, one per line.
+    // 4. Fully qualified main class name in slash-separated (not dot-separated) format.
+    // 5. List of main arguments, one per line.
+    //
+    // Note that an explicit count of main arguments is not needed because
+    // it can be computed from argc
     // =======================================================================
 
     char **ptr = (char **)argv;
-    const char *directive = *ptr++;
-    debug("[JAUNCH-JVM] directive = %s", directive);
  
     const char *libjvm_path = *ptr++;
     debug("[JAUNCH-JVM] libjvm_path = %s", libjvm_path);
 
     const int jvm_argc = atoi(*ptr++);
-    debug("[JAUNCH-JVM] jvm_argc = %d", jvm_argc);
-    if (jvm_argc < 0) {
-        error("jvm_argc value is too small: %d", jvm_argc);
-        return ERROR_ARG_COUNT_TOO_SMALL;
-    }
-    if (argc < 5 + jvm_argc) {
-        error("jvm_argc value is too large: %d", jvm_argc);
-        return ERROR_ARG_COUNT_TOO_LARGE;
-    }
-
     const char **jvm_argv = (const char **)ptr;
+    CHECK_ARGS("JAUNCH-JVM", "jvm", jvm_argc, 0, argc - 3, jvm_argv);
     ptr += jvm_argc;
-    for (size_t i = 0; i < jvm_argc; i++) {
-        debug("[JAUNCH-JVM] jvm_argv[%zu] = %s", i, jvm_argv[i]);
-    }
 
     const char *main_class_name = *ptr++;
     debug("[JAUNCH-JVM] main_class_name = %s", main_class_name);
 
-    const int main_argc = atoi(*ptr++);
-    debug("[JAUNCH-JVM] main_argc = %d", main_argc);
-    if (main_argc < 0) {
-        error("main_argc value is too small: %d", main_argc);
-        return ERROR_ARG_COUNT_TOO_SMALL;
-    }
-    if (argc < 5 + jvm_argc + main_argc) {
-        error("main_argc value is too large: %d", main_argc);
-        return ERROR_ARG_COUNT_TOO_LARGE;
-    }
-
+    const int main_argc = argc - 3 - jvm_argc;
     const char **main_argv = (const char **)ptr;
-    ptr += main_argc;
-    for (size_t i = 0; i < main_argc; i++) {
-        debug("[JAUNCH-JVM] main_argv[%zu] = %s", i, main_argv[i]);
-    }
+    CHECK_ARGS("JAUNCH-JVM", "main", main_argc, 0, main_argc, main_argv);
 
     // =======================================================================
     // Load the JVM.
