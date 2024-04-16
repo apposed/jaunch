@@ -6,11 +6,22 @@
 #define SLASH "/"
 #define EXE_SUFFIX ""
 
-void *loadlib(const char *path) { return dlopen(path, RTLD_NOW | RTLD_GLOBAL); /* TODO: or RTLD_LAZY? */ }
+// -- Helper functions --
 
 int file_exists(const char *path) {
   return access(path, F_OK) == 0;
 }
+
+// ===========================================================
+//              common.h FUNCTION IMPLEMENTATIONS
+// ===========================================================
+
+void *lib_open(const char *path) {
+  return dlopen(path, RTLD_NOW | RTLD_GLOBAL); /* TODO: or RTLD_LAZY? */
+}
+void *lib_sym(void *library, const char *symbol) { return dlsym(library, symbol); }
+void lib_close(void *library) { dlclose(library); }
+char *lib_error() { return dlerror(); }
 
 /*
  * POSIX-style function to launch a command in a separate process,

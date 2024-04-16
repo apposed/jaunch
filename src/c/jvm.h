@@ -75,16 +75,16 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
     // Load libjvm.
     debug("[JAUNCH-JVM] LOADING LIBJVM");
-    void *jvm_library = loadlib(libjvm_path);
-    if (!jvm_library) { error("Error loading libjvm: %s", dlerror()); return ERROR_DLOPEN; }
+    void *jvm_library = lib_open(libjvm_path);
+    if (!jvm_library) { error("Error loading libjvm: %s", lib_error()); return ERROR_DLOPEN; }
 
     // Load JNI_CreateJavaVM function.
     debug("[JAUNCH-JVM] LOADING JNI_CreateJavaVM");
     static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
-    JNI_CreateJavaVM = dlsym(jvm_library, "JNI_CreateJavaVM");
+    JNI_CreateJavaVM = lib_sym(jvm_library, "JNI_CreateJavaVM");
     if (!JNI_CreateJavaVM) {
-        error("Error finding JNI_CreateJavaVM: %s", dlerror());
-        dlclose(jvm_library);
+        error("Error finding JNI_CreateJavaVM: %s", lib_error());
+        lib_close(jvm_library);
         return ERROR_DLSYM;
     }
 
@@ -110,7 +110,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     JNIEnv *env;
     if (JNI_CreateJavaVM(&jvm, (void **)&env, &vmInitArgs) != JNI_OK) {
         error("Error creating Java Virtual Machine");
-        dlclose(jvm_library);
+        lib_close(jvm_library);
         return ERROR_CREATE_JAVA_VM;
     }
 
@@ -120,7 +120,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     if (mainClass == NULL) {
         error("Error finding class %s", main_class_name);
         (*jvm)->DestroyJavaVM(jvm);
-        dlclose(jvm_library);
+        lib_close(jvm_library);
         return ERROR_FIND_CLASS;
     }
 
@@ -130,7 +130,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     if (mainMethod == NULL) {
         error("Error finding main method of class %s", main_class_name);
         (*jvm)->DestroyJavaVM(jvm);
-        dlclose(jvm_library);
+        lib_close(jvm_library);
         return ERROR_GET_STATIC_METHOD_ID;
     }
 
@@ -157,7 +157,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     debug("[JAUNCH-JVM] DESTROYING JAVA VM");
     (*jvm)->DestroyJavaVM(jvm);
     debug("[JAUNCH-JVM] CLOSING LIBJVM");
-    dlclose(jvm_library);
+    lib_close(jvm_library);
     debug("[JAUNCH-JVM] GOODBYE");
 
     return SUCCESS;

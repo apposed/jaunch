@@ -47,16 +47,16 @@ static int launch_python(const size_t argc, const char **argv) {
 
     // Load libpython.
     debug("[JAUNCH-PYTHON] LOADING LIBPYTHON");
-    void *python_library = loadlib(libpython_path);
-    if (!python_library) { error("Error loading libpython: %s", dlerror()); return ERROR_DLOPEN; }
+    void *python_library = lib_open(libpython_path);
+    if (!python_library) { error("Error loading libpython: %s", lib_error()); return ERROR_DLOPEN; }
 
     // Load Py_BytesMain function.
     debug("[JAUNCH-PYTHON] LOADING Py_BytesMain");
     static int (*Py_BytesMain)(int, char **);
-    Py_BytesMain = dlsym(python_library, "Py_BytesMain");
+    Py_BytesMain = lib_sym(python_library, "Py_BytesMain");
     if (!Py_BytesMain) {
-        error("Error finding Py_BytesMain function: %s", dlerror());
-        dlclose(python_library);
+        error("Error finding Py_BytesMain function: %s", lib_error());
+        lib_close(python_library);
         return 1;
     }
 
@@ -65,7 +65,7 @@ static int launch_python(const size_t argc, const char **argv) {
 
     if (result != 0) {
       error("Error running Python script: %d", result);
-      dlclose(python_library);
+      lib_close(python_library);
       return result;
     }
 
@@ -74,7 +74,7 @@ static int launch_python(const size_t argc, const char **argv) {
     // =======================================================================
 
     debug("[JAUNCH-PYTHON] CLOSING LIBPYTHON");
-    dlclose(python_library);
+    lib_close(python_library);
     debug("[JAUNCH-PYTHON] GOODBYE");
 
     return SUCCESS;

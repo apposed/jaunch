@@ -6,27 +6,6 @@
 #define SLASH "\\"
 #define EXE_SUFFIX ".exe"
 
-void initThreads() {}
-
-void *loadlib(const char *path) { return LoadLibrary(path); }
-void *dlsym(void *library, const char *symbol) { return GetProcAddress(library, symbol); }
-void dlclose(void *library) { FreeLibrary(library); }
-char *dlerror() {
-    DWORD errorMessageID = GetLastError();
-    if (errorMessageID == 0) return NULL; // No error
-    LPSTR message = NULL;
-    FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        errorMessageID,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPSTR)&message,
-        0,
-        NULL
-    );
-    return message;
-}
-
 void handle_error(const char* errorMessage) {
     fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
     exit(1);
@@ -50,6 +29,29 @@ void write_line(HANDLE stdinWrite, const char *input) {
 
 int file_exists(const char *path) {
     return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
+}
+
+// ===========================================================
+//              common.h FUNCTION IMPLEMENTATIONS
+// ===========================================================
+
+void *lib_open(const char *path) { return LoadLibrary(path); }
+void *lib_sym(void *library, const char *symbol) { return GetProcAddress(library, symbol); }
+void lib_close(void *library) { FreeLibrary(library); }
+char *lib_error() {
+    DWORD errorMessageID = GetLastError();
+    if (errorMessageID == 0) return NULL; // No error
+    LPSTR message = NULL;
+    FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorMessageID,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&message,
+        0,
+        NULL
+    );
+    return message;
 }
 
 /*
@@ -163,6 +165,8 @@ int run_command(const char *command,
     free(outputBuffer);
     return split_result;
 }
+
+void init_threads() {}
 
 void show_alert(const char *title, const char *message) {
     MessageBox(NULL, message, title, MB_ICONERROR);

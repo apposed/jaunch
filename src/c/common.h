@@ -29,19 +29,18 @@
 // For implementations, see linux.h, macos.h, posix.h, win32.h
 // ===========================================================
 
-// used for calling XInitThreads on Linux/X11, empty on
-// Windows and macOS, defined in linux.h, win32.h, macos.h
-void initThreads();
-
-// run_command implementations in posix.h, win32.h
+// Implementations in posix.h, win32.h
+void *lib_open(const char *path);
+void *lib_sym(void *library, const char *symbol);
+void lib_close(void *library);
+char *lib_error();
 int run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output);
 
-// show_alert implementations in linux.h, macos.h, win32.h
+// implementations in linux.h, win32.h, macos.h
+void init_threads();
 void show_alert(const char *title, const char *message);
-
-// launch implementations in linux.h, macos.h, win32.h
 typedef int (*LaunchFunc)(const size_t, const char **);
 int launch(const LaunchFunc launch_func,
     const size_t argc, const char **argv);

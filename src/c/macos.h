@@ -7,23 +7,6 @@
 
 #define OS_NAME "macos"
 
-void initThreads() {}
-
-void show_alert(const char *title, const char *message) {
-    /* TODO: Get this objc code working.
-    // Create an NSString from the C string
-    id nsMessage = objc_msgSend((id)objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), message);
-
-    // Create an NSAlert
-    id alert = objc_msgSend((id)objc_getClass("NSAlert"), sel_registerName("alloc"));
-    objc_msgSend(alert, sel_registerName("init"));
-    objc_msgSend(alert, sel_registerName("setMessageText:"), nsMessage);
-
-    // Run the alert modal
-    objc_msgSend(alert, sel_registerName("runModal"));
-    */
-}
-
 struct LaunchConfiguration {
     LaunchFunc launch_runtime;
     size_t argc;
@@ -40,6 +23,27 @@ static void dummy_call_back(void *info) { }
 
 static void *launch_on_macos(void *dummy) {
     exit(config.launch_runtime(config.argc, config.argv));
+}
+
+// ===========================================================
+//              common.h FUNCTION IMPLEMENTATIONS
+// ===========================================================
+
+void init_threads() {}
+
+void show_alert(const char *title, const char *message) {
+    /* TODO: Get this objc code working.
+    // Create an NSString from the C string
+    id nsMessage = objc_msgSend((id)objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), message);
+
+    // Create an NSAlert
+    id alert = objc_msgSend((id)objc_getClass("NSAlert"), sel_registerName("alloc"));
+    objc_msgSend(alert, sel_registerName("init"));
+    objc_msgSend(alert, sel_registerName("setMessageText:"), nsMessage);
+
+    // Run the alert modal
+    objc_msgSend(alert, sel_registerName("runModal"));
+    */
 }
 
 /*
