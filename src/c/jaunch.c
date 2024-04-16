@@ -14,8 +14,8 @@
  * the configurator program in a separate process, using the function:
  *
  *     int run_command(const char *command,
- *         const char *input[], size_t numInput,
- *         char ***output, size_t *numOutput)
+ *         size_t numInput, const char *input[],
+ *         size_t *numOutput, char ***output)
  *
  * The C code waits for the Jaunch configurator process to complete, then
  * passes the outputs given by the configurator to the appropriate `launch`
@@ -151,7 +151,7 @@ int main(const int argc, const char *argv[]) {
 
     // Run external command to process the command line arguments.
 
-    int run_result = run_command((const char *)command, argv, argc, &output_argv, &output_argc);
+    int run_result = run_command((const char *)command, argc, argv, &output_argc, &output_argv);
     free(command);
     if (run_result != SUCCESS) return run_result;
 

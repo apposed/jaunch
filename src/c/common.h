@@ -35,8 +35,8 @@ void initThreads();
 
 // run_command implementations in posix.h, win32.h
 int run_command(const char *command,
-    const char *input[], size_t numInput,
-    char ***output, size_t *numOutput);
+    size_t numInput, const char *input[],
+    size_t *numOutput, char ***output);
 
 // show_alert implementations in linux.h, macos.h, win32.h
 void show_alert(const char *title, const char *message);

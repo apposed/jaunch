@@ -19,8 +19,8 @@ int file_exists(const char *path) {
  * As opposed to the Windows implementation in win32.h.
  */
 int run_command(const char *command,
-    const char *input[], size_t numInput,
-    char ***output, size_t *numOutput)
+    size_t numInput, const char *input[],
+    size_t *numOutput, char ***output)
 {
     // Create pipes for stdin and stdout
     int stdinPipe[2];

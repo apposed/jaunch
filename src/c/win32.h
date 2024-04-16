@@ -59,8 +59,8 @@ int file_exists(const char *path) {
  * As opposed to the POSIX (Linux and macOS) implementation in posix.h.
  */
 int run_command(const char *command,
-    const char *input[], size_t numInput,
-    char ***output, size_t *numOutput)
+    size_t numInput, const char *input[],
+    size_t *numOutput, char ***output)
 {
     // Create pipes for stdin and stdout
     HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite;
