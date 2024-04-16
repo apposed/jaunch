@@ -7,6 +7,8 @@
 
 #define OS_NAME "macos"
 
+void initThreads() {}
+
 void show_alert(const char *title, const char *message) {
     /* TODO: Get this objc code working.
     // Create an NSString from the C string
