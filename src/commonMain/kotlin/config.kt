@@ -1,8 +1,6 @@
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-const val BUFFER_SIZE = 65536
-
 /**
  * All of Jaunch's configuration in a tidy bundle.
  *
