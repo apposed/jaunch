@@ -30,12 +30,12 @@ Now test stuff.
 
   $ jaunch/jaunch-linux-x64 parsy a b c
   JVM
+  8
   /*/libjvm.so (glob)
   2
   -Djava.class.path=/*/lib/parsington-3.1.0.jar* (glob)
   -Xmx128m
   org/scijava/parsington/Main
-  3
   a
   b
   c
