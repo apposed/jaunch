@@ -1,5 +1,4 @@
 import platform.posix.exit
-import kotlin.math.min
 
 @Suppress("ArrayInDataClass")
 data class JaunchOption(
@@ -143,29 +142,30 @@ fun main(args: Array<String>) {
     // Declare a set to store option parameter values.
     // It will be populated at argument parsing time.
     val vars = mutableMapOf(
-        // Special variable containing path to the application.
+        // Special variable containing application directory path.
         "app-dir" to appDir.path,
+        // Special variable containing config directory path.
+        "config-dir" to configDir.path,
     )
     if (exeFile?.exists == true) vars["executable"] = exeFile.path
 
-    // Declare the authoritative lists of JVM arguments and main arguments.
-    // At the end of the configuration process, we will emit these to stdout.
-    val jvmArgs = mutableListOf<String>()
-    val mainArgs = mutableListOf<String>()
+    // Define the list of supported runtimes.
+    val runtimes = listOf(
+        JvmRuntimeConfig(config.jvmRecognizedArgs),
+    )
 
     // Parse the configurator's input arguments.
     //
     // An input argument matching one of Jaunch's supported options becomes an active hint.
     // So e.g. `--foo` would be added to the hints set as `--foo`.
     //
-    // Matching input arguments that take a parameter not only add the option as a hint,
-    // but also add the parameter value to the vars map.
+    // A matching input argument that takes a parameter not only adds the option as a hint,
+    // but also adds the parameter value to the vars map.
     // So e.g. `--sigmas=5` would add the `--sigma` hint, and add `"5"` as the value for the `sigma` variable.
     // Variable values will be interpolated into argument strings later in the configuration process.
     //
-    // Non-matching input arguments will be passed through directly,
-    // either to the JVM or to the main method on the Java side.
-    // The exact behavior will depend on whether the `--` separator was provided.
+    // Non-matching input arguments will be passed through directly, either to the runtime or to the main program.
+    // The exact behavior will depend on whether the `--` separator was provided in the input argument list.
     val divider = inputArgs.indexOf("--")
     var i = 0
     while (i < inputArgs.size) {
@@ -207,21 +207,18 @@ fun main(args: Array<String>) {
         else {
             // The argument is not a Jaunch one. Pass it through directly.
             if (divider < 0) {
-                // No dash-dash divider was given, so we need to guess: is this a JVM arg, or a main arg?
-                (if (config.recognizes(argKey)) jvmArgs else mainArgs) += arg
+                // No dash-dash divider was given, so we need to guess: is this a runtime arg, or a main arg?
+                for (r in runtimes) {
+                    (if (config.recognizes(argKey, r.recognizedArgs)) r.runtimeArgs else r.mainArgs) += arg
+                }
             }
             else if (i <= divider) {
-                // This argument is before the dash-dash divider, so must be treated as a JVM arg.
-                // But we only allow it through if it's a recognized JVM argument, or the
-                // allow-unrecognized-jvm-args configuration flag is set to true.
-                if (config.allowUnrecognizedJvmArgs != true && !config.recognizes(arg)) {
-                    error("Unrecognized JVM argument: $arg")
-                }
-                jvmArgs += arg
+                // This argument is before the dash-dash divider, so must be treated as a runtime arg.
+                for (r in runtimes) r.runtimeArgs += arg
             }
             else {
                 // This argument is after the dash-dash divider, so we treat it as a main arg.
-                mainArgs += arg
+                for (r in runtimes) r.mainArgs += arg
             }
         }
     }
@@ -230,8 +227,10 @@ fun main(args: Array<String>) {
     debug("Input arguments parsed:")
     debug("* hints -> ", hints)
     debug("* vars -> ", vars)
-    debug("* jvmArgs -> ", jvmArgs)
-    debug("* mainArgs -> ", mainArgs)
+    for (r in runtimes) {
+        debug("* ${r.name}.runtimeArgs -> ", r.runtimeArgs)
+        debug("* ${r.name}.mainArgs -> ", r.mainArgs)
+    }
 
     // Apply mode hints.
     for (mode in calculate(config.modes, hints, vars)) {
@@ -245,6 +244,9 @@ fun main(args: Array<String>) {
     debug("Modes applied:")
     debug("* hints -> ", hints)
 
+    // Discover and configure runtime installations.
+    for (r in runtimes) r.configure(configDir, config, hints, vars)
+
     // Discern directives to perform.
     val directives = calculate(config.directives, hints, vars).toSet()
     val launchDirectives = listOf(if (directives.isEmpty()) "JVM" else "STOP")
@@ -254,170 +256,46 @@ fun main(args: Array<String>) {
     debug("* directives -> ", directives)
     debug("* launchDirectives -> ", launchDirectives)
 
-    // Execute the help directive.
-    if ("help" in directives) help(executable, programName, supportedOptions)
+    val runtime: JvmRuntimeConfig = runtimes[0] // TODO: Actually decide based on directives.
 
-    // Calculate all the places to search for Java.
-    val jvmRootPaths = calculate(config.jvmRootPaths, hints, vars).
-        flatMap { glob(it) }.filter { File(it).isDirectory }.toSet()
-
-    debug()
-    debug("Root paths to search for Java:")
-    jvmRootPaths.forEach { debug("* ", it) }
-
-    // Calculate all the places to look for the JVM library.
-    val libjvmSuffixes = calculate(config.libjvmSuffixes, hints, vars)
-
-    debug()
-    debug("Suffixes to check for libjvm:")
-    libjvmSuffixes.forEach { debug("* ", it) }
-
-    // Calculate Java distro and version constraints.
-    val allowWeirdJvms = config.allowWeirdJvms ?: false
-    val distrosAllowed = calculate(config.javaDistrosAllowed, hints, vars)
-    val distrosBlocked = calculate(config.javaDistrosBlocked, hints, vars)
-    val osAliases = calculate(config.osAliases, hints, vars)
-    val archAliases = calculate(config.archAliases, hints, vars)
-    val constraints = JavaConstraints(configDir, libjvmSuffixes,
-        allowWeirdJvms, config.javaVersionMin, config.javaVersionMax,
-        distrosAllowed, distrosBlocked, osAliases, archAliases)
-
-    // Discover Java.
-    debug()
-    debug("Discovering Java installations...")
-    var java: JavaInstallation? = null
-    for (jvmPath in jvmRootPaths) {
-        debug("Analyzing candidate JVM directory: '", jvmPath, "'")
-        val javaCandidate = JavaInstallation(jvmPath, constraints)
-        if (javaCandidate.conforms) {
-            // Installation looks good! Moving on.
-            java = javaCandidate
-            break
-        }
-    }
-    if (java == null) error("No Java installation found.")
-    debug("* jvmRootPath -> ", java.rootPath)
-    debug("* libjvmPath -> ", java.libjvmPath ?: "<null>")
-    debug("* binJava -> ", java.binJava ?: "<null>")
-
-    // Apply JAVA: hints.
-    val mv = java.majorVersion
-    if (mv != null) {
-        hints += "JAVA:$mv"
-        // If Java version is OVER 9000, something went wrong in the parsing.
-        // Let's not explode the hints set with too many bogus values.
-        for (v in 0..min(mv, 9000)) hints += "JAVA:$v+"
-    }
-    debug("* hints -> ", hints)
-
-    // Execute the print-java-home and/or print-java-info directive.
-    if ("print-java-home" in directives) printlnErr(java.rootPath)
-    if ("print-java-info" in directives) printlnErr(java.toString())
-
-    // Calculate classpath.
-    val rawClasspath = calculate(config.classpath, hints, vars)
-    debugList("Classpath to calculate:", rawClasspath)
-    val classpath = rawClasspath.flatMap { glob(it) }
-    debugList("Classpath calculated:", classpath)
-
-    // Execute the print-class-path directive.
-    if ("print-class-path" in directives) classpath.forEach { printlnErr(it) }
-
-    // Calculate JVM arguments.
-    jvmArgs += calculate(config.jvmArgs, hints, vars)
-    debugList("JVM arguments calculated:", jvmArgs)
-
-    // Append or amend argument declaring classpath elements.
-    if (classpath.isNotEmpty()) {
-        val classpathString = classpath.joinToString(COLON)
-        val cpIndex = jvmArgs.indexOfFirst { it.startsWith("-Djava.class.path=") }
-        if (cpIndex >= 0) {
-            // Append to existing `-Djava.class.path` argument.
-            jvmArgs[cpIndex] += "$COLON$classpathString"
-            debug("Extended classpath arg: ${jvmArgs[cpIndex]}")
-        }
-        else {
-            // No `-Djava.class.path` argument, so we add one.
-            jvmArgs += "-Djava.class.path=$classpathString"
-            debug("Added classpath arg: ${jvmArgs.last()}")
+    // Execute configurator-side directives.
+    for (directive in directives) {
+        when (directive) {
+            "help" -> help(executable, programName, supportedOptions)
+            "print-runtime-home" -> printlnErr(runtime.home())
+            "print-runtime-info" -> printlnErr(runtime.info())
+            "print-class-path" -> printlnErr(runtime.classpath())
+            "dry-run" -> printlnErr(runtime.dryRun())
+            else -> error("Invalid directive: $directive")
         }
     }
 
-    // If not already declared, calculate and declare the max heap size.
-    val mxIndex = jvmArgs.indexOfFirst { it.startsWith("-Xmx") }
-    if (mxIndex < 0) {
-        val maxHeap = calculateMaxHeap(config.maxHeap)
-        jvmArgs += "-Xmx${maxHeap}"
-        debug("Added maxHeap arg: ${jvmArgs.last()}")
+    if (launchDirectives[0] == "STOP") {
+        println("STOP")
+        println(0)
+        return
     }
 
-    // Calculate main class.
-    debug()
-    debug("Calculating main class name...")
-    val mainClassNames = calculate(config.mainClasses, hints, vars)
-    val mainClassName = if (mainClassNames.isEmpty()) null else mainClassNames.first()
-    debug("mainClassName -> ", mainClassName ?: "<null>")
-    if (mainClassName == null)
-        error("No matching main class name")
+    val chosenRecognizedArgs = runtime.recognizedArgs
+    val chosenRuntimeArgs = runtime.runtimeArgs
 
-    // Calculate main args.
-    mainArgs += calculate(config.mainArgs, hints, vars)
-    debugList("Main arguments calculated:", mainArgs)
+    // Validate runtime args.
+    if (config.allowUnrecognizedArgs != true) {
+        // Check that the computed runtime args are all valid.
+        for (arg in chosenRuntimeArgs) {
+            if (!config.recognizes(arg, chosenRecognizedArgs)) {
+                error("Unrecognized ${runtime.name} argument: $arg")
+            }
+        }
+    }
 
-    // Execute the dry-run directive.
-    if ("dry-run" in directives) dryRun(java, jvmArgs, mainClassName, mainArgs)
-
-    // Construct and emit final configuration.
+    // Emit final configuration.
     debug()
     debug("Emitting final configuration to stdout...")
-    for (launchDirective in launchDirectives) {
-        debug("-> $launchDirective")
-        val dirLines = mutableListOf<String>()
-        when (launchDirective) {
-            "JVM" -> {
-                dirLines += java.libjvmPath!!
-                dirLines += jvmArgs.size.toString()
-                dirLines += jvmArgs
-                dirLines += mainClassName.replace(".", "/")
-                dirLines += mainArgs
-            }
-            "STOP" -> {}
-            else -> error("Unknown launch directive: $launchDirective")
-        }
-        println(launchDirective)
-        println(dirLines.size.toString())
-        dirLines.forEach { println(it) }
-    }
+    println(runtime.nativeConfig())
 }
 
 // -- Helper functions --
-
-private fun calculateMaxHeap(maxHeap: String?): String? {
-    if (maxHeap?.endsWith("%") != true) return maxHeap
-
-    // Compute percentage of total available memory.
-    val percent = maxHeap.substring(0, maxHeap.lastIndex).toDoubleOrNull() // Double or nothing! XD
-    if (percent == null || percent <= 0) {
-        warn("Ignoring invalid max-heap value '", maxHeap, "'")
-        return null
-    }
-
-    debug()
-    debug("Calculating max heap (", maxHeap, ")...")
-    val memInfo = memInfo()
-    if (memInfo.total == null) {
-        warn("Cannot determine total memory -- ignoring max-heap value '", maxHeap, "'")
-        return null
-    }
-    else debug("System reported memTotal of ", memInfo.total.toString())
-
-    val kbValue = (percent * memInfo.total!! / 100 / 1024).toInt()
-    if (kbValue <= 9999) return "${kbValue}k"
-    val mbValue = kbValue / 1024
-    if (mbValue <= 9999) return "${mbValue}m"
-    val gbValue = mbValue / 1024
-    return "${gbValue}g"
-}
 
 private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
     val index = indexOf(delimiter)
@@ -428,28 +306,13 @@ private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
 
 private fun help(executable: String?, programName: String, supportedOptions: JaunchOptions) {
     val exeName = executable ?: "jaunch"
-
-    printlnErr("Usage: $exeName [<Java options>.. --] [<main arguments>..]")
+    printlnErr("Usage: $exeName [<Runtime options>.. --] [<main arguments>..]")
     printlnErr()
     printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / $JAUNCH_BUILD / $BUILD_TARGET)")
-    printlnErr("Java options are passed to the Java Runtime,")
+    printlnErr("Runtime options are passed to the Java Runtime,")
     printlnErr("main arguments to the launched program ($programName).")
     printlnErr()
     printlnErr("In addition, the following options are supported:")
     val optionsUnique = linkedSetOf(*supportedOptions.values.toTypedArray())
     optionsUnique.forEach { printlnErr(it.help()) }
-}
-
-private fun dryRun(
-    java: JavaInstallation,
-    jvmArgs: MutableList<String>,
-    mainClassName: String?,
-    mainArgs: MutableList<String>
-) {
-    printlnErr(buildString {
-        append(java.binJava ?: "java")
-        jvmArgs.forEach { append(" $it") }
-        append(" $mainClassName")
-        mainArgs.forEach { append(" $it") }
-    })
 }

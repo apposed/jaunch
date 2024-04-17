@@ -12,21 +12,17 @@ jaunch-version = 1
 
 program-name = 'Parsy'
 
-java-version-min = '8'
+jvm.version-min = '8'
 #java-version-max = '21'
 
-classpath = [
+jvm.classpath = [
     '${app-dir}/lib/*.jar',
 ]
 
-max-heap = '128m' # '50%'
+jvm.max-heap = '128m' # '50%'
 
-jvm-args = [
-]
+jvm.runtime-args = []
 
-main-class-candidates = [
-    'org.scijava.parsington.Main',
-]
+jvm.main-class = ['org.scijava.parsington.Main']
 
-main-args = [
-]
+jvm.main-args = []

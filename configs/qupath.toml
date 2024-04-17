@@ -12,21 +12,19 @@ jaunch-version = 1
 
 program-name = 'QuPath'
 
-java-version-min = '21'
+jvm.version-min = '21'
 
-classpath = [
+jvm.classpath = [
     '${app-dir}/lib/app/qupath-app-*.jar',
     '${app-dir}/lib/app/*.jar',
 ]
 
-max-heap = '70%'
+jvm.max-heap = '70%'
 
-jvm-args = [
+jvm.runtime-args = [
     '!OS:WINDOWS|-Djava.library.path=${app-dir}/lib/app',
     'OS:WINDOWS|-Djava.library.path=${app-dir}\lib\app',
     '-Djpackage.app-version=0.5.0',
 ]
 
-main-class-candidates = [
-    'qupath.QuPath',
-]
+jvm.main-class = ['qupath.QuPath']

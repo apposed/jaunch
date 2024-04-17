@@ -13,7 +13,7 @@
 # overrides or augments this configuration with fizzbuzz-specific settings.
 #
 # Minimally, such application-specific configuration will include the `program-name`
-# and `main-class` (or `main-class-candidates`) fields, and typically a `classpath`
+# and `main-class` fields, and typically a `classpath`
 # for needed JAR files. But it may also add application-specific options via the
 # `supported-options` field, as well as constraints such as `version-min` and
 # `version-max` to restrict which Javas are compatible with the application.
@@ -50,7 +50,7 @@ jaunch-version = 1
 #    option for setting the max heap size, without memorizing Java's -Xmx terminology.
 #
 # (In both of these examples, the transformations described are defined within the
-# jvm-args section toward the bottom of the file. But be patient! You'll get there.)
+# jvm.runtime-args section toward the bottom of the file. Be patient, we'll get there!)
 #
 # The syntax here is hopefully self-explanatory by reading through the list.
 # But here are the technical details anyway just in case:
@@ -101,6 +101,139 @@ supported-options = [
 ]
 
 # ==============================================================================
+# Aliases for operating system names. Used when analyzing root directory names.
+os-aliases = [
+    "LINUX:linux",
+    "MACOSX:darwin,macos,macosx",
+    "WINDOWS:win,windows",
+    "IOS:ios",
+    "ANDROID:android",
+]
+
+# ==============================================================================
+# Aliases for CPU architectures. Used when analyzing root directory names.
+arch-aliases = [
+    "ARM32:aarch32,arm32",
+    "ARM64:aarch64,arm64",
+    "X86:i386,i486,i586,i686,x86-32,x86_32,x86",
+    "X64:amd64,x86-64,x86_64,x64",
+]
+
+# ==============================================================================
+# List of additional hints to enable or disable based on other hints.
+#
+# See "jvm.root-paths" below for an overview of hints.
+#
+# With modes, you can set a single hint in response to several different other hints,
+# which can help to consolidate rules in other sections of the configuration.
+# Modes can also be used to negate hints. It's easiest to explain via an example.
+# Suppose your program wants to support the following three options:
+#
+# * --headless, which enables headless mode, disabling the GUI.
+# * --batch, which enables a mode to run sequential computations.
+# * --big-gui, to use the *BIG* GUI, when you like it large!
+#
+# Let's say that use of the batch mode implies headless operation,
+# while use of the big GUI is incompatible with headless.
+#
+# You might define the following modes here:
+#
+#     '--headless|headless',
+#     '--batch|headless',
+#     '--big-gui|!headless',
+#
+# In this way, whenever either --headless or --batch is passed, the headless mode hint
+# will be enabled, and whenever --big-gui is passed, the headless mode is disabled.
+# If multiple conflicting arguments are passed, the ultimate state of headless mode will
+# depend on the order of such arguments, since mode lines are evaluated sequentially.
+modes = []
+
+# ==============================================================================
+# Commands that control Jaunch's launching behavior.
+#
+# Each one runs at a particular (hardcoded) time during configuration.
+# Directives unsupported by the configurator program are ignored.
+#
+# This may seem confusingly abstract, but the basic idea is this: maybe you want
+# Jaunch *not* to launch the usual program this time, but rather to do something else!
+#
+# What sorts of other things? you might ask. And how can we possibly define
+# such open-ended behavior in a mere TOML configuration file? Well, the short
+# answer is: we can't. The configurator program that ships with Jaunch has some
+# built-in directives, and that's it. As of this writing, those are:
+#
+# * STOP               - Abort the launch without displaying an error message.
+# * ERROR              - Abort the launch and display an error message to the user.
+#
+# * help               - Display the usage text, built from the supported-options above.
+# * dry-run            - Display the final launch command with runtime args + main args.
+#                        Useful to see what would happen, without it actually happening.
+# * print-app-dir      - Print out the path to the application. Typically, this will be
+#                        the folder containing the launcher.
+
+# * JVM                - Launches the program using the Java Virtual Machine.
+# * print-java-home    - Print out the path to the chosen Java installation.
+# * print-java-info    - Print out all the details of the chosen Java installation,
+#                        including not only its path, but also the distro, version,
+#                        operating system, CPU architecture, and other metadata fields.
+#
+# Directives in UPPER CASE are native launch modes handled on the C/native side,
+# while directives in web-case are executed on the configurator side.
+#
+# If you need to support other directives besides those above, you'll have to
+# hack the Kotlin and/or C source code, and also write rules here in the TOML.
+#
+# But if you simply want to disable e.g. Jaunch's built-in help, you can safely
+# remove the `--help` and `-h` lines below to do so.
+directives = [
+  '--help|help,CANCEL',
+  '-h|help,CANCEL',
+  '--dry-run|dry-run,CANCEL',
+  '--print-runtime-home|print-runtime-home',
+  '--print-runtime-info|print-runtime-info',
+  '--print-app-dir|print-app-dir',
+]
+
+# ==============================================================================
+# Whether to allow unrecognized arguments to be passed to the runtime.
+#
+# When the minus-minus divider is absent, the only args that end up as runtime args
+# will be ones from the `recognized-args` lists below. But if the minus-minus divider
+# *is* given, it becomes possible to force a particular argument to be construed as
+# an argument to the runtime, even when it does not appear on the list.
+# Depending on your application, it might not be desirable for such unrecognized args
+# to be allowed through to the program launch.
+#
+# If you want to allow all user-specified JVM args through to the program launch,
+# set this value to true.
+#
+# If you want full control over what arguments the user can pass to the runtime, set
+# this value to false, and edit the recognized-args list below according to your needs.
+# Then Jaunch will fail fast when told to pass an unrecognized option to the runtime.
+#
+# For example, suppose for a JVM-based application called JFizzBuzz the user invokes:
+#
+#     ./jfb -ZZ:SuperSecretOption -- 1 2 3 4 5
+#
+# Jaunch would translate this into something like:
+#
+#     .../bin/java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
+#
+# You and I both know that Java will barf when confronted with an argument like
+# -ZZ:SuperSecretOption. But maybe you are using a custom build of OpenJDK produced by
+# your organization's new superintelligent AI, which actually *does* have this option!
+# Who is Jaunch to judge? (In that case, I would argue you should really just add
+# '-ZZ:*' to the `jvm.recognized-args` list below, but then I would be judging.)
+# Or maybe you just want to trust your users as OpenJDK evolves, rather than dealing
+# with the bureaucracy of updating the TOML file every time OpenJDK changes its
+# supported options. In such cases, this option is here for you.
+allow-unrecognized-args = false
+
+# ==============================================================================
+# Now come the fields for controlling the launch of JVM-based programs.
+# ==============================================================================
+
+# ==============================================================================
 # The list of arguments that Jaunch will recognize as belonging to the JVM,
 # rather than your application's main method.
 #
@@ -127,7 +260,7 @@ supported-options = [
 # Even though the Java argument appears after the main class arguments. Your users can
 # mix and match to their hearts' content, being as sloppy as they want, and Jaunch will
 # sort out the mess. As long as the JVM args are on the list here, of course.
-recognized-jvm-args = [
+jvm.recognized-args = [
     '-?',
     '-D*',
     '-X*',
@@ -157,45 +290,11 @@ recognized-jvm-args = [
 ]
 
 # ==============================================================================
-# Whether to allow unrecognized arguments to be passed to the JVM.
-#
-# When the minus-minus divider is absent, the only args that end up as JVM args will be
-# ones from the list above. But if the minus-minus divider *is* given, it becomes
-# possible to force a particular argument to be construed as a JVM argument, even when
-# it does not appear on the list. Depending on your application, it might not be
-# desirable for such unrecognized JVM args to be allowed through to the Java launch.
-#
-# If you want to allow all user-specified JVM args through to the Java launch, set this
-# value to true.
-#
-# If you want full control over what arguments the user can pass to the JVM, set this
-# value to false, and edit the recognized-jvm-args list above according to your needs.
-# Then Jaunch will fail fast when told to pass an unrecognized option to Java.
-#
-# For example, suppose the user invokes:
-#
-#     ./fizzbuzz -ZZ:SuperSecretOption -- 1 2 3 4 5
-#
-# Jaunch would translate this into something like:
-#
-#     java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
-#
-# You and I both know that Java will barf when confronted with an argument like
-# -ZZ:SuperSecretOption. But maybe you are using a custom build of OpenJDK produced by
-# your organization's new superintelligent AI, which actually *does* have this option!
-# Who is Jaunch to judge? (In that case, I would argue you should really just add
-# '-ZZ:*' to your list of recognized JVM args above, but then I would be judging.)
-# Or maybe you just want to trust your users as OpenJDK evolves, rather than dealing
-# with the bureaucracy of updating the TOML file every time OpenJDK changes its
-# supported options. In such cases, this option is here for you.
-allow-unrecognized-jvm-args = false
-
-# ==============================================================================
 # Whether to attempt to launch with mysterious flavors of the JVM.
 #
 # When Jaunch discovers a Java installation on the user's system, it tries very hard
 # to understand the details of that installation, including Java version, distribution
-# (see `java-distros-allowed` and `java-distros-blocked` below), operating system, and
+# (see `jvm.distros-allowed` and `jvm.distros-blocked` below), operating system, and
 # CPU architecture, so that it can respect the constraints defined in this config file.
 #
 # However, the variability across JVM distributions is actually quite a lot:
@@ -224,11 +323,11 @@ allow-unrecognized-jvm-args = false
 #
 # As such, it is possible for all of Jaunch's efforts to be in vain, and to end up
 # trying to decide whether to launch with some mystery-flavored JVM. In such scenarios,
-# the allow-weird-jvms flag comes to the rescue, telling Jaunch whether to allow it
-# (true), or give up and complain (false). Hopefully, your users will never know the
+# the jvm.allow-weird-runtimes flag comes to the rescue, telling Jaunch whether to allow
+# it (true), or give up and complain (false). Hopefully, your users will never know the
 # difference, as long as they have well-behaved distros, and/or you ship a good distro
 # with your application. But just in case, give a think to how you want this to behave.
-allow-weird-jvms = true
+jvm.allow-weird-runtimes = true
 
 # ==============================================================================
 # Acceptable range of Java versions to match.
@@ -238,11 +337,11 @@ allow-weird-jvms = true
 # system for appropriate JVM installations. If a JVM is successfully discovered, but
 # then found to be outside these constraints, it is discarded and the search continues.
 # For installations whose version cannot be determined, what Jaunch does will depend on
-# the allow-weird-jvms boolean setting above.
+# the jvm.allow-weird-runtimes boolean setting above.
 #
 # The most common use of these fields is to specify major versions alone (e.g.
-# "java-version-min = 11"), but Jaunch does make a best effort to compare version
-# strings digit by digit, so you could try "java-version-min = 1.8.0.101" if you
+# `jvm.version-min = '11'`), but Jaunch does make a best effort to compare version
+# strings digit by digit, so you could try `jvm.version-min = '1.8.0.101'` if you
 # like to live dangerously. YMMV, though.
 #
 # "But what syntax exactly should I use to specify these versions?" you might wonder.
@@ -313,20 +412,20 @@ allow-weird-jvms = true
 # If you want 11.0.8, write '11.0.8', not '1.11.0.8'.
 #
 # As a kindness, when Jaunch sees a major version digit less than 9, it prepends the
-# '1.' prefix on your behalf. So you can write e.g. "java-version-min = '8'" if you
+# '1.' prefix on your behalf. So you can write e.g. `jvm.version-min = '8'` if you
 # really want to. Jaunch also strips the '1.' leading digit when the subsequent minor
 # version digit is 9 or more. So write '1.11.0.8' if you must! But know that in doing
 # so, you stand opposed to the hallowed official versioning scheme, a heretic in the
 # eyes of Java developers everywhere. You have been warned!
-#java-version-min = '8' # hobgoblin!
-#java-version-max = '21'
+#jvm.version-min = '8' # hobgoblin!
+#jvm.version-max = '21'
 
 # ==============================================================================
 # Acceptable and unacceptable distributions/vendors/flavors of Java to match.
 #
 # These two fields let you constrain which Java distributions are OK to use and which
 # are not, respectively. For distros matching neither the allowlist nor blocklist,
-# what Jaunch does will depend on the allow-weird-jvms boolean setting above.
+# what Jaunch does will depend on the jvm.allow-weird-runtimes boolean setting above.
 #
 # As of this writing, the following Java distributions have been tested:
 #
@@ -390,7 +489,7 @@ allow-weird-jvms = true
 #
 #   will be identified as TencentKona, because Jaunch will invoke bin/java and
 #   see that the token 'tencent' matches the `java.vendor` system property.
-java-distros-allowed = [
+jvm.distros-allowed = [
     'Alibaba Dragonwell:alibaba,dragonwell',
     'Amazon Corretto:amazon,corretto',
     'Azul Zulu:azul,zulu',
@@ -408,26 +507,7 @@ java-distros-allowed = [
     'TencentKona:tencent,kona',
     'Ubuntu OpenJDK:ubuntu',
 ]
-java-distros-blocked = []
-
-# ==============================================================================
-# Aliases for operating system names. Used when analyzing root directory names.
-os-aliases = [
-    "LINUX:linux",
-    "MACOSX:darwin,macos,macosx",
-    "WINDOWS:win,windows",
-    "IOS:ios",
-    "ANDROID:android",
-]
-
-# ==============================================================================
-# Aliases for CPU architectures. Used when analyzing root directory names.
-arch-aliases = [
-    "ARM32:aarch32,arm32",
-    "ARM64:aarch64,arm64",
-    "X86:i386,i486,i586,i686,x86-32,x86_32,x86",
-    "X64:amd64,x86-64,x86_64,x64",
-]
+jvm.distros-blocked = []
 
 # ==============================================================================
 # Developer aside: Right now, Jaunch only filters Java installations by distro,
@@ -470,15 +550,15 @@ arch-aliases = [
 #   - JAVA:9+ if the selected Java installation is version 9 or later.
 #   - and so on.
 #   Of course, Java hints will only be set after a Java installation matches,
-#   so they won't work here in jvm-root-paths, nor in libjvm-suffixes.
-#   But they can be useful in the jvm-args section to ensure Jaunch passes
-#   JVM args only to those versions of the JVM that support them, such as the
-#   JPMS-related flags like --add-opens which were introduced in Java 9.
+#   so they won't work here in jvm.root-paths, nor in jvm.lib-suffixes.
+#   But they can be useful in the jvm.runtime-args section to ensure Jaunch
+#   passes JVM args only to those versions of the JVM that support them, such
+#   as the JPMS-related flags like --add-opens which were introduced in Java 9.
 #
 # Finally, a segment prefixed by a bang symbol (!) negates the hint,
 # making that line match only when that particular hint is *not* set.
 #
-# For example, consider the following jvm-root-paths line:
+# For example, consider the following jvm.root-paths line:
 #
 #     '!--system|OS:LINUX|ARCH:X64|java/linux64',
 #
@@ -496,7 +576,7 @@ arch-aliases = [
 # 
 # Similarly, variable expressions are also sourced from environment variables, so
 # the '${JAVA_HOME}' line will be populated with the JAVA_HOME environment variable.
-jvm-root-paths = [
+jvm.root-paths = [
     '--java-home|${java-home}',
     '${JAVA_HOME}',
     '!--system|${app-dir}/lib/runtime',                              # jpackage
@@ -555,7 +635,7 @@ jvm-root-paths = [
 #
 # Finally, perusing the list below, you may notice several entries beginning
 # with jre/. This nested folder is only present up to Java 8, nothing after.
-libjvm-suffixes = [
+jvm.lib-suffixes = [
     'OS:LINUX|lib/server/libjvm.so',                    # Java 9+
     'OS:LINUX|ARCH:X64|jre/lib/amd64/server/libjvm.so', # Java 8 (64-bit)
     'OS:LINUX|ARCH:X86|jre/lib/i386/server/libjvm.so',  # Java 8 (32-bit)
@@ -569,77 +649,6 @@ libjvm-suffixes = [
 ]
 
 # ==============================================================================
-# List of additional hints to enable or disable based on other hints.
-#
-# See "jvm-root-paths" above for an overview of hints.
-#
-# With modes, you can set a single hint in response to several different other hints,
-# which can help to consolidate rules in other sections of the configuration.
-# Modes can also be used to negate hints. It's easiest to explain via an example.
-# Suppose your program wants to support the following three options:
-#
-# * --headless, which enables headless mode, disabling the GUI.
-# * --batch, which enables a mode to run sequential computations.
-# * --big-gui, to use the *BIG* GUI, when you like it large!
-#
-# Let's say that use of the batch mode implies headless operation,
-# while use of the big GUI is incompatible with headless.
-#
-# You might define the following modes here:
-#
-#     '--headless|headless',
-#     '--batch|headless',
-#     '--big-gui|!headless',
-#
-# In this way, whenever either --headless or --batch is passed, the headless mode hint
-# will be enabled, and whenever --big-gui is passed, the headless mode is disabled.
-# If multiple conflicting arguments are passed, the ultimate state of headless mode will
-# depend on the order of such arguments, since mode lines are evaluated sequentially.
-modes = []
-
-# ==============================================================================
-# Commands that override Jaunch's usual launching behavior.
-#
-# Each one runs at a particular (hardcoded) time during configuration.
-# Directives unsupported by the configurator program are ignored.
-#
-# This may seem confusingly abstract, but the basic idea is this: maybe you want
-# Jaunch *not* to launch the usual program this time, but rather to do something else!
-#
-# What sorts of other things? you might ask. And how can we possibly define
-# such open-ended behavior in a mere TOML configuration file? Well, the short
-# answer is: we can't. The configurator program that ships with Jaunch has some
-# built-in directives, and that's it. As of this writing, those are:
-#
-# * help            - Display the usage text, built from the supported-options above.
-# * dry-run         - Display the final java command with JVM args and main args.
-#                     Useful to see what would happen, without it actually happening.
-# * print-java-home - Print out the path to the chosen Java installation.
-# * print-java-info - Print out all the details of the chosen Java installation,
-#                     including not only its path, but also the distro, version,
-#                     operating system, CPU architecture, and other metadata fields.
-# * print-app-dir   - Print out the path to the application. Typically, this will be
-#                     the folder containing the launcher.
-#
-# When a directive gets activated, Jaunch's default launching behavior is disabled.
-# So when you run e.g. `./fizz-buzz --help`, you'll see the usage text printed out,
-# but no Java will be launched.
-#
-# If you need to support other directives besides those above, you'll have to hack
-# the Kotlin source code to include them, and also write rules here in the TOML.
-#
-# But if you simply want to disable e.g. Jaunch's built-in help, you can safely
-# remove the `--help` and `-h` lines below to do so.
-directives = [
-  '--help|help',
-  '-h|help',
-  '--dry-run|dry-run',
-  '--print-java-home|print-java-home',
-  '--print-java-info|print-java-info',
-  '--print-app-dir|print-app-dir',
-]
-
-# ==============================================================================
 # Runtime classpath elements (e.g. JAR files) to pass to Java.
 #
 # These are typically relative paths beneath the application root directory,
@@ -650,7 +659,7 @@ directives = [
 #
 # The double-asterisk (**) for recursive matching is not yet implemented,
 # but could be done if there is user demand (PRs welcome ;-).
-classpath = [
+jvm.classpath = [
     '--class-path|${class-path}',
     '--jar-path|${jar-path}/*',
 ]
@@ -670,26 +679,20 @@ classpath = [
 # These will be translated into an appropriate '-Xmx...' argument under the hood.
 #
 # If unset, Java's default will be used (i.e. no -Xmx argument will be injected).
-#max-heap = '50%'
+#jvm.max-heap = '50%'
 
 # ==============================================================================
 # Arguments to pass to the JVM.
 #
 # This is the magic sauce where Jaunch options and other criteria get translated
-# into JVM arguments. See 'jvm-root-paths' above for a thorough explanation.
-jvm-args = [
+# into JVM arguments. See 'jvm.root-paths' above for a thorough explanation.
+jvm.runtime-args = [
     '--headless|-Djava.awt.headless=true',
     '--headless|-Dapple.awt.UIElement=true',
     '--heap|-Xmx${heap}',
     '--ext|-Djava.ext.dirs=${ext}',
     '--debugger|-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:${debugger}',
 ]
-
-# ==============================================================================
-# The main class to launch.
-#
-# Use this field when your application has a single main class to launch.
-#main-class = org.fizzbuzz.FizzBuzz
 
 # ==============================================================================
 # A list of candidate main classes, one of which will get launched.
@@ -699,7 +702,7 @@ jvm-args = [
 #
 # This field is useful if you want to launch a different main class depending on
 # criteria such as OS, CPU architecture, or which options are given on the CLI.
-#main-class-candidates = [
+#jvm.main-class = [
 #    '--fizzbuzz|org.fizzbuzz.FizzBuzz'
 #    '--main-class|${main-class}',
 #    'org.fizzbuzz.Main', # default behavior
@@ -708,10 +711,10 @@ jvm-args = [
 # ==============================================================================
 # Arguments to pass to the main class on the Java side.
 #
-# This is the other half of the magic sauce, along with jvm-args above:
+# This is the other half of the magic sauce, along with jvm.runtime-args above:
 # Options and other criteria get translated into main arguments here.
-# See the 'jvm-root-paths' section above for a thorough explanation.
-#main-args = [
+# See the 'jvm.root-paths' section above for a thorough explanation.
+#jvm.main-args = [
 #    '!--fizz|!--buzz|--mode=number',
 #    '--fizz|!--buzz|--mode=fizz',
 #    '--buzz|!--fizz|--mode=buzz',

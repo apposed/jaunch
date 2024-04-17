@@ -1,9 +1,11 @@
 // Logic for discovery and inspection of Java Virtual Machine (JVM) installations.
 
-data class JavaConstraints(
+import kotlin.math.min
+
+data class JvmConstraints(
     val configDir: File,
-    val libjvmSuffixes: List<String>,
-    val allowWeirdJvms: Boolean,
+    val libSuffixes: List<String>,
+    val allowWeirdRuntimes: Boolean,
     val versionMin: String?,
     val versionMax: String?,
     val distrosAllowed: List<String>,
@@ -11,6 +13,154 @@ data class JavaConstraints(
     val osAliases: List<String>,
     val archAliases: List<String>,
 )
+
+class JvmRuntimeConfig(recognizedArgs: Array<String>) :
+    RuntimeConfig("java", "JVM", recognizedArgs)
+{
+    var java: JavaInstallation? = null
+
+    override fun configure(configDir: File, config: JaunchConfig, hints: MutableSet<String>, vars: MutableMap<String, String>) {
+        // Calculate all the places to search for Java.
+        val jvmRootPaths =
+            calculate(config.jvmRootPaths, hints, vars).flatMap { glob(it) }.filter { File(it).isDirectory }.toSet()
+
+        debug()
+        debug("Root paths to search for Java:")
+        jvmRootPaths.forEach { debug("* ", it) }
+
+        // Calculate all the places to look for the JVM library.
+        val libjvmSuffixes = calculate(config.jvmLibSuffixes, hints, vars)
+
+        debug()
+        debug("Suffixes to check for libjvm:")
+        libjvmSuffixes.forEach { debug("* ", it) }
+
+        // Calculate Java distro and version constraints.
+        val allowWeirdJvms = config.jvmAllowWeirdRuntimes ?: false
+        val distrosAllowed = calculate(config.jvmDistrosAllowed, hints, vars)
+        val distrosBlocked = calculate(config.jvmDistrosBlocked, hints, vars)
+        val osAliases = calculate(config.osAliases, hints, vars)
+        val archAliases = calculate(config.archAliases, hints, vars)
+        val constraints = JvmConstraints(
+            configDir, libjvmSuffixes,
+            allowWeirdJvms, config.jvmVersionMin, config.jvmVersionMax,
+            distrosAllowed, distrosBlocked, osAliases, archAliases
+        )
+
+        // Discover Java.
+        debug()
+        debug("Discovering Java installations...")
+        var java: JavaInstallation? = null
+        for (jvmPath in jvmRootPaths) {
+            debug("Analyzing candidate JVM directory: '", jvmPath, "'")
+            val javaCandidate = JavaInstallation(jvmPath, constraints)
+            if (javaCandidate.conforms) {
+                // Installation looks good! Moving on.
+                java = javaCandidate
+                break
+            }
+        }
+        if (java == null) error("No Java installation found.")
+        debug("* jvmRootPath -> ", java.rootPath)
+        debug("* libjvmPath -> ", java.libjvmPath ?: "<null>")
+        debug("* binJava -> ", java.binJava ?: "<null>")
+
+        // Apply JAVA: hints.
+        val mv = java.majorVersion
+        if (mv != null) {
+            hints += "JAVA:$mv"
+            // If Java version is OVER 9000, something went wrong in the parsing.
+            // Let's not explode the hints set with too many bogus values.
+            for (v in 0..min(mv, 9000)) hints += "JAVA:$v+"
+        }
+        debug("* hints -> ", hints)
+
+        // Calculate classpath.
+        val rawClasspath = calculate(config.jvmClasspath, hints, vars)
+        debugList("Classpath to calculate:", rawClasspath)
+        val classpath = rawClasspath.flatMap { glob(it) }
+        debugList("Classpath calculated:", classpath)
+
+        // Calculate JVM arguments.
+        runtimeArgs += calculate(config.jvmRuntimeArgs, hints, vars)
+        debugList("JVM arguments calculated:", runtimeArgs)
+
+        // Append or amend argument declaring classpath elements.
+        if (classpath.isNotEmpty()) {
+            val classpathString = classpath.joinToString(COLON)
+            val cpIndex = runtimeArgs.indexOfFirst { it.startsWith("-Djava.class.path=") }
+            if (cpIndex >= 0) {
+                // Append to existing `-Djava.class.path` argument.
+                runtimeArgs[cpIndex] += "$COLON$classpathString"
+                debug("Extended classpath arg: ${runtimeArgs[cpIndex]}")
+            } else {
+                // No `-Djava.class.path` argument, so we add one.
+                runtimeArgs += "-Djava.class.path=$classpathString"
+                debug("Added classpath arg: ${runtimeArgs.last()}")
+            }
+        }
+
+        // If not already declared, calculate and declare the max heap size.
+        val mxIndex = runtimeArgs.indexOfFirst { it.startsWith("-Xmx") }
+        if (mxIndex < 0) {
+            val maxHeap = calculateMaxHeap(config.jvmMaxHeap)
+            runtimeArgs += "-Xmx${maxHeap}"
+            debug("Added maxHeap arg: ${runtimeArgs.last()}")
+        }
+
+        // Calculate main class.
+        debug()
+        debug("Calculating main class name...")
+        val mainClassNames = calculate(config.jvmMainClass, hints, vars)
+        mainProgram = if (mainClassNames.isEmpty()) null else mainClassNames.first()
+        debug("mainProgram -> ", mainProgram ?: "<null>")
+        if (mainProgram == null)
+            error("No matching main class name")
+
+        // Calculate main args.
+        mainArgs += calculate(config.jvmMainArgs, hints, vars)
+        debugList("Main arguments calculated:", mainArgs)
+
+        this.java = java
+    }
+
+    override fun nativeConfig(): String {
+        val libjvmPath = java?.libjvmPath ?: error("No matching Java installations found.")
+        val mainClass = mainProgram ?: error("No Java main program specified.")
+        return buildString {
+            appendLine(directive)
+            appendLine(runtimeArgs.size + mainArgs.size + 3)
+            appendLine(libjvmPath)
+            appendLine(runtimeArgs.size)
+            for (arg in runtimeArgs) appendLine(arg)
+            appendLine(mainClass.replace(".", "/"))
+            for (mainArg in mainArgs) appendLine(mainArg)
+        }
+    }
+
+    override fun home(): String {
+        return java?.rootPath ?: error("No matching Java installations found.")
+    }
+
+    override fun info(): String {
+        return java.toString()
+    }
+
+    override fun dryRun(): String {
+        return buildString {
+            append(java?.binJava ?: "java")
+            runtimeArgs.forEach { append(" $it") }
+            append(" $mainProgram")
+            mainArgs.forEach { append(" $it") }
+        }
+    }
+
+    fun classpath(): String {
+        val prefix = "-Djava.class.path="
+        val classpathArg = runtimeArgs.firstOrNull { it.startsWith(prefix) } ?: return "<none>"
+        return classpathArg.substring(prefix.length).replace(COLON, "\n- ")
+    }
+}
 
 /**
  * A Java installation, rooted at a particular directory.
@@ -46,7 +196,7 @@ data class JavaConstraints(
  */
 class JavaInstallation(
     val rootPath: String,
-    val constraints: JavaConstraints,
+    val constraints: JvmConstraints,
 ) {
     val libjvmPath: String? by lazy { findLibjvm() }
     val binJava: String? by lazy { findBinJava() }
@@ -97,7 +247,7 @@ class JavaInstallation(
     // -- Lazy evaluation functions --
 
     private fun findLibjvm(): String? {
-        return constraints.libjvmSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
+        return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
     }
 
     private fun findBinJava(): String? {
@@ -166,7 +316,7 @@ class JavaInstallation(
     }
 
     private fun checkConstraints(): Boolean {
-        val strict = !constraints.allowWeirdJvms
+        val strict = !constraints.allowWeirdRuntimes
 
         // Ensure libjvm is present.
         if (libjvmPath == null) return fail("No JVM library found.")
@@ -288,4 +438,31 @@ private fun cleanupVersion(v: String): String {
     // Prepend `1.` as appropriate.
     return v.replace(Regex("^[2345678](\\D|$)"), "1.$0")
     // TODO: Should also remove `1.` from strings like `1.11.0`...
+}
+
+private fun calculateMaxHeap(maxHeap: String?): String? {
+    if (maxHeap?.endsWith("%") != true) return maxHeap
+
+    // Compute percentage of total available memory.
+    val percent = maxHeap.substring(0, maxHeap.lastIndex).toDoubleOrNull() // Double or nothing! XD
+    if (percent == null || percent <= 0) {
+        warn("Ignoring invalid max-heap value '", maxHeap, "'")
+        return null
+    }
+
+    debug()
+    debug("Calculating max heap (", maxHeap, ")...")
+    val memInfo = memInfo()
+    if (memInfo.total == null) {
+        warn("Cannot determine total memory -- ignoring max-heap value '", maxHeap, "'")
+        return null
+    }
+    else debug("System reported memTotal of ", memInfo.total.toString())
+
+    val kbValue = (percent * memInfo.total!! / 100 / 1024).toInt()
+    if (kbValue <= 9999) return "${kbValue}k"
+    val mbValue = kbValue / 1024
+    if (mbValue <= 9999) return "${mbValue}m"
+    val gbValue = mbValue / 1024
+    return "${gbValue}g"
 }

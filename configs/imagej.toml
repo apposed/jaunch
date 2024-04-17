@@ -12,16 +12,16 @@ jaunch-version = 1
 
 program-name = 'ImageJ'
 
-jvm-root-paths = [
+jvm.root-paths = [
     '${app-dir}',
 ]
 
-java-version-min = '1.6'
+jvm.version-min = '1.6'
 
-classpath = [
+jvm.classpath = [
     '${app-dir}/ij.jar',
 ]
 
-max-heap = '75%'
+jvm.max-heap = '75%'
 
-main-class = 'ij.ImageJ'
+jvm.main-class = ['ij.ImageJ']

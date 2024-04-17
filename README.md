@@ -124,9 +124,9 @@ then responsible for outputting the following things via its stdout:
 
 1. Number of lines of output.
 2. Directive for the native launcher to perform, or else an error message to display.
-   - `LIBJVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
-   - `LIBPYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
-   - `CANCEL` to launch nothing.
+   - `JVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
+   - `PYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
+   - `STOP` to launch nothing.
 3. Path to runtime native library (libjvm or libpython).
 4. Number of arguments to the runtime (Python or JVM).
 5. List of arguments to the runtime, one per line.

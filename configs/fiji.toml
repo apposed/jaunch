@@ -54,14 +54,6 @@ supported-options = [
 # ./ImageJ-linux64 --ij2 --headless --console --run hello.py 'name="Mr Kraken"'
 ]
 
-jvm-root-paths = [
-    # Fiji used to ship versions of OpenJDK 8 with a mangled directory structure.
-    # The mangling was done to work around limitations of the old ImageJ Launcher.
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
-]
-
-java-version-min = '8'
-
 modes = [
   # Decide which mode to launch: default, original-imagej, legacy-fiji, or custom-main.
   '--dont-patch-ij1|MODE:original-imagej',
@@ -93,7 +85,19 @@ directives = [
   '--print-ij-dir|print-app-dir', # For backwards compatibility.
 ]
 
-classpath = [
+# /============================================================================\
+# |                                JAVA CONFIG                                 |
+# \============================================================================/
+
+jvm.root-paths = [
+    # Fiji used to ship versions of OpenJDK 8 with a mangled directory structure.
+    # The mangling was done to work around limitations of the old ImageJ Launcher.
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
+]
+
+jvm.version-min = '8'
+
+jvm.classpath = [
     '--full-classpath|${app-dir}/jars/*.jar',
     '--full-classpath|${app-dir}/jars/bio-formats/*.jar',
     '--full-classpath|${app-dir}/plugins/*.jar',
@@ -102,9 +106,9 @@ classpath = [
     '--jar|${jar}',
 ]
 
-max-heap = '75%'
+jvm.max-heap = '75%'
 
-jvm-args = [
+jvm.runtime-args = [
     '--info|-Dscijava.log.level=info',
     '--debug|-Dij.debug=true',
     '--debug|-Dscijava.log.level=debug',
@@ -210,14 +214,14 @@ jvm-args = [
     '-Dpython.console.encoding=UTF-8',
 ]
 
-main-class-candidates = [
+jvm.main-class = [
     '--main-class|${main-class}',
     '--jar|net.imagej.launcher.JarLauncher',
     '--update|net.imagej.updater.CommandLine',
     'net.imagej.launcher.ClassLauncher',
 ]
 
-main-args = [
+jvm.main-args = [
     '--jar|${jar}',
 
     # TODO: -classpath is a flag for the ClassLauncher and JarLauncher mains!
