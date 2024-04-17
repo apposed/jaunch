@@ -110,9 +110,6 @@ supported-options = [
 # The asterisk wildcard symbol (*) is allowed as a suffix,
 # if you want to match all arguments with a particular prefix.
 #
-# All values on this list are assumed to be given with at least one dash symbol
-# prepended, maybe two. (Heck, go nuts and put three or four! But Java won't like it.)
-#
 # About main method arguments: Jaunch's philosophy is to remain agnostic of the options
 # your application supports, rather than trying to constrain them in its configuration
 # and checking them itself. As such, it is your application's responsibility to emit
@@ -122,7 +119,7 @@ supported-options = [
 #
 #     ./fizzbuzz 1 2 3 4 5 -Xms1g 
 #
-# Because 'X' is on the recognized-jvm-args list out of the box, Jaunch will translate
+# Because '-X' is on the jvm.recognized-args list out of the box, Jaunch will translate
 # this invocation to:
 #
 #     java -Xms1g org.fizzbuzz.FizzBuzz 1 2 3 4 5
