@@ -345,13 +345,14 @@ private fun configureRuntimes(
     configDir: File,
     hints: MutableSet<String>,
     vars: MutableMap<String, String>
-): List<JvmRuntimeConfig> {
+): List<RuntimeConfig> {
     debug()
     debug("Configuring runtimes...")
 
     // Define the list of supported runtimes.
     val runtimes = listOf(
         JvmRuntimeConfig(config.jvmRecognizedArgs),
+        PythonRuntimeConfig(config.pythonRecognizedArgs),
     )
 
     // Discover the runtime installations.
@@ -442,6 +443,19 @@ private fun unknownArg(
 
 private fun interpolateArgs(argsInContext: Map<String, ProgramArgs>, vars: Map<String, String>) {
     // TODO: something ;-)
+    /*
+    for (args in argsInContext.values) {
+        val nooRuntime = mutableListOf<String>()
+        for (arg in args.runtime) nooRuntime += interpolate(arg)
+        args.runtime.clear()
+        args.runtime += nooRuntime
+
+        val nooMain = mutableListOf<String>()
+        for (arg in args.main) nooMain += interpolate(arg)
+        args.main.clear()
+        args.main += nooMain
+    }
+    */
 }
 
 private fun executeDirectives(
@@ -477,9 +491,15 @@ private fun executeDirectives(
     // Emit launch-side directives.
     debug()
     debug("Emitting launch directives to stdout...")
-    for (directive in launchDirectives) {
+    // HACK: If STOP appears in the launch directives, don't also launch other things.
+    // Further thought and config wrangling needed, but it gets the job done for now.
+    val tweakedLaunchDirectives = if ("STOP" in launchDirectives) listOf("STOP") else launchDirectives
+    for (directive in tweakedLaunchDirectives) {
         val runtime = runtimes.firstOrNull { it.directive == directive }
-        println(runtime?.launch() ?: directive)
+        val lines = runtime?.launch(argsInContext[runtime.prefix]!!) ?: emptyList()
+        println(directive)
+        println(lines.size)
+        lines.forEach { println(it) }
     }
 }
 
@@ -497,7 +517,7 @@ private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOp
     printlnErr("Usage: $exeName [<Runtime options>.. --] [<main arguments>..]")
     printlnErr()
     printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / $JAUNCH_BUILD / $BUILD_TARGET)")
-    printlnErr("Runtime options are passed to the Java Runtime,")
+    printlnErr("Runtime options are passed to the runtime platform (JVM or Python),")
     printlnErr("main arguments to the launched program ($programName).")
     printlnErr()
     printlnErr("In addition, the following options are supported:")

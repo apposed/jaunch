@@ -82,8 +82,15 @@ modes = [
 ]
 
 directives = [
-  '--print-ij-dir|print-app-dir', # For backwards compatibility.
+  '--print-ij-dir|print-app-dir,STOP', # For backwards compatibility.
+  'JVM',
 ]
+
+# /============================================================================\
+# |                               PYTHON CONFIG                                |
+# \============================================================================/
+
+# TODO
 
 # /============================================================================\
 # |                                JAVA CONFIG                                 |

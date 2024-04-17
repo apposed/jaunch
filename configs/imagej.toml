@@ -12,6 +12,8 @@ jaunch-version = 1
 
 program-name = 'ImageJ'
 
+directives = ['JVM']
+
 jvm.root-paths = [
     '${app-dir}',
 ]

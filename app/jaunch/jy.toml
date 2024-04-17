@@ -12,6 +12,8 @@ jaunch-version = 1
 
 program-name = 'Jy'
 
+directives = ['JVM']
+
 jvm.version-min = '8'
 #jvm.version-max = '21'
 

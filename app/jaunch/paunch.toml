@@ -1,0 +1,22 @@
+# *** Welcome to the Paunch configuration file! ***
+#
+# Paunch is a Python launcher built on Jaunch (https://github.com/scijava/jaunch).
+#
+# One advantage of Paunch over the normal python launcher is that on macOS,
+# Paunch starts Python on a separate pthread, and starts the AppKit event loop
+# on the main thread, so that GUIs (especially Java-based AWT/Swing GUIs) can
+# successfully operate without hanging.
+#
+# There is a general layer of launcher configuration in the jaunch.toml file.
+# The contents below define Paunch's particular launcher behavior and features,
+# on top of Paunch's "sensible default" functionality.
+#
+# See that jaunch.toml file for more details about Jaunch configuration.
+
+jaunch-version = 1
+
+program-name = 'Paunch'
+
+directives = ['PYTHON']
+
+python.version-min = '3.8'

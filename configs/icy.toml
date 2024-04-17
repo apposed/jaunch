@@ -12,6 +12,8 @@ jaunch-version = 1
 
 program-name = 'Icy'
 
+directives = ['JVM']
+
 jvm.version-min = '8'
 
 jvm.classpath = [

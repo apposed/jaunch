@@ -12,6 +12,8 @@ jaunch-version = 1
 
 program-name = 'Parsy'
 
+directives = ['JVM']
+
 jvm.version-min = '8'
 #java-version-max = '21'
 

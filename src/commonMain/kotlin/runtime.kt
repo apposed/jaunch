@@ -38,7 +38,7 @@ abstract class RuntimeConfig(
     )
 
     /** Gets the launch directive block for this runtime configuration. */
-    abstract fun launch(): String
+    abstract fun launch(args: ProgramArgs): List<String>
 
     /**
      * Attempt to execute the given directive.

@@ -11,6 +11,7 @@ do (
   srcDir=${l%/launcher*}
   suffix=${l#*/launcher}
   set -x
+  cp "$l" "$srcDir/paunch$suffix"
   cp "$l" "$srcDir/jy$suffix"
   mv "$l" "$srcDir/parsy$suffix"
 ) done

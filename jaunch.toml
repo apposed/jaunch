@@ -3,7 +3,7 @@
 # ==============================================================================
 #
 # This jaunch.toml file contains useful general-purpose, non-application-specific
-# configuration that defines some sensible defaults for typical Java-based launchers.
+# configuration that defines some sensible defaults for typical launchers.
 # You can of course edit it to customize Jaunch's behavior however you like.
 #
 # Each application will typically have its own extensions to the general configuration
@@ -12,11 +12,9 @@
 # FizzBuzz application, you would also write a fizzbuzz.toml companion file that
 # overrides or augments this configuration with fizzbuzz-specific settings.
 #
-# Minimally, such application-specific configuration will include the `program-name`
-# and `main-class` fields, and typically a `classpath`
-# for needed JAR files. But it may also add application-specific options via the
-# `supported-options` field, as well as constraints such as `version-min` and
-# `version-max` to restrict which Javas are compatible with the application.
+# For simple examples of application-specific configuration, see:
+# - app/config/paunch.toml for a Jaunch-based Python launcher
+# - app/config/jy.toml for a Jaunch-based Jython launcher
 #
 # Alternately, if you would like to keep all configuration together in one file
 # for simplicity, you can write a single TOML file with everything, and name it
@@ -30,11 +28,13 @@
 jaunch-version = 1
 
 # ==============================================================================
-# The name of your program! This name will appear in the usage text.
+# The name of your program! This name will appear in usage text and dialog boxes.
 #program-name = 'FizzBuzz'
 
 # ==============================================================================
 # The list of command line options supported by Jaunch out of the box.
+#
+# TODO: Update this section to be unspecific to JVM programs.
 #
 # These are arguments that Jaunch will interpret, transforming them in various ways
 # into arguments to the Java Virtual Machine (JVM) and/or main class that is launched.
@@ -91,6 +91,9 @@ supported-options = [
     '--java-home=<path>|specify JAVA_HOME explicitly',
     '--print-java-home|print path to the selected Java',
     '--print-java-info|print information about the selected Java',
+    '--python-home=<path>|specify PYTHON_HOME explicitly',
+    '--print-python-home|print path to the selected Python',
+    '--print-python-info|print information about the selected Python',
     '--print-app-dir|print directory where the application is located',
     '--headless|run in text mode',
     "--heap,--mem,--memory=<amount>|set Java's heap size to <amount> (e.g. 512M)",
@@ -122,6 +125,8 @@ arch-aliases = [
 # ==============================================================================
 # List of additional hints to enable or disable based on other hints.
 #
+# TODO: Rework this section to introduce hints, rather than referring to below.
+#
 # See "jvm.root-paths" below for an overview of hints.
 #
 # With modes, you can set a single hint in response to several different other hints,
@@ -151,6 +156,8 @@ modes = []
 # ==============================================================================
 # Commands that control Jaunch's launching behavior.
 #
+# TODO: Rewrite this section to be nicer and more up to date.
+#
 # Each one runs at a particular (hardcoded) time during configuration.
 # Directives unsupported by the configurator program are ignored.
 #
@@ -171,6 +178,12 @@ modes = []
 # * print-app-dir      - Print out the path to the application. Typically, this will be
 #                        the folder containing the launcher.
 
+# * PYTHON             - Launches the program using the Python interpreter.
+# * print-python-home  - Print out the path to the chosen Python installation.
+# * print-python-info  - Print out all the details of the chosen Python installation,
+#                        including not only its path, but also the distro, version,
+#                        operating system, CPU architecture, and other metadata fields.
+
 # * JVM                - Launches the program using the Java Virtual Machine.
 # * print-java-home    - Print out the path to the chosen Java installation.
 # * print-java-info    - Print out all the details of the chosen Java installation,
@@ -190,11 +203,12 @@ directives = [
   '-h|help,STOP',                          # global
   '--print-app-dir|print-app-dir',         # global
   '--print-config-dir|print-config-dir',   # global
-  '--dry-run|dry-run,STOP',                # jvm
+  '--dry-run|dry-run,STOP',                # python, jvm
+  '--print-python-home|print-python-home', # python
+  '--print-python-info|print-python-info', # python
   '--print-classpath|print-classpath',     # jvm
   '--print-java-home|print-java-home',     # jvm
   '--print-java-info|print-java-info',     # jvm
-  'JVM',
 ]
 
 # ==============================================================================
@@ -233,7 +247,160 @@ directives = [
 allow-unrecognized-args = false
 
 # ==============================================================================
+# Here begins the fields for controlling the launch of Python-based programs.
+# For JVM-specific fields, skip to the `jvm` section below.
+# ==============================================================================
+
+python.recognized-args = [
+    '-b', '-bb',
+    '-B',
+    '-c cmd',
+    '-d',
+    '-E',
+    '-h', '-?', # --help is reserved for Jaunch
+    '-i',
+    '-I',
+    '-m mod',
+    '-O',
+    '-OO',
+    '-q',
+    '-s',
+    '-S',
+    '-u',
+    '-v',
+    '-V', # --version is reserved for Jaunch
+    '-W arg',
+    '-x',
+    '-X opt',
+    '--check-hash-based-pycs always|default|never',
+]
+
+# ==============================================================================
+# Paths to check for Python installations.
+#
+# This is a list of directories where Jaunch might hope to find a Python installation.
+# Directories are checked sequentially until one is found that matches all criteria.
+#
+# This is also the first field where we see Jaunch's hints/rules system in action.
+# Each entry on the root-dirs list may be prefixed with string separated by pipes.
+# Each segment is a *hint* for Jaunch regarding a flag that must be set for that
+# particular line to be considered. Jaunch sets hint flags based on a few sources:
+#
+# * Active operating system: OS:LINUX, OS:MACOSX, OS:WINDOWS,
+#   OS:IOS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS, or OS:UNKNOWN.
+#
+# * Active CPU architecture: ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64,
+#   ARCH:MIPS32, ARCH:MIPSEL32, ARCH:WASM32, or ARCH:UNKNOWN.
+
+# * Option hints, set from arguments passed to Jaunch, each of which sets a matching
+#   hint. For example, passing the --headless option will set a hint '--headless'.
+#
+# * Mode hints, set from evaluation of the modes field (see below).
+#
+# * Python hints, based on the Python installation selected:
+#   - PYTHON:3.9 if the selected Python installation is version 3.9.
+#   - PYTHON:3.9+ if the selected Python installation is version 3.9 or later.
+#   - PYTHON:3.10 if the selected Python installation is version 3.10.
+#   - PYTHON:3.10+ if the selected Python installation is version 3.10 or later.
+#   - and so on.
+#   Of course, Python hints will only be set after a Python installation matches,
+#   so they won't work here in python.root-paths, nor in python.lib-suffixes.
+#   But they can be useful in the python.runtime-args section to ensure Jaunch
+#   passes runtime args only to those versions of Python that support them,
+#   such as the -P flag which was introduced in Python 3.11.
+#
+# Finally, a segment prefixed by a bang symbol (!) negates the hint,
+# making that line match only when that particular hint is *not* set.
+#
+# For example, consider the following python.root-paths line:
+#
+#     '!--system|OS:LINUX|ARCH:X64|python/linux64',
+#
+# The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path
+# of python/linux64 will only be considered on 64-bit Linux systems, and only
+# when the --system option was *not* given as part of the launcher invocation.
+#
+# This is also the first field where we see Jaunch's variables in use:
+#
+#     '--python-home|${python-home}'
+#
+# Thanks to the above line, when the user passes '--python-home=/best', the
+# --python-home hint will be set, and the python-home variable will be set to /best.
+# So not only will the line match, but the root path to check will become /best.
+python.root-paths = [
+    '--python-home|${python-home}',
+    '${PYTHON_HOME}',
+    '~/miniforge3/envs/*',
+    '~/mambaforge/envs/*',
+    '${app-dir}/python',
+    '${app-dir}/lib/runtime',
+]
+
+# TODO: Verify this list for all platforms.
+python.lib-suffixes = [
+    'OS:LINUX|lib/libpython3.so',
+    'OS:MACOSX|lib/libpython3.dylib',
+    'OS:WINDOWS|lib\libpython3.dll',
+]
+
+# ==============================================================================
+# Acceptable range of Python versions to match.
+#
+# These two fields let you constrain the minimum and maximum Python versions
+# respectively that your application supports. This information will be used when
+# searching the system for appropriate Python installations. If a Python installation
+# is successfully discovered, but then found to be outside these constraints, it is
+# discarded and the search continues.
+#
+# The most common use of these fields is to specify a major.minor version pair
+# (e.g. `python.version-min = '3.9'`), but Jaunch does compare version strings digit by
+# digit, so you could write `python.version-min = '3.8.5' if you need to be specific.
+python.version-min = '3.8'
+#python.version-max = '3.12'
+
+# ==============================================================================
+# Packages that must be present in the Python installation.
+#
+# TODO
+python.packages = []
+
+# ==============================================================================
+# Arguments to pass to Python.
+#
+# This is the magic sauce where Jaunch options and other criteria get translated
+# into Python arguments. See 'python.root-paths' above for a thorough explanation.
+python.runtime-args = []
+
+# ==============================================================================
+# A list of paths to candidate main scripts, one of which will get launched.
+#
+# Jaunch evaluates the rules attached to each candidate main script. The first
+# line with matching rules becomes the main script, with subsequent lines ignored.
+#
+# This field is useful if you want to launch a different main script depending on
+# criteria such as OS, CPU architecture, or which options are given on the CLI.
+#python.main-script = [
+#    '--fizzbuzz|fizzbuzz.py'
+#    '--main-script|${main-script}',
+#    'main.py', # default behavior
+#]
+
+# ==============================================================================
+# Arguments to pass to the main class on the Python side.
+#
+# This is the other half of the magic sauce, along with python.runtime-args above:
+# Options and other criteria get translated into main arguments here.
+# See the 'python.root-paths' section above for a thorough explanation.
+#python.main-args = [
+#    '!--fizz|!--buzz|--mode=number',
+#    '--fizz|!--buzz|--mode=fizz',
+#    '--buzz|!--fizz|--mode=buzz',
+#    '--fizz|--buzz|--mode=fizzbuzz',
+#]
+
+# ==============================================================================
 # Now come the fields for controlling the launch of JVM-based programs.
+# For Python-specific fields, jump back up to the `python` section above.
 # ==============================================================================
 
 # ==============================================================================

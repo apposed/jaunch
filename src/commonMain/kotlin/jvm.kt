@@ -129,8 +129,6 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         val mainClassNames = calculate(config.jvmMainClass, hints, vars)
         mainProgram = mainClassNames.firstOrNull()
         debug("mainProgram -> ", mainProgram ?: "<null>")
-        if (mainProgram == null)
-            error("No matching main class name")
 
         // Calculate main args.
         mainArgs += calculate(config.jvmMainArgs, hints, vars)
@@ -139,17 +137,15 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         this.java = java
     }
 
-    override fun launch(): String {
+    override fun launch(args: ProgramArgs): List<String> {
         val libjvmPath = java?.libjvmPath ?: error("No matching Java installations found.")
         val mainClass = mainProgram ?: error("No Java main program specified.")
-        return buildString {
-            appendLine(directive)
-            appendLine(runtimeArgs.size + mainArgs.size + 3)
-            appendLine(libjvmPath)
-            appendLine(runtimeArgs.size)
-            for (arg in runtimeArgs) appendLine(arg)
-            appendLine(mainClass.replace(".", "/"))
-            for (mainArg in mainArgs) appendLine(mainArg)
+        return buildList {
+            add(libjvmPath)
+            add(args.runtime.size.toString())
+            addAll(args.runtime)
+            add(mainClass.replace(".", "/"))
+            addAll(args.main)
         }
     }
 

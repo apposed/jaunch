@@ -1,0 +1,253 @@
+// Logic for discovery and inspection of Python installations.
+
+import kotlin.math.min
+
+data class PythonConstraints(
+    val configDir: File,
+    val libSuffixes: List<String>,
+    val versionMin: String?,
+    val versionMax: String?,
+)
+
+class PythonRuntimeConfig(recognizedArgs: Array<String>) :
+    RuntimeConfig("python", "PYTHON", recognizedArgs)
+{
+    var python: PythonInstallation? = null
+
+    override val supportedDirectives: DirectivesMap = mutableMapOf(
+        "dry-run" to { printlnErr(dryRun()) },
+        "print-python-home" to { printlnErr(pythonHome()) },
+        "print-python-info" to { printlnErr(pythonInfo()) },
+    )
+
+    override fun configure(
+        configDir: File,
+        config: JaunchConfig,
+        hints: MutableSet<String>,
+        vars: MutableMap<String, String>
+    ) {
+        // Calculate all the places to search for Python.
+        val pythonRootPaths = calculate(config.pythonRootPaths, hints, vars)
+                .flatMap { glob(it) }
+                .filter { File(it).isDirectory }
+                .toSet()
+
+        debug()
+        debug("Root paths to search for Python:")
+        pythonRootPaths.forEach { debug("* ", it) }
+
+        // Calculate all the places to look for the Python library.
+        val libPythonSuffixes = calculate(config.pythonLibSuffixes, hints, vars)
+
+        debug()
+        debug("Suffixes to check for libpython:")
+        libPythonSuffixes.forEach { debug("* ", it) }
+
+        // Calculate Python distro and version constraints.
+        val constraints = PythonConstraints(
+            configDir,
+            libPythonSuffixes,
+            config.pythonVersionMin, config.pythonVersionMax
+        )
+
+        // Discover Python.
+        debug()
+        debug("Discovering Python installations...")
+        var python: PythonInstallation? = null
+        for (pythonPath in pythonRootPaths) {
+            debug("Analyzing candidate Python directory: '", pythonPath, "'")
+            val pythonCandidate = PythonInstallation(pythonPath, constraints)
+            if (pythonCandidate.conforms) {
+                // Installation looks good! Moving on.
+                python = pythonCandidate
+                break
+            }
+        }
+        if (python == null) error("No Python installation found.")
+        debug("Successfully discovered Python installation:")
+        debug("* rootPath -> ", python.rootPath)
+        debug("* libPythonPath -> ", python.libPythonPath ?: "<null>")
+        debug("* binPython -> ", python.binPython ?: "<null>")
+
+        // Apply PYTHON: hints.
+        val majorMinor = python.majorMinorVersion
+        if (majorMinor != null) {
+            val (major, minor) = majorMinor
+            hints += "PYTHON:$major.$minor"
+            // If minor version is OVER 9000, something went wrong in the parsing.
+            // Let's not explode the hints set with too many bogus values.
+            for (v in 0..min(minor, 9000)) hints += "PYTHON:$major.$v+"
+        }
+        debug("* hints -> ", hints)
+
+        // Calculate runtime arguments.
+        runtimeArgs += calculate(config.pythonRuntimeArgs, hints, vars)
+        debugList("Python arguments calculated:", runtimeArgs)
+
+        // Calculate main script.
+        debug()
+        debug("Calculating main script path...")
+        val mainScriptPaths = calculate(config.pythonMainScript, hints, vars)
+        mainProgram = mainScriptPaths.firstOrNull()
+        debug("mainProgram -> ", mainProgram ?: "<null>")
+
+        // Calculate main args.
+        mainArgs += calculate(config.pythonMainArgs, hints, vars)
+        debugList("Main arguments calculated:", mainArgs)
+
+        this.python = python
+    }
+
+    override fun launch(args: ProgramArgs): List<String> {
+        val libPythonPath = python?.libPythonPath ?: error("No matching Python installations found.")
+        return buildList {
+            add(libPythonPath)
+            addAll(args.runtime)
+            if (mainProgram != null) add(mainProgram!!)
+            addAll(args.main)
+        }
+    }
+
+    // -- Directive handlers --
+
+    fun dryRun(): String {
+        return buildString {
+            append(python?.binPython ?: "python")
+            runtimeArgs.forEach { append(" $it") }
+            append(" $mainProgram")
+            mainArgs.forEach { append(" $it") }
+        }
+    }
+
+    fun pythonHome(): String {
+        return python?.rootPath ?: error("No matching Python installations found.")
+    }
+
+    fun pythonInfo(): String {
+        return python?.toString() ?: error("No matching Python installations found.")
+    }
+}
+
+/**
+ * A Python installation, rooted at a particular directory.
+ *
+ * This class contains heuristics for discerning the Python installation's version
+ * and installed packages, by invoking the Python binary and reading the output.
+ */
+class PythonInstallation(
+    val rootPath: String,
+    val constraints: PythonConstraints,
+) {
+    val libPythonPath: String? by lazy { findLibPython() }
+    val binPython: String? by lazy { findBinPython() }
+    val version: String? by lazy { guessPythonVersion() }
+    val packages: Map<String, String> by lazy { guessInstalledPackages() }
+    val conforms: Boolean by lazy { checkConstraints() }
+
+    /** Gets the major.minor version digits of the Python installation. */
+    val majorMinorVersion: Pair<Int, Int>?
+        get() {
+            val digits = versionDigits(version ?: return null)
+            return if (digits.size < 2) null else Pair(digits[0], digits[1])
+        }
+
+    override fun toString(): String {
+        return listOf(
+            "root: $rootPath",
+            "libPython: $libPythonPath",
+            "version: $version",
+            "packages:${bulletList(packages)}",
+        ).joinToString(NL)
+    }
+
+    // -- Lazy evaluation functions --
+
+    private fun findLibPython(): String? {
+        return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
+    }
+
+    private fun findBinPython(): String? {
+        val extension = if (OS_NAME == "WINDOWS") ".exe" else ""
+        for (candidate in arrayOf("python", "python3", "bin${SLASH}python", "bin${SLASH}python3")) {
+            val pythonFile = File("$rootPath$SLASH$candidate$extension")
+            if (pythonFile.exists) return pythonFile.path
+        }
+        return null
+    }
+
+    private fun guessPythonVersion(): String {
+        return guess("Python version") { askPythonForVersion() ?: "<unknown>" }
+    }
+
+    private fun guessInstalledPackages(): Map<String, String> {
+        return guess("installed packages") { askPipForPackages() }
+    }
+
+    private fun <T> guess(label: String, doGuess: () -> T): T {
+        debug("Guessing $label...")
+        val result = doGuess()
+        debug("-> $label: $result")
+        return result
+    }
+
+    /** Calls `python --version` to be told the Python version from the boss. */
+    private fun askPythonForVersion(): String? {
+        val pythonExe = binPython
+        if (pythonExe == null) {
+            debug("Python executable does not exist")
+            return null
+        }
+        debug("Invoking `\"", pythonExe, "\" --version`...")
+        val line = execute("\"$pythonExe\" --version")?.get(0) ?: return null
+        val versionPattern = Regex("(\\d+\\.\\d+\\.\\d+[^ ]*)")
+        return versionPattern.find(line)?.value
+    }
+
+    private fun askPipForPackages(): Map<String, String> {
+        val pythonExe = binPython
+        if (pythonExe == null) {
+            debug("Python executable does not exist")
+            return emptyMap()
+        }
+        debug("Invoking `\"", pythonExe, "\" -m pip list`...")
+        val lines = execute("\"$pythonExe\" -m pip list") ?: emptyList()
+        // Start at index 2 to skip the table headers.
+        return lines.subList(min(2, lines.size), lines.size)
+            .map { it.split(Regex("\\s+")) }
+            .associate { it[0] to if (it.isEmpty()) "" else it[1] }
+    }
+
+    private fun checkConstraints(): Boolean {
+        // Ensure libpython is present.
+        if (libPythonPath == null) return fail("No Python library found.")
+
+        // Check Python version constraints.
+        if (constraints.versionMin != null || constraints.versionMax != null) {
+            if (version == null)
+                return fail("Version constraints exist, but version is unknown.")
+            if (version != null) {
+                if (versionOutOfBounds(version!!, constraints.versionMin, constraints.versionMax))
+                    return fail("Version '$version' is outside specified bounds " +
+                            "[${constraints.versionMin}, ${constraints.versionMax}].")
+            }
+        }
+
+        // Check installed package constraints.
+        // TODO: Actually check packages. ;-)
+
+        // All checks passed!
+        return true
+    }
+
+    // -- Helper methods --
+
+    private fun bulletList(map: Map<String, String>?, bullet: String = "* "): String {
+        return when {
+            map == null -> " <none>"
+            map.isEmpty() -> " <empty>"
+            else -> "$NL$bullet" + map.entries.joinToString("$NL$bullet")
+        }
+    }
+
+    private fun fail(vararg args: Any): Boolean { debug(*args); return false }
+}

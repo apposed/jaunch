@@ -39,6 +39,39 @@ data class JaunchConfig (
     /** Whether to allow unrecognized arguments to be passed to the runtime. */
     val allowUnrecognizedArgs: Boolean? = null,
 
+    // -- Python-specific configuration fields --
+
+    /**
+     * The list of arguments that Jaunch will recognize as belonging to the Python interpreter,
+     * as opposed to the application's main program.
+     */
+    val pythonRecognizedArgs: Array<String> = emptyArray(),
+
+    /** Paths to check for Python installations. */
+    val pythonRootPaths: Array<String> = emptyArray(),
+
+    /** List of places within a Python installation to look for the Python library. */
+    val pythonLibSuffixes: Array<String> = emptyArray(),
+
+    /** Minimum acceptable Python version to match. */
+    val pythonVersionMin: String? = null,
+
+    /** Maximum acceptable Python version to match. */
+    val pythonVersionMax: String? = null,
+
+    /** List of packages that must be present in a suitable Python installation. */
+    val pythonPackages: Array<String> = emptyArray(),
+
+    /** Arguments to pass to the Python runtime. */
+    val pythonRuntimeArgs: Array<String> = emptyArray(),
+
+    /** A list of candidate Python scripts, one of which will get launched. */
+    val pythonMainScript: Array<String> = emptyArray(),
+
+    /** Arguments to pass to the Python program itself. */
+    val pythonMainArgs: Array<String> = emptyArray(),
+
+
     // -- JVM-specific configuration fields --
 
     /**
@@ -116,6 +149,16 @@ data class JaunchConfig (
             directives = config.directives + directives,
             allowUnrecognizedArgs = config.allowUnrecognizedArgs ?: allowUnrecognizedArgs,
 
+            pythonRecognizedArgs = config.pythonRecognizedArgs + pythonRecognizedArgs,
+            pythonRootPaths = config.pythonRootPaths + pythonRootPaths,
+            pythonLibSuffixes = config.pythonLibSuffixes + pythonLibSuffixes,
+            pythonVersionMin = config.pythonVersionMin ?: pythonVersionMin,
+            pythonVersionMax = config.pythonVersionMax ?: pythonVersionMax,
+            pythonPackages = config.pythonPackages + pythonPackages,
+            pythonRuntimeArgs = config.pythonRuntimeArgs + pythonRuntimeArgs,
+            pythonMainScript = config.pythonMainScript + pythonMainScript,
+            pythonMainArgs = config.pythonMainArgs + pythonMainArgs,
+
             jvmRecognizedArgs = config.jvmRecognizedArgs + jvmRecognizedArgs,
             jvmAllowWeirdRuntimes = config.jvmAllowWeirdRuntimes ?: jvmAllowWeirdRuntimes,
             jvmVersionMin = config.jvmVersionMin ?: jvmVersionMin,
@@ -150,6 +193,15 @@ fun readConfig(tomlFile: File): JaunchConfig {
     var modes: List<String>? = null
     var directives: List<String>? = null
     var allowUnrecognizedArgs: Boolean? = null
+    var pythonRecognizedArgs: List<String>? = null
+    var pythonRootPaths: List<String>? = null
+    var pythonLibSuffixes: List<String>? = null
+    var pythonVersionMin: String? = null
+    var pythonVersionMax: String? = null
+    var pythonPackages: List<String>? = null
+    var pythonRuntimeArgs: List<String>? = null
+    var pythonMainScript: List<String>? = null
+    var pythonMainArgs: List<String>? = null
     var jvmRecognizedArgs: List<String>? = null
     var jvmAllowWeirdRuntimes: Boolean? = null
     var jvmVersionMin: String? = null
@@ -193,6 +245,15 @@ fun readConfig(tomlFile: File): JaunchConfig {
                     "modes" -> modes = asList(value)
                     "directives" -> directives = asList(value)
                     "allow-unrecognized-args" -> allowUnrecognizedArgs = asBoolean(value)
+                    "python.recognized-args" -> pythonRecognizedArgs = asList(value)
+                    "python.root-paths" -> pythonRootPaths = asList(value)
+                    "python.lib-suffixes" -> pythonLibSuffixes = asList(value)
+                    "python.version-min" -> pythonVersionMin = asString(value)
+                    "python.version-max" -> pythonVersionMax = asString(value)
+                    "python.packages" -> pythonPackages = asList(value)
+                    "python.runtime-args" -> pythonRuntimeArgs = asList(value)
+                    "python.script-path" -> pythonMainScript = asList(value)
+                    "python.main-args" -> pythonMainArgs = asList(value)
                     "jvm.recognized-args" -> jvmRecognizedArgs = asList(value)
                     "jvm.allow-weird-runtimes" -> jvmAllowWeirdRuntimes = asBoolean(value)
                     "jvm.version-min" -> jvmVersionMin = asString(value)
@@ -222,6 +283,15 @@ fun readConfig(tomlFile: File): JaunchConfig {
         modes = asArray(modes),
         directives = asArray(directives),
         allowUnrecognizedArgs = allowUnrecognizedArgs,
+        pythonRecognizedArgs = asArray(pythonRecognizedArgs),
+        pythonRootPaths = asArray(pythonRootPaths),
+        pythonLibSuffixes = asArray(pythonLibSuffixes),
+        pythonVersionMin = pythonVersionMin,
+        pythonVersionMax = pythonVersionMax,
+        pythonPackages = asArray(pythonPackages),
+        pythonRuntimeArgs = asArray(pythonRuntimeArgs),
+        pythonMainScript = asArray(pythonMainScript),
+        pythonMainArgs = asArray(pythonMainArgs),
         jvmRecognizedArgs = asArray(jvmRecognizedArgs),
         jvmAllowWeirdRuntimes = jvmAllowWeirdRuntimes,
         jvmVersionMin = jvmVersionMin,

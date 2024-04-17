@@ -12,6 +12,8 @@ jaunch-version = 1
 
 program-name = 'QuPath'
 
+directives = ['JVM']
+
 jvm.version-min = '21'
 
 jvm.classpath = [
