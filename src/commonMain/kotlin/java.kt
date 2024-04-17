@@ -241,7 +241,7 @@ class JavaInstallation(
     private fun fail(vararg args: Any): Boolean { debug(*args); return false }
 }
 
-fun extractJavaVersion(root: String): String? {
+internal fun extractJavaVersion(root: String): String? {
     // Many CPU architecture tokens are hard to distinguish from version digits.
     // So first, do some preprocessing to remove such tokens from the root path string.
     val confusingPatterns = arrayOf(
@@ -284,7 +284,7 @@ fun extractJavaVersion(root: String): String? {
     return null
 }
 
-fun cleanupVersion(v: String): String {
+private fun cleanupVersion(v: String): String {
     // Prepend `1.` as appropriate.
     return v.replace(Regex("^[2345678](\\D|$)"), "1.$0")
     // TODO: Should also remove `1.` from strings like `1.11.0`...
