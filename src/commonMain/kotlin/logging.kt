@@ -1,3 +1,5 @@
+// Functions for emitting log messages.
+
 var debugMode = getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
 
 fun debug(vararg args: Any) { if (debugMode) report("DEBUG", *args) }

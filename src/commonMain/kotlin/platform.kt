@@ -1,3 +1,5 @@
+// Platform-specific function declarations.
+
 import kotlin.experimental.ExperimentalNativeApi
 
 expect val BUILD_TARGET: String

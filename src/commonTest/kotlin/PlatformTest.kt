@@ -3,6 +3,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+/** Tests `platform.kt` functions. */
 class PlatformTest {
     @Test
     fun testExecute() {

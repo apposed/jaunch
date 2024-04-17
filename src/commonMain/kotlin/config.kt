@@ -1,3 +1,5 @@
+// Jaunch configuration data structure and I/O.
+
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
@@ -238,6 +240,8 @@ fun readConfig(tomlFile: File): JaunchConfig {
         mainArgs = asArray(mainArgs),
     )
 }
+
+// -- I/O helper functions --
 
 private fun <T : Any> castOrWarn(value: Any?, c: KClass<T>): T? {
     if (value == null) return null

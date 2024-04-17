@@ -1,3 +1,5 @@
+// Logic for discovery and inspection of Java Virtual Machine (JVM) installations.
+
 data class JavaConstraints(
     val configDir: File,
     val libjvmSuffixes: List<String>,

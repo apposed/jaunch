@@ -1,5 +1,6 @@
 import kotlin.test.*
 
+/** Tests `File.kt` behavior. */
 class FileTest {
     @Test
     fun testBasics() {
