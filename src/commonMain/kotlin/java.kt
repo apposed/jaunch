@@ -61,7 +61,8 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
             }
         }
         if (java == null) error("No Java installation found.")
-        debug("* jvmRootPath -> ", java.rootPath)
+        debug("Successfully discovered Java installation:")
+        debug("* rootPath -> ", java.rootPath)
         debug("* libjvmPath -> ", java.libjvmPath ?: "<null>")
         debug("* binJava -> ", java.binJava ?: "<null>")
 
@@ -260,37 +261,46 @@ class JavaInstallation(
     }
 
     private fun guessJavaVersion(): String? {
-        debug("Guessing Java version...")
-        return extractJavaVersion(File(rootPath).name) ?:
-            releaseInfo?.get("JAVA_VERSION") ?: sysProps?.get("java.version")
+        return guess("Java version") {
+            extractJavaVersion(File(rootPath).name) ?:
+            releaseInfo?.get("JAVA_VERSION") ?:
+            sysProps?.get("java.version")
+        }
     }
 
     private fun guessDistribution(): String? {
-        debug("Guessing Java distribution...")
-
-        val distroMap = aliasMap(constraints.distrosAllowed + constraints.distrosBlocked)
-        return guessDistro(distroMap, File(rootPath).name) ?:
+        return guess("Java distribution") {
+            val distroMap = aliasMap(constraints.distrosAllowed + constraints.distrosBlocked)
+            guessDistro(distroMap, File(rootPath).name) ?:
             guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR_VERSION")) ?:
             guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR")) ?:
             guessDistro(distroMap, sysProps?.get("java.vendor.version")) ?:
-            guessDistro(distroMap, sysProps?.get("java.vendor")) ?:
-            sysProps?.get("java.vendor")
+            guessDistro(distroMap, sysProps?.get("java.vendor")) ?: sysProps?.get("java.vendor")
+        }
     }
 
     private fun guessOperatingSystemName(): String? {
-        debug("Guessing OS name...")
-        return guessField(constraints.osAliases, "OS_NAME", "os.name")
+        return guess("OS name") {
+            guessField(constraints.osAliases, "OS_NAME", "os.name")
+        }
     }
 
     private fun guessCpuArchitecture(): String? {
-        debug("Guessing CPU architecture...")
-        return guessField(constraints.archAliases, "OS_ARCH", "os.arch")
+        return guess("CPU architecture") {
+            guessField(constraints.archAliases, "OS_ARCH", "os.arch")
+        }
+    }
+
+    private fun guess(label: String, doGuess: () -> String?): String? {
+        debug("Guessing $label...")
+        val result = doGuess()
+        debug("-> $label: $result")
+        return result
     }
 
     /** Reads metadata from the `release` file. */
     private fun readReleaseInfo(): Map<String, String>? {
         debug("Reading release file...")
-
         val releaseFile = File("$rootPath/release")
         if (!releaseFile.exists) return null
         return linesToMap(releaseFile.lines(), "=", stripQuotes=true)
