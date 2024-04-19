@@ -1,7 +1,7 @@
 // Base class for runtime environment configuration state.
 
 abstract class RuntimeConfig(
-    val name: String,
+    val prefix: String,
     val directive: String,
     val recognizedArgs: Array<String>
 ) {

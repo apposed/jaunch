@@ -3,8 +3,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** Tests `java.kt` functions. */
-class JavaTest {
+/** Tests `jvm.kt` functions. */
+class JvmTest {
 
     @Test
     fun testExtractJavaVersion() {

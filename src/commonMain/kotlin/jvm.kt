@@ -15,7 +15,7 @@ data class JvmConstraints(
 )
 
 class JvmRuntimeConfig(recognizedArgs: Array<String>) :
-    RuntimeConfig("java", "JVM", recognizedArgs)
+    RuntimeConfig("jvm", "JVM", recognizedArgs)
 {
     var java: JavaInstallation? = null
 

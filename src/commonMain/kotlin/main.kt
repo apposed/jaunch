@@ -228,8 +228,8 @@ fun main(args: Array<String>) {
     debug("* hints -> ", hints)
     debug("* vars -> ", vars)
     for (r in runtimes) {
-        debug("* ${r.name}.runtimeArgs -> ", r.runtimeArgs)
-        debug("* ${r.name}.mainArgs -> ", r.mainArgs)
+        debug("* ${r.prefix}.runtimeArgs -> ", r.runtimeArgs)
+        debug("* ${r.prefix}.mainArgs -> ", r.mainArgs)
     }
 
     // Apply mode hints.
@@ -284,7 +284,7 @@ fun main(args: Array<String>) {
         // Check that the computed runtime args are all valid.
         for (arg in chosenRuntimeArgs) {
             if (!config.recognizes(arg, chosenRecognizedArgs)) {
-                error("Unrecognized ${runtime.name} argument: $arg")
+                error("Unrecognized ${runtime.prefix} argument: $arg")
             }
         }
     }
