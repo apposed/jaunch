@@ -35,8 +35,11 @@ fun main(args: Array<String>) {
                 jaunch fizzbuzz --heap 2g --debugger 8000
 
             and watch how Jaunch transforms the arguments.
+            If the behavior is not what you expect, try using the --debug flag:
 
-            You can learn similar information using Jaunch's --dry-run option:
+                jaunch fizzbuzz --heap 2g --debugger 8000 --debug
+
+            You can also see similar information using Jaunch's --dry-run option:
 
                 fizzbuzz --heap 2g --debugger 8000 --dry-run
 
