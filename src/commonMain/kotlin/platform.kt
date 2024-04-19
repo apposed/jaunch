@@ -21,8 +21,14 @@ data class MemoryInfo(var total: Long? = null, var free: Long? = null)
 expect fun memInfo(): MemoryInfo
 
 expect val USER_HOME: String?
+
+/** The platform-specific symbol for separating elements in a file path: `/` on POSIX or `\` on Windows. */
 expect val SLASH: String
+
+/** The platform-specific symbol for separating files in a list: `:` on POSIX or `;` on Windows. */
 expect val COLON: String
+
+/** The platform-specific symbol for terminating a line: `\n` on POSIX or `\r\n` on Windows. */
 expect val NL: String
 
 @OptIn(ExperimentalNativeApi::class)
