@@ -252,7 +252,7 @@ allow-unrecognized-args = false
 #
 #     ./fizzbuzz 1 2 3 4 5 -Xms1g 
 #
-# Because '-X' is on the jvm.recognized-args list out of the box, Jaunch will translate
+# Because '-X*' is on the jvm.recognized-args list out of the box, Jaunch will translate
 # this invocation to:
 #
 #     java -Xms1g org.fizzbuzz.FizzBuzz 1 2 3 4 5
