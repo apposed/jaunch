@@ -1,5 +1,32 @@
 import platform.posix.exit
 
+const val USAGE_MESSAGE = """
+Hello! You have found the Jaunch configurator.
+Your curiosity is an asset. :-)
+
+This program is intended to be called internally by Jaunch's native
+launcher executable. Normally, you do not need to run it yourself.
+
+However, if you wish, you can test its behavior by passing command line
+arguments in the same manner as you would to Jaunch's native launcher,
+prepended by the name of the native launcher executable.
+
+For example, if your native launcher is called fizzbuzz, you could try:
+
+    jaunch fizzbuzz --heap 2g --debugger 8000
+
+and watch how Jaunch transforms the arguments.
+If the behavior is not what you expect, try using the --debug flag:
+
+    jaunch fizzbuzz --heap 2g --debugger 8000 --debug
+
+You can also see similar information using Jaunch's --dry-run option:
+
+    fizzbuzz --heap 2g --debugger 8000 --dry-run
+
+For more details, check out the jaunch.toml file. Happy Jaunching!
+"""
+
 @Suppress("ArrayInDataClass")
 data class JaunchOption(
     val flags: Array<String>,
@@ -18,33 +45,9 @@ typealias JaunchOptions = Map<String, JaunchOption>
 
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
-        // Display usage message.
-        printlnErr("""
-            Hello! You have found the Jaunch configurator.
-            Your curiosity is an asset. :-)
-
-            This program is intended to be called internally by Jaunch's native
-            launcher executable. Normally, you do not need to run it yourself.
-
-            However, if you wish, you can test its behavior by passing command line
-            arguments in the same manner as you would to Jaunch's native launcher,
-            prepended by the name of the native launcher executable.
-
-            For example, if your native launcher is called fizzbuzz, you could try:
-
-                jaunch fizzbuzz --heap 2g --debugger 8000
-
-            and watch how Jaunch transforms the arguments.
-            If the behavior is not what you expect, try using the --debug flag:
-
-                jaunch fizzbuzz --heap 2g --debugger 8000 --debug
-
-            You can also see similar information using Jaunch's --dry-run option:
-
-                fizzbuzz --heap 2g --debugger 8000 --dry-run
-
-            For more details, check out the jaunch.toml file. Happy Jaunching!
-        """.trimIndent())
+        // The program was run without arguments, likely manually.
+        // So we display a friendly greeting with tips, then quit.
+        printlnErr(USAGE_MESSAGE)
         exit(1)
     }
 
