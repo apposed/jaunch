@@ -19,10 +19,24 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
 {
     var java: JavaInstallation? = null
 
-    override fun configure(configDir: File, config: JaunchConfig, hints: MutableSet<String>, vars: MutableMap<String, String>) {
+    override val supportedDirectives: DirectivesMap = mutableMapOf(
+        "dry-run" to { printlnErr(dryRun()) },
+        "print-class-path" to { printlnErr(classpath() ?: "<none>") },
+        "print-java-home" to { printlnErr(javaHome()) },
+        "print-java-info" to { printlnErr(javaInfo()) },
+    )
+
+    override fun configure(
+        configDir: File,
+        config: JaunchConfig,
+        hints: MutableSet<String>,
+        vars: MutableMap<String, String>
+    ) {
         // Calculate all the places to search for Java.
-        val jvmRootPaths =
-            calculate(config.jvmRootPaths, hints, vars).flatMap { glob(it) }.filter { File(it).isDirectory }.toSet()
+        val jvmRootPaths = calculate(config.jvmRootPaths, hints, vars)
+                .flatMap { glob(it) }
+                .filter { File(it).isDirectory }
+                .toSet()
 
         debug()
         debug("Root paths to search for Java:")
@@ -125,7 +139,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         this.java = java
     }
 
-    override fun nativeConfig(): String {
+    override fun launch(): String {
         val libjvmPath = java?.libjvmPath ?: error("No matching Java installations found.")
         val mainClass = mainProgram ?: error("No Java main program specified.")
         return buildString {
@@ -139,15 +153,15 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         }
     }
 
-    override fun home(): String {
-        return java?.rootPath ?: error("No matching Java installations found.")
+    // -- Directive handlers --
+
+    fun classpath(divider: String = "\n- "): String? {
+        val prefix = "-Djava.class.path="
+        val classpathArg = runtimeArgs.firstOrNull { it.startsWith(prefix) } ?: return null
+        return classpathArg.substring(prefix.length).replace(COLON, divider)
     }
 
-    override fun info(): String {
-        return java.toString()
-    }
-
-    override fun dryRun(): String {
+    fun dryRun(): String {
         return buildString {
             append(java?.binJava ?: "java")
             runtimeArgs.forEach { append(" $it") }
@@ -156,10 +170,12 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         }
     }
 
-    fun classpath(): String {
-        val prefix = "-Djava.class.path="
-        val classpathArg = runtimeArgs.firstOrNull { it.startsWith(prefix) } ?: return "<none>"
-        return classpathArg.substring(prefix.length).replace(COLON, "\n- ")
+    fun javaHome(): String {
+        return java?.rootPath ?: error("No matching Java installations found.")
+    }
+
+    fun javaInfo(): String {
+        return java.toString()
     }
 }
 

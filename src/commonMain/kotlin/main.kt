@@ -2,6 +2,8 @@
 
 import platform.posix.exit
 
+// Main entry point for Jaunch configurator.
+
 const val USAGE_MESSAGE = """
 Hello! You have found the Jaunch configurator.
 Your curiosity is an asset. :-)
@@ -53,6 +55,60 @@ fun main(args: Array<String>) {
         exit(1)
     }
 
+    val (exeFile, inputArgs) = parseArguments(args)
+    val appDir = discernAppDirectory(exeFile)
+    val configDir = findConfigDirectory(appDir)
+    val config = readConfigFiles(configDir, exeFile)
+
+    val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
+    debug("programName -> ", programName)
+
+    val supportedOptions: JaunchOptions = parseSupportedOptions(config.supportedOptions.asIterable())
+
+    val hints = createHints()
+    val vars = createVars(appDir, configDir, exeFile)
+
+    // Sort out the arguments, keeping the user-specified runtime and main arguments in a struct. At this point,
+    // it may yet be ambiguous whether certain user args belong with the runtime, the main program, or neither.
+    val userArgs = classifyArguments(inputArgs, supportedOptions, vars, hints)
+
+    applyModeHints(config.modes, hints, vars)
+
+    val runtimes = configureRuntimes(config, configDir, hints, vars)
+    val (launchDirectives, configDirectives) = calculateDirectives(config, hints, vars)
+    val activatedRuntimes = runtimes.filter { it.directive in launchDirectives }
+
+    // Ensure that the user arguments meet our expectations.
+    validateUserArgs(config, runtimes, userArgs)
+
+    // Calculate program arguments *in context* -- i.e. with respect to each runtime.
+    // This is a map from each runtime prefix to its contextualized arguments (bundle of runtime and main args).
+    val argsInContext = runtimes.associate { it.prefix to contextualizeArgs(runtimes, it, userArgs) }
+    vars += argsInContext.entries.associate { (k, v) -> k to v.toString() }
+
+    // Now evaluate any expressions in the contextualized arguments.
+    // We do this in a subsequent step separated from the previous one because the expressions
+    // in question might themselves refer to the contextualized arguments of other runtimes.
+    // Why? So that we can e.g. pass the final JVM arguments to a PYTHON launch, where the
+    // Python script being invoked will itself start up a JVM with those given JVM arguments.
+    // In the case of cyclic variable references between runtimes, the interpolation will be incomplete.
+    interpolateArgs(argsInContext, vars)
+
+    // Declare the global (runtime-agnostic) directives.
+    val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
+        "help" to { _ -> help(exeFile, programName, supportedOptions) }
+    )
+
+    // Finally, execute all the directives! \^_^/
+    executeDirectives(globalDirectiveFunctions,
+        configDirectives, launchDirectives,
+        runtimes, activatedRuntimes,
+        userArgs, argsInContext)
+}
+
+// -- Program flow functions --
+
+private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
     // If a sole `-` argument was given on the CLI, read the arguments from stdin.
     val theArgs = if (args.size == 1 && args[0] == "-") stdinLines() else args
 
@@ -68,8 +124,11 @@ fun main(args: Array<String>) {
     debug("executable -> ", executable ?: "<null>")
     debug("inputArgs -> ", inputArgs)
 
-    // Discern the application base directory.
     val exeFile = executable?.let(::File) // The native launcher program.
+    return Pair(exeFile, inputArgs)
+}
+
+private fun discernAppDirectory(exeFile: File?): File {
     // Check for native launcher in Contents/MacOS directory.
     // If so, treat the app directory as two directories higher up.
     // We do it this way, rather than OS_NAME == "MACOSX", so that the native
@@ -77,8 +136,10 @@ fun main(args: Array<String>) {
     val exeDir = exeFile?.dir ?: File(".")
     val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir else exeDir
     debug("appDir -> ", appDir)
+    return appDir
+}
 
-    // Find the configuration directory.
+private fun findConfigDirectory(appDir: File): File {
     // NB: This list should match the JAUNCH_SEARCH_PATHS array in jaunch.c.
     val configDirs = listOf(
         appDir / "jaunch",
@@ -86,10 +147,13 @@ fun main(args: Array<String>) {
         appDir / "config" / "jaunch",
         appDir / ".config" / "jaunch"
     )
-    val configDir = configDirs.find { it.isDirectory } ?:
-        error("Jaunch config directory not found. Please place config in one of: $configDirs")
+    val configDir = configDirs.find { it.isDirectory }
+        ?: error("Jaunch config directory not found. Please place config in one of: $configDirs")
     debug("configDir -> ", configDir)
+    return configDir
+}
 
+private fun readConfigFiles(configDir: File, exeFile: File?): JaunchConfig {
     // Make a list of relevant configuration files to read.
     val osName = OS_NAME.lowercase()
     val cpuArch = CPU_ARCH.lowercase()
@@ -112,20 +176,25 @@ fun main(args: Array<String>) {
     }
     // Read and merge all the config files.
     for (configFile in configFiles) config += readConfig(configFile)
+    return config
+}
 
-    val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
-    debug("programName -> ", programName)
-
-    // Parse the configuration's declared Jaunch options.
-    //
-    // For each option, we have a string of the form:
-    //   --alpha,...,--omega=assignment|Description of what this option does.
-    //
-    // We need to parse out the help text, the actual flags list, and whether the flags expect an assignment value.
+/**
+ * Parse the configuration's declared Jaunch options, wrapping each into a `JaunchOption` object.
+ *
+ * For each option, we have a string of the form:
+ *   --alpha,...,--omega=assignment|Description of what this option does.
+ *
+ * We need to parse out the help text, the actual flags list, and whether the flags expect an assignment value.
+ *
+ * @param supportedOptions A `supportedOptions` list from a `JaunchConfig`.
+ * @return a map of supported options, from each of the option's flags to the corresponding JaunchOption object.
+ */
+private fun parseSupportedOptions(supportedOptions: Iterable<String>): JaunchOptions {
     debug()
     debug("Parsing supported options...")
-    val supportedOptions: JaunchOptions = buildMap {
-        for (optionLine in config.supportedOptions) {
+    return buildMap {
+        for (optionLine in supportedOptions) {
             val (optionString, help) = optionLine bisect '|'
             val (flagsString, assignment) = optionString bisect '='
             val flags = flagsString.split(',')
@@ -134,10 +203,14 @@ fun main(args: Array<String>) {
             for (flag in flags) this[flag] = option
         }
     }
+}
 
-    // Declare a set of active hints, for activation of configuration elements.
-    // Initially populated with hints for the current operating system and CPU architecture,
-    // but it will grow over the course of the configuration process below.
+/**
+ * Declare a set of active hints, for activation of configuration elements.
+ * Initially populated with hints for the current operating system and CPU architecture,
+ * but it will grow over the course of the configuration process below.
+ */
+private fun createHints(): MutableSet<String> {
     val hints = mutableSetOf(
         // Kotlin knows these operating systems:
         //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
@@ -146,9 +219,18 @@ fun main(args: Array<String>) {
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
         "ARCH:$CPU_ARCH"
     )
+    return hints
+}
 
-    // Declare a set to store option parameter values.
-    // It will be populated at argument parsing time.
+/**
+ * Declare a set to store option parameter values.
+ * It will be populated at argument parsing time.
+ */
+private fun createVars(
+    appDir: File,
+    configDir: File,
+    exeFile: File?
+): MutableMap<String, String> {
     val vars = mutableMapOf(
         // Special variable containing application directory path.
         "app-dir" to appDir.path,
@@ -156,30 +238,37 @@ fun main(args: Array<String>) {
         "config-dir" to configDir.path,
     )
     if (exeFile?.exists == true) vars["executable"] = exeFile.path
+    return vars
+}
 
-    // Define the list of supported runtimes.
-    val runtimes = listOf(
-        JvmRuntimeConfig(config.jvmRecognizedArgs),
-    )
-
-    // Parse the configurator's input arguments.
-    //
-    // An input argument matching one of Jaunch's supported options becomes an active hint.
-    // So e.g. `--foo` would be added to the hints set as `--foo`.
-    //
-    // A matching input argument that takes a parameter not only adds the option as a hint,
-    // but also adds the parameter value to the vars map.
-    // So e.g. `--sigmas=5` would add the `--sigma` hint, and add `"5"` as the value for the `sigma` variable.
-    // Variable values will be interpolated into argument strings later in the configuration process.
-    //
-    // Non-matching input arguments will be passed through directly, either to the runtime or to the main program.
-    // The exact behavior will depend on whether the `--` separator was provided in the input argument list.
+/**
+ * Categorize the configurator's input arguments.
+ *
+ * An input argument matching one of Jaunch's supported options becomes an active hint.
+ * So e.g. `--foo` would be added to the hints set as `--foo`.
+ *
+ * A matching input argument that takes a parameter not only adds the option as a hint,
+ * but also adds the parameter value to the vars map.
+ * So e.g. `--sigmas=5` would add the `--sigma` hint, and add `"5"` as the value for the `sigma` variable.
+ * Variable values will be interpolated into argument strings later in the configuration process.
+ *
+ * Non-matching input arguments will be returned as a [ProgramArgs] struct, with each argument
+ * sorted into one of three buckets: runtime args, main args, and ambiguous args. The exact
+ * behavior will depend on whether the user provided the `--` separator in the input argument list.
+ */
+private fun classifyArguments(
+    inputArgs: List<String>,
+    supportedOptions: JaunchOptions,
+    vars: MutableMap<String, String>,
+    hints: MutableSet<String>
+): ProgramArgs {
+    val userArgs = ProgramArgs()
     val divider = inputArgs.indexOf("--")
     var i = 0
     while (i < inputArgs.size) {
         val arg = inputArgs[i++]
 
-        // Check for the --option=value kind of argument.
+        // Handle both --key and --key=value kinds of arguments.
         val equals = arg.indexOf("=")
         val argKey = if (equals >= 0) arg.substring(0, equals) else arg
         val argVal = if (equals >= 0) arg.substring(equals + 1) else null
@@ -187,15 +276,13 @@ fun main(args: Array<String>) {
         if (argKey == "--") {
             if (argVal != null) error("Divider symbol (--) does not accept a parameter")
             if (i - 1 != divider) error("Divider symbol (--) may only be given once")
-        }
-        else if ((divider < 0 || i <= divider) && argKey in supportedOptions) {
+        } else if ((divider < 0 || i <= divider) && argKey in supportedOptions) {
             // The argument is declared in Jaunch's configuration. Deal with it appropriately.
             val option: JaunchOption = supportedOptions[argKey]!!
             if (option.assignment == null) {
                 // standalone option
                 if (argVal != null) error("Option $argKey does not accept a parameter")
-            }
-            else {
+            } else {
                 // option with value assignment
                 val v = argVal ?: if (i < inputArgs.size) inputArgs[i++] else
                     error("No parameter value given for argument $argKey")
@@ -211,96 +298,189 @@ fun main(args: Array<String>) {
                 vars[varName] = v
             }
             hints += argKey
-        }
-        else {
-            // The argument is not a Jaunch one. Pass it through directly.
+        } else {
+            // The argument is not a Jaunch one. Save it for later.
             if (divider < 0) {
-                // No dash-dash divider was given, so we need to guess: is this a runtime arg, or a main arg?
-                for (r in runtimes) {
-                    (if (config.recognizes(argKey, r.recognizedArgs)) r.runtimeArgs else r.mainArgs) += arg
-                }
-            }
-            else if (i <= divider) {
+                // No dash-dash divider was given, so we will need to guess later: runtime arg or main arg?
+                userArgs.ambiguous += arg
+            } else if (i <= divider) {
                 // This argument is before the dash-dash divider, so must be treated as a runtime arg.
-                for (r in runtimes) r.runtimeArgs += arg
-            }
-            else {
+                userArgs.runtime += arg
+            } else {
                 // This argument is after the dash-dash divider, so we treat it as a main arg.
-                for (r in runtimes) r.mainArgs += arg
+                userArgs.main += arg
             }
         }
     }
 
     debug()
-    debug("Input arguments parsed:")
+    debug("Input arguments processed:")
     debug("* hints -> ", hints)
     debug("* vars -> ", vars)
-    for (r in runtimes) {
-        debug("* ${r.prefix}.runtimeArgs -> ", r.runtimeArgs)
-        debug("* ${r.prefix}.mainArgs -> ", r.mainArgs)
-    }
+    debug("* userArgs.runtime -> ", userArgs.runtime)
+    debug("* userArgs.main -> ", userArgs.main)
+    debug("* userArgs.ambiguous -> ", userArgs.ambiguous)
 
-    // Apply mode hints.
-    for (mode in calculate(config.modes, hints, vars)) {
+    return userArgs
+}
+
+private fun applyModeHints(
+    modes: Array<String>,
+    hints: MutableSet<String>,
+    vars: MutableMap<String, String>
+) {
+    for (mode in calculate(modes, hints, vars)) {
         if (mode.startsWith("!")) {
             // Negated mode expression: remove the mode hint.
             hints -= mode.substring(1)
-        }
-        else hints += mode
+        } else hints += mode
     }
     debug()
     debug("Modes applied:")
     debug("* hints -> ", hints)
+}
 
-    // Discover and configure runtime installations.
+private fun configureRuntimes(
+    config: JaunchConfig,
+    configDir: File,
+    hints: MutableSet<String>,
+    vars: MutableMap<String, String>
+): List<JvmRuntimeConfig> {
+    debug()
+    debug("Configuring runtimes...")
+
+    // Define the list of supported runtimes.
+    val runtimes = listOf(
+        JvmRuntimeConfig(config.jvmRecognizedArgs),
+    )
+
+    // Discover the runtime installations.
     for (r in runtimes) r.configure(configDir, config, hints, vars)
 
-    // Discern directives to perform.
-    val directives = calculate(config.directives, hints, vars).toSet()
-    val launchDirectives = listOf(if (directives.isEmpty()) "JVM" else "STOP")
+    return runtimes
+}
+
+/** Discern directives to perform. */
+private fun calculateDirectives(
+    config: JaunchConfig,
+    hints: MutableSet<String>,
+    vars: MutableMap<String, String>
+): Pair<List<String>, List<String>> {
+    val directives = calculate(config.directives, hints, vars).flatMap { it.split(",") }.toSet()
+    val (launchDirectives, configDirectives) = directives.partition { it == it.uppercase() }
 
     debug()
     debug("Directives parsed:")
     debug("* directives -> ", directives)
     debug("* launchDirectives -> ", launchDirectives)
+    debug("* configDirectives -> ", configDirectives)
 
-    val runtime: JvmRuntimeConfig = runtimes[0] // TODO: Actually decide based on directives.
+    return Pair(launchDirectives, configDirectives)
+}
 
-    // Execute configurator-side directives.
-    for (directive in directives) {
-        when (directive) {
-            "help" -> help(executable, programName, supportedOptions)
-            "print-runtime-home" -> printlnErr(runtime.home())
-            "print-runtime-info" -> printlnErr(runtime.info())
-            "print-class-path" -> printlnErr(runtime.classpath())
-            "dry-run" -> printlnErr(runtime.dryRun())
-            else -> error("Invalid directive: $directive")
-        }
-    }
-
-    if (launchDirectives[0] == "STOP") {
-        println("STOP")
-        println(0)
-        return
-    }
-
-    val chosenRecognizedArgs = runtime.recognizedArgs
-    val chosenRuntimeArgs = runtime.runtimeArgs
-
-    // Validate runtime args.
-    if (config.allowUnrecognizedArgs != true) {
-        // Check that the computed runtime args are all valid.
-        for (arg in chosenRuntimeArgs) {
-            if (!config.recognizes(arg, chosenRecognizedArgs)) {
-                error("Unrecognized ${runtime.prefix} argument: $arg")
-            }
-        }
-    }
-
-    // Emit final configuration.
+/** Ensure user arguments meet expectations. */
+fun validateUserArgs(
+    config: JaunchConfig,
+    runtimes: List<RuntimeConfig>,
+    userArgs: ProgramArgs
+) {
     debug()
-    debug("Emitting final configuration to stdout...")
-    println(runtime.nativeConfig())
+    debug("Validating user arguments...")
+
+    // Verify that some runtime recognizes each argument given as a runtime arg,
+    // unless allow-unrecognized-args is set to true.
+    val strict = config.allowUnrecognizedArgs != true
+    for (arg in userArgs.runtime) {
+        if (strict && unknownArg(runtimes, arg)) error("Unrecognized runtime argument: $arg")
+    }
+}
+
+fun contextualizeArgs(
+    runtimes: List<RuntimeConfig>,
+    runtime: RuntimeConfig,
+    userArgs: ProgramArgs
+): ProgramArgs {
+    val resolved = ProgramArgs()
+
+    // Add the already-resolved arguments for this specific runtime.
+    resolved.runtime += runtime.runtimeArgs
+    resolved.main += runtime.mainArgs
+
+    // Add user-specified arguments intended as runtime args.
+    for (arg in userArgs.runtime) {
+        // There are three scenarios here:
+        // 1) This runtime recognizes the argument, so we add it to this runtime's list of runtime args.
+        // 2) This runtime does not recognize it, but some other runtime(s) do, in which case we skip it.
+        // 3) No runtime recognizes the argument, so we add it to this (and all) runtime's list of runtime args.
+        //
+        // Note that if we are at this point in the code and scenario (3) happens, it must be because the
+        // allow-unrecognized-args flag was set to true (otherwise the validateUserArgs check would have failed),
+        // so it makes sense to throw up our hands and pass this weird argument to all enabled runtimes.
+        if (arg in runtime.recognizedArgs || unknownArg(runtimes, arg)) resolved.runtime += arg
+    }
+
+    // Add user-specified arguments intended as main args. Nothing tricky here.
+    resolved.main += userArgs.main
+
+    // Finally: we need to sort through the ambiguous user arguments.
+    // If the user used the minus-minus (--) separator, this list will be empty.
+    for (arg in userArgs.ambiguous) {
+        if (arg in runtime.recognizedArgs) resolved.runtime += arg
+        else if (unknownArg(runtimes, arg)) resolved.main += arg
+        // else some other runtime will snarf up this arg, so this one should ignore it.
+    }
+
+    return resolved
+}
+
+private fun unknownArg(
+    runtimes: List<RuntimeConfig>,
+    arg: String
+): Boolean {
+    return runtimes.firstOrNull { arg in it.recognizedArgs } == null
+}
+
+private fun interpolateArgs(argsInContext: Map<String, ProgramArgs>, vars: Map<String, String>) {
+    // TODO: something ;-)
+}
+
+private fun executeDirectives(
+    globalDirectiveFunctions: DirectivesMap,
+    configDirectives: List<String>,
+    launchDirectives: List<String>,
+    runtimes: List<RuntimeConfig>,
+    activatedRuntimes: List<RuntimeConfig>,
+    userArgs: ProgramArgs,
+    argsInContext: Map<String, ProgramArgs>
+) {
+    // Execute the configurator-side directives.
+    debug()
+    debug("Executing configurator-side directives...")
+    for (directive in configDirectives) {
+        // Execute the directive globally if possible.
+        val doDirective = globalDirectiveFunctions[directive]
+        if (doDirective != null) {
+            doDirective(userArgs)
+            continue
+        }
+
+        // Not a global directive -- delegate execution to activated runtimes.
+        var success = false
+        for (runtime in activatedRuntimes) {
+            val myArgs = argsInContext[runtime.prefix]
+                ?: error("No contextual args for {runtime.prefix} runtime?!")
+            success = success || runtime.tryDirective(directive, myArgs)
+        }
+        if (!success) error("Invalid directive: $directive")
+    }
+
+    // Emit launch-side directives.
+    debug()
+    debug("Emitting launch directives to stdout...")
+    for (directive in launchDirectives) {
+        val runtime = runtimes.firstOrNull { it.directive == directive }
+        println(runtime?.launch() ?: directive)
+    }
 }
 
 // -- Helper functions --
@@ -310,10 +490,10 @@ private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
     return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
 }
 
-// -- Directives --
+// -- Directive handlers --
 
-private fun help(executable: String?, programName: String, supportedOptions: JaunchOptions) {
-    val exeName = executable ?: "jaunch"
+private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOptions) {
+    val exeName = exeFile?.path ?: "jaunch"
     printlnErr("Usage: $exeName [<Runtime options>.. --] [<main arguments>..]")
     printlnErr()
     printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / $JAUNCH_BUILD / $BUILD_TARGET)")

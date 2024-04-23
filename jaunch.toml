@@ -186,12 +186,15 @@ modes = []
 # But if you simply want to disable e.g. Jaunch's built-in help, you can safely
 # remove the `--help` and `-h` lines below to do so.
 directives = [
-  '--help|help,CANCEL',
-  '-h|help,CANCEL',
-  '--dry-run|dry-run,CANCEL',
-  '--print-runtime-home|print-runtime-home',
-  '--print-runtime-info|print-runtime-info',
-  '--print-app-dir|print-app-dir',
+  '--help|help,STOP',                      # global
+  '-h|help,STOP',                          # global
+  '--print-app-dir|print-app-dir',         # global
+  '--print-config-dir|print-config-dir',   # global
+  '--dry-run|dry-run,STOP',                # jvm
+  '--print-classpath|print-classpath',     # jvm
+  '--print-java-home|print-java-home',     # jvm
+  '--print-java-info|print-java-info',     # jvm
+  'JVM',
 ]
 
 # ==============================================================================
