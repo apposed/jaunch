@@ -1,3 +1,5 @@
+// Main entry point for Jaunch configurator.
+
 import platform.posix.exit
 
 const val USAGE_MESSAGE = """
