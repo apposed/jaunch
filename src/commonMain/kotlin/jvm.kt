@@ -175,7 +175,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     fun javaInfo(): String {
-        return java.toString()
+        return java?.toString() ?: error("No matching Java installations found.")
     }
 }
 
