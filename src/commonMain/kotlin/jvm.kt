@@ -127,7 +127,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         debug()
         debug("Calculating main class name...")
         val mainClassNames = calculate(config.jvmMainClass, hints, vars)
-        mainProgram = if (mainClassNames.isEmpty()) null else mainClassNames.first()
+        mainProgram = mainClassNames.firstOrNull()
         debug("mainProgram -> ", mainProgram ?: "<null>")
         if (mainProgram == null)
             error("No matching main class name")
