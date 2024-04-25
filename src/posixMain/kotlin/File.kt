@@ -5,7 +5,7 @@ import platform.posix.*
 actual class File actual constructor(private val rawPath: String) {
 
     actual val path: String = canonicalize(rawPath)
-    actual val exists: Boolean get() = access(path, F_OK) == 0 // TODO: IJL uses R_OK... what's the diff?
+    actual val exists: Boolean get() = access(path, F_OK) == 0
     //actual val canRead: Boolean get() = access(path, R_OK) == 0
     //actual val canWrite: Boolean get() = access(path, W_OK) == 0
     //actual val canExecute: Boolean get() = access(path, X_OK) == 0
