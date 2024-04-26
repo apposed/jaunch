@@ -1,0 +1,236 @@
+# Shared Jaunch configuration for Python-based programs.
+#
+# See the common.toml file for more details about Jaunch configuration.
+
+includes = ['common.toml']
+
+# ==============================================================================
+# Python-specific Jaunch options.
+
+supported-options = [
+    '--python-home=<path>|specify PYTHON_HOME explicitly',
+    '--print-python-home|print path to the selected Python',
+    '--print-python-info|print information about the selected Python',
+]
+
+# ==============================================================================
+# Python-specific modes:
+#
+# * LAUNCH:PYTHON - when set, PYTHON will be included in the directives.
+
+modes = [
+    'LAUNCH:PYTHON',
+    '--print-python-home|!LAUNCH:PYTHON',
+    '--print-python-info|!LAUNCH:PYTHON',
+]
+
+# ==============================================================================
+# Python-specific directives:
+#
+# * PYTHON             - Launches the main program using the Python interpreter.
+# * print-python-home  - Print out the path to the chosen Python installation.
+# * print-python-info  - Print out all the details of the chosen Python installation,
+#                        including not only its path, but also the distro, version,
+#                        operating system, CPU architecture, and other metadata fields.
+
+directives = [
+    'LAUNCH:PYTHON|PYTHON',
+    '--print-python-home|print-python-home',
+    '--print-python-info|print-python-info',
+]
+
+# ==============================================================================
+# python.recognized-args
+# ==============================================================================
+# TODO
+
+python.recognized-args = [
+    '-b', '-bb',
+    '-B',
+    '-c cmd',
+    '-d',
+    '-E',
+    '-h', '-?', # --help is reserved for Jaunch
+    '-i',
+    '-I',
+    '-m mod',
+    '-O',
+    '-OO',
+    '-q',
+    '-s',
+    '-S',
+    '-u',
+    '-v',
+    '-V', # --version is reserved for Jaunch
+    '-W arg',
+    '-x',
+    '-X opt',
+    '--check-hash-based-pycs always|default|never',
+]
+
+# ==============================================================================
+# python.root-paths
+# ==============================================================================
+# Paths to check for Python installations.
+#
+# This is a list of directories where Jaunch might hope to find a Python installation.
+# Directories are checked sequentially until one is found that matches all criteria.
+#
+# This is also the first field where we see Jaunch's hints/rules system in action.
+# Each entry on the root-dirs list may be prefixed with string separated by pipes.
+# Each segment is a *hint* for Jaunch regarding a flag that must be set for that
+# particular line to be considered. Jaunch sets hint flags based on a few sources:
+#
+# * Active operating system: OS:LINUX, OS:MACOSX, OS:WINDOWS,
+#   OS:IOS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS, or OS:UNKNOWN.
+#
+# * Active CPU architecture: ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64,
+#   ARCH:MIPS32, ARCH:MIPSEL32, ARCH:WASM32, or ARCH:UNKNOWN.
+
+# * Option hints, set from arguments passed to Jaunch, each of which sets a matching
+#   hint. For example, passing the --headless option will set a hint '--headless'.
+#
+# * Mode hints, set from evaluation of the modes field (see common.toml).
+#
+# * Python hints, based on the Python installation selected:
+#   - PYTHON:3.9 if the selected Python installation is version 3.9.
+#   - PYTHON:3.9+ if the selected Python installation is version 3.9 or later.
+#   - PYTHON:3.10 if the selected Python installation is version 3.10.
+#   - PYTHON:3.10+ if the selected Python installation is version 3.10 or later.
+#   - and so on.
+#   Of course, Python hints will only be set after a Python installation matches,
+#   so they won't work here in python.root-paths, nor in python.lib-suffixes.
+#   But they can be useful in the python.runtime-args section to ensure Jaunch
+#   passes runtime args only to those versions of Python that support them,
+#   such as the -P flag which was introduced in Python 3.11.
+#
+# Finally, a segment prefixed by a bang symbol (!) negates the hint,
+# making that line match only when that particular hint is *not* set.
+#
+# For example, consider the following python.root-paths line:
+#
+#     '!--system|OS:LINUX|ARCH:X64|${app-dir}/python/linux64/*',
+#
+# The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path of
+# ${app-dir}/python/linux64/* will only be considered on 64-bit Linux systems, and
+# only when the --system option was *not* given as part of the launcher invocation.
+#
+# This is also the first field where we see Jaunch's variables in use:
+#
+#     '--python-home|${python-home}'
+#
+# Thanks to the above line, when the user passes '--python-home=/best', the
+# --python-home hint will be set, and the python-home variable will be set to /best.
+# So not only will the line match, but the root path to check will become /best.
+
+python.root-paths = [
+    '--python-home|${python-home}',                                    # user override (CLI arg)
+    '${PYTHON_HOME}',                                                  # user override (env var)
+    '!--system|${app-dir}/lib/runtime',                                # bundled
+    '!--system|${app-dir}/python',                                     # bundled
+    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/python/linux-arm64/*',   # bundled (Linux aarch64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/python/linux64/*',         # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X86|${app-dir}/python/linux32/*',         # bundled (Linux x86-32)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/python/macosx-arm64/*/Contents/Home', # bundled (macOS aarch64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/python/macosx-arm64/*', # bundled (macOS aarch64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*/Contents/Home', # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*',         # bundled (macOS x86-64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\python\win64\*',         # bundled (Windows x86-64)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\python\win32\*',         # bundled (Windows x86-32)
+    '${CONDA_PREFIX}/envs/*',                                          # Conda
+]
+
+# ==============================================================================
+# Developer aside: Right now, Jaunch does not utilize any programmatic ways
+# to discover Python root directories. But it could! For example, it could
+# invoke `mamba env list` to get a list of installed Conda/Mamba environments.
+#
+# We could invent schema elements for toggling use of such detection approaches.
+# But for now: YAGNI! File an issue or a pull request if you do need it.
+
+# ==============================================================================
+# python.lib-suffixes
+# ==============================================================================
+# List of places within a Python installation to look for the Python library.
+#
+# For example, if the root directory currently being considered is
+# /the-best-python, and the current lib-suffixes line is lib/libpython3.so,
+# then Jaunch will check the path /the-best-python/lib/libpython3.so for the
+# library. If found, we have a winning Python installation!
+
+# TODO: Verify this list for all platforms.
+python.lib-suffixes = [
+    'OS:LINUX|lib/libpython3.so',
+    'OS:MACOSX|lib/libpython3.dylib',
+    'OS:WINDOWS|lib\libpython3.dll',
+]
+
+# ==============================================================================
+# python.version-min, python.version-max
+# ==============================================================================
+# Acceptable range of Python versions to match.
+#
+# These two fields let you constrain the minimum and maximum Python versions
+# respectively that your application supports. This information will be used when
+# searching the system for appropriate Python installations. If a Python installation
+# is successfully discovered, but then found to be outside these constraints, it is
+# discarded and the search continues.
+#
+# The most common use of these fields is to specify a major.minor version pair
+# (e.g. `python.version-min = '3.9'`), but Jaunch does compare version strings digit by
+# digit, so you could write `python.version-min = '3.8.5' if you need to be specific.
+
+python.version-min = '3.8'
+#python.version-max = '3.12'
+
+# ==============================================================================
+# python.packages
+# ==============================================================================
+# Packages that must be present in the Python installation.
+#
+# TODO The syntax is similar to requirements.txt.
+
+python.packages = []
+
+# ==============================================================================
+# python.runtime-args
+# ==============================================================================
+# Arguments to pass to Python.
+#
+# This is the magic sauce where Jaunch options and other criteria get translated
+# into Python arguments. See 'python.root-paths' above for a thorough explanation.
+
+python.runtime-args = []
+
+# ==============================================================================
+# python.main-script
+# ==============================================================================
+# A list of paths to candidate main scripts, one of which will get launched.
+#
+# Jaunch evaluates the rules attached to each candidate main script. The first
+# line with matching rules becomes the main script, with subsequent lines ignored.
+#
+# This field is useful if you want to launch a different main script depending on
+# criteria such as OS, CPU architecture, or which options are given on the CLI.
+
+#python.main-script = [
+#    '--fizzbuzz|fizzbuzz.py'
+#    '--main-script|${main-script}',
+#    'main.py', # default behavior
+#]
+
+# ==============================================================================
+# python.main-args
+# ==============================================================================
+# Arguments to pass to the main script on the Python side.
+#
+# This is the other half of the magic sauce, along with python.runtime-args above:
+# Options and other criteria get translated into main arguments here.
+# See the 'python.root-paths' section above for a thorough explanation.
+
+#python.main-args = [
+#    '!--fizz|!--buzz|--mode=number',
+#    '--fizz|!--buzz|--mode=fizz',
+#    '--buzz|!--fizz|--mode=buzz',
+#    '--fizz|--buzz|--mode=fizzbuzz',
+#]

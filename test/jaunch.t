@@ -25,7 +25,7 @@ Now test stuff.
   
       fizzbuzz --heap 2g --debugger 8000 --dry-run
   
-  For more details, check out the jaunch.toml file. Happy Jaunching!
+  For more details, check out the nearby TOML files. Happy Jaunching!
   [1]
 
   $ jaunch/jaunch-linux-x64 parsy a b c

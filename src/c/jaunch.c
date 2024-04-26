@@ -37,9 +37,9 @@
  *
  *     java -DverboseLevel=2 -Xmx128m com.fizzbuzz.FizzBuzz Hello 100..200
  *
- * depending on the way Jaunch is configured via its jaunch.toml file.
+ * depending on the way Jaunch is configured via its TOML config files.
  *
- * See the jaunch.toml file for a walkthrough of how the configurator
+ * See the common.toml file for a walkthrough of how the configurator
  * can be flexibly configured to decide how arguments are transformed.
  */
 

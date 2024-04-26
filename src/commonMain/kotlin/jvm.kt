@@ -119,8 +119,10 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         val mxIndex = runtimeArgs.indexOfFirst { it.startsWith("-Xmx") }
         if (mxIndex < 0) {
             val maxHeap = calculateMaxHeap(config.jvmMaxHeap)
-            runtimeArgs += "-Xmx${maxHeap}"
-            debug("Added maxHeap arg: ${runtimeArgs.last()}")
+            if (maxHeap != null) {
+                runtimeArgs += "-Xmx$maxHeap"
+                debug("Added maxHeap arg: ${runtimeArgs.last()}")
+            }
         }
 
         // Calculate main class.

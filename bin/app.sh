@@ -4,17 +4,60 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[app]\033[0m"
 
-# Copy Jaunch binaries and configuration from dist folder.
-(set -x; cp -rp dist/* app) &&
-find app -name 'launcher*' | while read l
-do (
-  srcDir=${l%/launcher*}
-  suffix=${l#*/launcher}
-  set -x
-  cp "$l" "$srcDir/paunch$suffix"
-  cp "$l" "$srcDir/jy$suffix"
-  mv "$l" "$srcDir/parsy$suffix"
-) done
+if [ ! -d app/jaunch ]; then (set -x; mkdir -p app/jaunch); fi
+
+# Copy launcher binaries within the dist folder, duplicating to all demo apps.
+#
+# We use the dist folder rather than build because those binaries may have
+# been packed by upx, whereas those in build are the raw compiled outputs.
+#
+# And we use this awkward find construction to capture launcher binaries in
+# both the base dist folder as well as nested under dist/Contents/MacOS.
+echo "Copying launcher binaries..."
+find dist -name 'launcher-*' | while read f
+do
+  srcDir=${f%/launcher*}
+  targetDir="${srcDir#dist}"
+  if [ "$targetDir" ]; then targetDir="app/$targetDir"; else targetDir=app; fi
+  if [ ! -d "$targetDir" ]; then (set -x; mkdir -p "$targetDir"); fi
+  suffix=${f#*/launcher}
+  (
+    set -x
+    cp "$f" "$targetDir/paunch$suffix"
+    cp "$f" "$targetDir/jy$suffix"
+    cp "$f" "$targetDir/parsy$suffix"
+    cp "$f" "$targetDir/repl$suffix"
+  )
+done
+
+# Copy jaunch configurator binaries.
+echo "Copying jaunch configurator binaries..."
+find dist -name 'jaunch-*' | while read f
+do
+  srcDir=${f%/jaunch-*}
+  targetDir="${srcDir#dist/}"
+  if [ "$targetDir" ]; then targetDir="app/$targetDir"; else targetDir=app; fi
+  if [ ! -d "$targetDir" ]; then (set -x; mkdir -p "$targetDir"); fi
+  (set -x; cp "$f" "$targetDir/")
+done
+
+# Copy Props.class helper program and TOML configuration files.
+echo "Copying configuration files and helpers..."
+for f in \
+  Props.class \
+  common.toml \
+  jvm.toml \
+  python.toml \
+  jy.toml \
+  parsy.toml \
+  paunch.toml \
+  repl.toml
+do
+  if [ ! -f "app/jaunch/$f" ]
+  then
+    (set -x; cp "configs/$f" app/jaunch/)
+  fi
+done
 
 # Install needed JAR files.
 copyDependency() {
@@ -24,8 +67,9 @@ copyDependency() {
   if [ ! -f app/lib/$a-$v.jar ]
   then
     mkdir -p app/lib
+    echo "Downloading $a..."
     (set -x; curl -fsL https://search.maven.org/remotecontent\?filepath\=$g/$a/$v/$a-$v.jar > app/lib/$a-$v.jar)
   fi
 }
-copyDependency org/scijava parsington 3.1.0
-copyDependency org/python jython 2.7.3
+copyDependency org/scijava parsington 3.1.0 # dependency of parsy
+copyDependency org/python jython 2.7.3      # dependency of jy

@@ -2,29 +2,23 @@
 #
 # This launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
-# There is a general layer of launcher configuration in the jaunch.toml file.
 # The contents below define Parsy's particular launcher behavior and features,
 # on top of Jaunch's "sensible default" functionality.
 #
-# See that jaunch.toml file for more details about Jaunch configuration.
+# See the common.toml file for more details about Jaunch configuration.
 
 jaunch-version = 1
 
 program-name = 'Parsy'
 
-directives = ['JVM']
+includes = ['jvm.toml']
 
 jvm.version-min = '8'
-#java-version-max = '21'
 
 jvm.classpath = [
     '${app-dir}/lib/*.jar',
 ]
 
-jvm.max-heap = '128m' # '50%'
-
-jvm.runtime-args = []
+jvm.max-heap = '64m'
 
 jvm.main-class = ['org.scijava.parsington.Main']
-
-jvm.main-args = []

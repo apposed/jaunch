@@ -7,16 +7,15 @@
 # on the main thread, so that GUIs (especially Java-based AWT/Swing GUIs) can
 # successfully operate without hanging.
 #
-# There is a general layer of launcher configuration in the jaunch.toml file.
 # The contents below define Paunch's particular launcher behavior and features,
 # on top of Paunch's "sensible default" functionality.
 #
-# See that jaunch.toml file for more details about Jaunch configuration.
+# See the common.toml file for more details about Jaunch configuration.
 
 jaunch-version = 1
 
 program-name = 'Paunch'
 
-directives = ['PYTHON']
+includes = ['python.toml']
 
 python.version-min = '3.8'

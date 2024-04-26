@@ -41,17 +41,22 @@ copyBinary build/bin/macosX64/releaseExecutable/jaunch.kexe dist/Contents/MacOS 
 copyBinary build/bin/macosUniversal/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos true
 copyBinary build/bin/windows/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-x64.exe
 
-# Copy TOML configuration files.
-if [ ! -f dist/jaunch/jaunch.toml ]
+# Copy Props.class helper program and TOML configuration files.
+mkdir -p dist/jaunch
+for f in \
+  Props.class \
+  common.toml \
+  jvm.toml \
+  python.toml
+do
+  if [ ! -f "dist/jaunch/$f" ]
+  then
+    (set -x; cp "configs/$f" dist/jaunch/)
+  fi
+done
+if [ ! -f dist/jaunch/launcher.toml ]
 then
-  mkdir -p dist/jaunch
-  (set -x; cp jaunch.toml dist/jaunch/)
-fi
-
-# Copy Props.class helper program.
-if [ ! -f dist/jaunch/Props.class ]
-then
-  (set -x; cp Props.class dist/jaunch/)
+  (set -x; cp configs/repl.toml dist/jaunch/launcher.toml)
 fi
 
 # Wrap it up into a tarball.

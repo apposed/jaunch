@@ -9,25 +9,31 @@ including the **Java Virtual Machine (JVM)**, the **Python interpreter**, or bot
 
 (These instructions are temporary until Jaunch has a stable release.)
 
-1. [Build from source](BUILD.md) by running `make app`.
+1. [Build from source](BUILD.md) by running `make dist`.
 
-2. Copy the `app/jy`/`app\jy.exe` native launcher to your application distribution
-   root, renaming it to match your desired naming. For example, if your application
-   is called Fizzbuzz, you might name it `fizzbuzz`/`fizzbuzz.exe`.
+2. Copy the `dist/launcher`/`dist\launcher.exe` native launcher to your
+   application distribution root, renaming it to match your desired naming.
+   For example, if your application is called Fizzbuzz, you might name it
+   `fizzbuzz`/`fizzbuzz.exe`.
 
-3. Copy the entire `app/jaunch` folder to your application distribution root.
+3. Create a directory beneath your application root, into which your application's
+   Jaunch TOML configuration will be stored. This configuration directory can be
+   named `jaunch`, `.jaunch`, `config/jaunch`, or `.config/jaunch`, depending on
+   your requirements and taste. Or you can customize the allowed configuration
+   directory names by editing the `JAUNCH_SEARCH_PATHS` list in
+   [jaunch.c](src/c/jaunch.c) and matching `configDirs` list in
+   [main.kt](src/commonMain/kotlin/main.kt).
 
-4. Delete the unneeded `jaunch/parsy.toml` file.
+4. Copy the TOML files from the `dist/jaunch` folder to your application
+   distribution's configuration folder, as created in (3).
 
-5. Rename the `jaunch/jy.toml` to match the name of your native launcher&mdash;e.g.
-   `jaunch/fizzbuzz.toml`, and edit it to match your application's requirements.
-   See the comments in `jaunch/jaunch.toml` for detailed guidance.
+5. Rename the `launcher.toml` file to match your launcher name from (2)
+   (e.g. `fizzbuzz.toml`).
 
-If you prefer, you can rename the `jaunch` configuration folder to `.jaunch`,
-`config/jaunch`, or `.config/jaunch`, all of which Jaunch supports by default.
-Or you can customize the allowed configuration directory names by editing the
-`JAUNCH_SEARCH_PATHS` list in [jaunch.c](src/c/jaunch.c) and
-matching `configDirs` list in [Jaunch.kt](src/commonMain/kotlin/Jaunch.kt).
+6. Edit the renamed TOML file's contents to set the parameters for your
+   application. See the comments in `common.toml` for detailed guidance.
+   If you don't need the JVM, you can remove the JVM-specific parts.
+   If you don't need Python, you can remove the Python-specific parts.
 
 ## Building from source
 
@@ -127,7 +133,11 @@ then responsible for outputting the following things via its stdout:
    - `JVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
    - `PYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
    - `STOP` to launch nothing.
-3. Path to runtime native library (libjvm or libpython).
+3. A sequence of lines corresponding to the directive:
+   - For the JVM:
+     1. A path to jvm native library.
+     2. 
+TODO: Update this explanation. It's different per directive now.
 4. Number of arguments to the runtime (Python or JVM).
 5. List of arguments to the runtime, one per line.
 6. Main program to run.
@@ -151,11 +161,11 @@ However, Jaunch was designed to satisfy the needs of applications with more comp
 command line functionality, which is where the Kotlin configurator comes in. It reads
 declarative TOML configuration files, which define how Jaunch will make the above
 decisions. The TOML configuration is its own layer of the architecture, which is best
-learned by reading the [jaunch.toml](jaunch.toml) file directly. With this design, the
-behavior of Jaunch can be heavily customized without needing to modify source code and
-rebuild. And for applications that need it, there can be multiple different native
-launchers in the application base directory that all share the same jaunch configurator
-native binaries with different TOML configurations.
+learned by reading the [common.toml](configs/common.toml) file directly. With this
+design, the behavior of Jaunch can be heavily customized without needing to modify
+source code and rebuild. And for applications that need it, there can be multiple
+different native launchers in the application base directory that all share the same
+jaunch configurator native binaries with different TOML configurations.
 
 ## Alternatives
 

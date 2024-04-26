@@ -28,7 +28,7 @@ You can also see similar information using Jaunch's --dry-run option:
 
     fizzbuzz --heap 2g --debugger 8000 --dry-run
 
-For more details, check out the jaunch.toml file. Happy Jaunching!
+For more details, check out the nearby TOML files. Happy Jaunching!
 """
 
 @Suppress("ArrayInDataClass")
@@ -58,7 +58,7 @@ fun main(args: Array<String>) {
     val (exeFile, inputArgs) = parseArguments(args)
     val appDir = discernAppDirectory(exeFile)
     val configDir = findConfigDirectory(appDir)
-    val config = readConfigFiles(configDir, exeFile)
+    val config = readConfigFile(configDir, exeFile)
 
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
@@ -153,30 +153,20 @@ private fun findConfigDirectory(appDir: File): File {
     return configDir
 }
 
-private fun readConfigFiles(configDir: File, exeFile: File?): JaunchConfig {
-    // Make a list of relevant configuration files to read.
-    val osName = OS_NAME.lowercase()
-    val cpuArch = CPU_ARCH.lowercase()
-    var config = JaunchConfig()
-    val configFiles = mutableListOf(
-        configDir / "jaunch.toml",
-        configDir / "jaunch-$osName.toml",
-        configDir / "jaunch-$osName-$cpuArch.toml",
-    )
-    if (exeFile != null) {
-        // Include the app-specific config file(s) as well.
-        val index = configFiles.size
-        var fileName = exeFile.base.name
-        while (true) {
-            configFiles.add(index, configDir / "$fileName.toml")
-            val dash = fileName.lastIndexOf("-")
-            if (dash < 0) break
-            fileName = fileName.substring(0, dash)
-        }
+private fun readConfigFile(configDir: File, exeFile: File?): JaunchConfig {
+    var fileName = if (exeFile == null) "jaunch" else "${exeFile.base.name}"
+    // The launcher might have trailing suffixes such as OS_NAME and/or CPU_ARCH.
+    // For example: fizzbuzz-linux-x64. In such a situation, we want to look for
+    // fizzbuzz-linux-x64.toml, fizzbuzz-linux.toml, and fizzbuzz.toml.
+    while (true) {
+        val configFile = configDir / "$fileName.toml"
+        debug("Looking for config file: $configFile")
+        if (configFile.exists) return readConfig(configFile)
+        val dash = fileName.lastIndexOf("-")
+        if (dash < 0) break
+        fileName = fileName.substring(0, dash)
     }
-    // Read and merge all the config files.
-    for (configFile in configFiles) config += readConfig(configFile)
-    return config
+    error("No config file found for $fileName")
 }
 
 /**
@@ -513,7 +503,7 @@ private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
 // -- Directive handlers --
 
 private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOptions) {
-    val exeName = exeFile?.path ?: "jaunch"
+    val exeName = exeFile?.name ?: "jaunch"
     printlnErr("Usage: $exeName [<Runtime options>.. --] [<main arguments>..]")
     printlnErr()
     printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / $JAUNCH_BUILD / $BUILD_TARGET)")

@@ -8,8 +8,9 @@ rm -rfv \
   build \
   dist \
   app/Contents \
+  app/jaunch \
   app/jy* \
   app/parsy* \
-  app/jaunch/jaunch* \
-  app/jaunch/*.class \
+  app/paunch* \
+  app/repl* \
   jaunch.tar.gz

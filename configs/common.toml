@@ -1,0 +1,244 @@
+# ==============================================================================
+# *** Welcome to Jaunch's base configuration file! ***
+# ==============================================================================
+#
+# Jaunch is a native binary (two per platform, actually) to discover non-native
+# runtimes including Python and the Java Virtual Machine (JVM), start them, and
+# run programs using them. Via its TOML-based configuration mechanism, Jaunch
+# is designed to be powerful and flexible without the need to edit or recompile
+# the Jaunch source code.
+#
+# This common.toml file contains useful general-purpose, non-application-specific
+# configuration that defines some sensible defaults for typical launchers.
+# You can of course edit it to customize Jaunch's behavior however you like.
+#
+# Each application will have its own extensions to the general configuration
+# defined in another TOML file named the same as its native launcher executable.
+# For example, if you have a native executable named fizzbuzz for launching your
+# FizzBuzz application, you would also write a fizzbuzz.toml companion file that
+# overrides or augments this configuration with fizzbuzz-specific settings.
+#
+# For simple examples of specific applications, see:
+# - app/jaunch/paunch.toml - Paunch, a Jaunch-based Python launcher
+# - app/jaunch/jy.toml     - Jy, a Jaunch-based Jython launcher
+# - app/jaunch/parsy.toml  - Parsy, a launcher for the Parsington library.
+#
+# Alternately, if you would like to keep all configuration together in one file
+# for simplicity, you can write a single TOML file with everything, and name it
+# either `jaunch.toml` or the same as your native launcher (e.g. `fizzbuzz.toml`).
+#
+# Without further ado, let's dive into the configuration!
+
+# ==============================================================================
+# jaunch-version
+# ==============================================================================
+# The version of Jaunch with which this configuration file is intended to work.
+# Leave this value be, unless you are upgrading from an older version of Jaunch.
+
+jaunch-version = 1
+
+# ==============================================================================
+# program-name
+# ==============================================================================
+# The name of your program! This name will appear in usage text and dialog boxes.
+
+#program-name = 'FizzBuzz'
+
+# ==============================================================================
+# includes
+# ==============================================================================
+# Other configuration files to recursively combine with this one.
+# This mechanism can help to better organize your configuration logic.
+# Or turn it into a gigantic mess, if you enjoy overengineered spaghetti.
+
+includes = []
+
+# ==============================================================================
+# supported-options
+# ==============================================================================
+# The list of command line options supported by Jaunch out of the box.
+#
+# These are arguments that Jaunch will interpret, transforming them in various ways
+# into arguments to the main program that is launched, and/or the runtime itself.
+#
+# The syntax here is hopefully self-explanatory by reading through the list.
+# But here are the technical details anyway just in case:
+#
+# * The pipe symbol (|) divides the declaration of the option itself from its help text.
+#   The help text is not required, but recommended, and will be shown when Jaunch's help
+#   directive is invoked (which happens out of the box when the --help option is given).
+#
+# * Options may be standalone (like --debug), or may take a parameter.
+#
+# * To declare an option as requiring a parameter, simply write an equals sign
+#   (=) after the option flag. What you write after the equals sign does not
+#   matter, except that it will be shown that way in the help text.
+#
+# * Jaunch parses parameters given as either a single argument --count=123 with an
+#   equals sign (=), or as two arguments (--count 123) separated by a space.
+#
+# * The parameter value given by the user will be stored into Jaunch's variables using
+#   the canonical name of the option in question. So for example, --count=456 will store
+#   the value "456" into the variable called count.
+#
+# * Options may have any number of aliases, separated by commas. So e.g.
+#   --size,length=<number> would let both --size=37 and --length=37 work.
+#
+# * If you need to use an actual pipe symbol (|) as part of your option or help text, you
+#   can't, sorry! It's not a good idea anyway, because that symbol is used by shells to
+#   indicate I/O piping between processes. So making it part of an option would be super
+#   tricky and confusing. That's why Jaunch uses the pipe symbol as its separator:
+#   because it is very unlikely to be needed as an actual character anywhere.
+#
+# See python.toml and jvm.toml for more supported-options examples.
+
+supported-options = [
+    '--help,-h|show this help',
+    '--dry-run|show the command line, but do not run anything',
+    '--info|informational output',
+    '--debug|verbose output',
+    '--print-app-dir|print directory where the application is located',
+    '--system|do not try to run bundled runtime',
+]
+
+# ==============================================================================
+# os-aliases, arch-aliases
+# ==============================================================================
+# Aliases for operating system names and CPU architectures, respectively.
+# Used when analyzing root directory names.
+
+os-aliases = [
+    "LINUX:linux",
+    "MACOSX:darwin,macos,macosx",
+    "WINDOWS:win,windows",
+    "IOS:ios",
+    "ANDROID:android",
+]
+arch-aliases = [
+    "ARM32:aarch32,arm32",
+    "ARM64:aarch64,arm64",
+    "X86:i386,i486,i586,i686,x86-32,x86_32,x86",
+    "X64:amd64,x86-64,x86_64,x64",
+]
+
+# ==============================================================================
+# modes
+# ==============================================================================
+# List of additional hints to enable or disable based on other hints.
+#
+# TODO: Rework this section to introduce hints, rather than referring to below.
+#
+# See "jvm.root-paths" below for an overview of hints.
+#
+# With modes, you can set a single hint in response to several different other hints,
+# which can help to consolidate rules in other sections of the configuration.
+# Modes can also be used to negate hints. It's easiest to explain via an example.
+# Suppose your program wants to support the following three options:
+#
+# * --headless, which enables headless mode, disabling the GUI.
+# * --batch, which enables a mode to run sequential computations.
+# * --big-gui, to use the *BIG* GUI, when you like it large!
+#
+# Let's say that use of the batch mode implies headless operation,
+# while use of the big GUI is incompatible with headless.
+#
+# You might define the following modes here:
+#
+#     '--headless|headless',
+#     '--batch|headless',
+#     '--big-gui|!headless',
+#
+# In this way, whenever either --headless or --batch is passed, the headless mode hint
+# will be enabled, and whenever --big-gui is passed, the headless mode is disabled.
+# If multiple conflicting arguments are passed, the ultimate state of headless mode will
+# depend on the order of such arguments, since mode lines are evaluated sequentially.
+
+modes = []
+
+# ==============================================================================
+# directives
+# ==============================================================================
+# Commands that control Jaunch's launching behavior.
+#
+# TODO: Rewrite this section to be nicer and more up to date.
+#
+# Each one runs at a particular (hardcoded) time during configuration.
+# Directives unsupported by the configurator program are ignored.
+#
+# This may seem confusingly abstract, but the basic idea is this: maybe you want
+# Jaunch *not* to launch the usual program this time, but rather to do something else!
+#
+# What sorts of other things? you might ask. And how can we possibly define
+# such open-ended behavior in a mere TOML configuration file? Well, the short
+# answer is: we can't. The configurator program that ships with Jaunch has some
+# built-in directives, and that's it. As of this writing, those are:
+#
+# * STOP               - Abort the launch without displaying an error message.
+# * ERROR              - Abort the launch and display an error message to the user.
+#
+# * help               - Display the usage text, built from the supported-options above.
+# * dry-run            - Display the final launch command with runtime args + main args.
+#                        Useful to see what would happen, without it actually happening.
+# * print-app-dir      - Print out the path to the application. Typically, this will be
+#                        the folder containing the launcher.
+#
+# Directives in UPPER CASE are native launch modes handled on the C/native side,
+# while directives in web-case are executed on the configurator side.
+#
+# If you need to support other directives besides those above, you'll have to
+# hack the Kotlin and/or C source code, and also write rules here in the TOML.
+#
+# But if you simply want to disable e.g. Jaunch's built-in help, you can safely
+# remove the `--help` and `-h` lines below to do so.
+
+directives = [
+  '--help|help,STOP',
+  '-h|help,STOP',
+  '--print-app-dir|print-app-dir',
+  '--print-config-dir|print-config-dir',
+  '--dry-run|dry-run,STOP',
+]
+
+# ==============================================================================
+# allow-unrecognized-args
+# ==============================================================================
+# Whether to allow unrecognized arguments to be passed to the runtime.
+#
+# When the minus-minus divider is absent, the only args that end up as runtime
+# args will be ones from the runtime-specific `recognized-args` lists (see
+# python.toml and jvm.toml for examples). But if the minus-minus divider *is*
+# given, it becomes possible to force a particular argument to be construed as
+# an argument to the runtime, even when it does not appear on the list.
+#
+# Depending on your application, it might not be desirable for such
+# unrecognized args to be allowed through to the program launch.
+#
+# If you want to allow all user-specified runtime args through to the program
+# launch, set this value to true.
+#
+# If you want full control over what arguments the user can pass to the runtime,
+# set this value to false, and edit the appropriate recognized-args list
+# according to your needs. Then Jaunch will fail fast when told to pass an
+# unrecognized option to the runtime.
+#
+# For example, suppose for a JVM-based application called JFizzBuzz the user writes:
+#
+#     ./jfb -ZZ:SuperSecretOption -- 1 2 3 4 5
+#
+# Using the config in jvm.toml, Jaunch would translate this into something like:
+#
+#     .../bin/java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
+#
+# If you know Java, you probably know that it will barf when confronted with an
+# argument like -ZZ:SuperSecretOption. But maybe you are using a custom build of
+# OpenJDK produced by your organization's new superintelligent AI, which
+# actually *does* have this option! Who is Jaunch to judge? (In that case, I
+# would argue you should really just add '-ZZ:*' to the `jvm.recognized-args`
+# list in jvm.toml, but then I would be judging.) Or maybe you just want to
+# trust your users as OpenJDK evolves, rather than dealing with the bureaucracy
+# of updating the TOML file every time OpenJDK changes its supported options.
+# In such cases, this option is here for you.
+
+allow-unrecognized-args = false
+
+# You did it! It's the end. :clap: Bye now.

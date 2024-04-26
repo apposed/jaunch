@@ -1,0 +1,35 @@
+# *** Welcome to the example application configuration file! ***
+#
+# This launcher is built on Jaunch (https://github.com/scijava/jaunch).
+#
+# The contents below define this particular launcher's behavior and features,
+# on top of Jaunch's "sensible default" functionality.
+#
+# See the common.toml file for more details about Jaunch configuration.
+
+jaunch-version = 1
+
+program-name = 'REPL'
+
+includes = ['python.toml', 'jvm.toml']
+
+supported-options = [
+    '--python|Launch the Python REPL',
+    '--jshell|Launch the jshell REPL',
+]
+
+# Launch neither Python nor the JVM by default.
+# Only launch Python when --python flag is given.
+# Only launch the JVM when --jshell flag is given.
+modes = [
+    '!LAUNCH:PYTHON',
+    '!LAUNCH:JVM',
+    '--python|LAUNCH:PYTHON',
+    '--jshell|LAUNCH:JVM',
+]
+
+python.runtime-args = ['-i']
+
+jvm.version-min = '9'
+
+jvm.main-class = ['jdk.internal.jshell.tool.JShellToolProvider']

@@ -7,7 +7,7 @@ import kotlin.reflect.cast
  * All of Jaunch's configuration in a tidy bundle.
  *
  * Instances of this class are typically coalesced from a TOML configuration file.
- * See [the stock jaunch.toml file](https://github.com/scijava/jaunch/blob/-/jaunch.toml)
+ * See [the common.toml file](https://github.com/scijava/jaunch/blob/-/configs/common.toml)
  * for a full explanation of what all these fields mean, and how to configure them.
  */
 @Suppress("ArrayInDataClass")
@@ -20,6 +20,9 @@ data class JaunchConfig (
 
     /** Name of the program being launched by Jaunch. */
     val programName: String? = null,
+
+    /** List of other configuration files to import. */
+    val includes: Array<String> = emptyArray(),
 
     /** The list of command line options understood by Jaunch. */
     val supportedOptions: Array<String> = emptyArray(),
@@ -70,7 +73,6 @@ data class JaunchConfig (
 
     /** Arguments to pass to the Python program itself. */
     val pythonMainArgs: Array<String> = emptyArray(),
-
 
     // -- JVM-specific configuration fields --
 
@@ -142,6 +144,7 @@ data class JaunchConfig (
         }
         return JaunchConfig(
             programName = config.programName ?: programName,
+            includes = config.includes + includes,
             supportedOptions = config.supportedOptions + supportedOptions,
             osAliases = config.osAliases + osAliases,
             archAliases = config.archAliases + archAliases,
@@ -180,13 +183,23 @@ data class JaunchConfig (
 // It worked well, but bloated the jaunch configurator binary by several megabytes.
 // Therefore, to belittle the launcher, Jaunch now does its own minimal parsing.
 
-fun readConfig(tomlFile: File): JaunchConfig {
+fun readConfig(
+    tomlFile: File,
+    config: JaunchConfig? = null,
+    visited: MutableSet<String>? = null
+): JaunchConfig {
+    var theConfig = config ?: JaunchConfig()
+    val theVisited = visited ?: mutableSetOf()
+    if (!tomlFile.exists) warn("Included config file does not exist: $tomlFile")
+    if (!tomlFile.exists || tomlFile.path in theVisited) return theConfig
+
     debug("Reading config file: $tomlFile")
-    if (!tomlFile.exists) return JaunchConfig()
+    theVisited += tomlFile.path
 
     // Declare Jaunch config fields.
     var jaunchVersion: Int? = null
     var programName: String? = null
+    var includes: List<String>? = null
     var supportedOptions: List<String>? = null
     var osAliases: List<String>? = null
     var archAliases: List<String>? = null
@@ -239,6 +252,7 @@ fun readConfig(tomlFile: File): JaunchConfig {
                 when (name) {
                     "jaunch-version" -> jaunchVersion = asInt(value)
                     "program-name" -> programName = asString(value)
+                    "includes" -> includes = asList(value)
                     "supported-options" -> supportedOptions = asList(value)
                     "os-aliases" -> osAliases = asList(value)
                     "arch-aliases" -> archAliases = asList(value)
@@ -273,10 +287,16 @@ fun readConfig(tomlFile: File): JaunchConfig {
         }
     }
 
+    // Recursively read config file includes.
+    for (path in includes ?: emptyList()) {
+        theConfig += readConfig(tomlFile.dir / path, theConfig, theVisited)
+    }
+
     // Return the final result.
-    return JaunchConfig(
+    return theConfig + JaunchConfig(
         jaunchVersion = jaunchVersion,
         programName = programName,
+        includes = asArray(includes),
         supportedOptions = asArray(supportedOptions),
         osAliases = asArray(osAliases),
         archAliases = asArray(archAliases),
