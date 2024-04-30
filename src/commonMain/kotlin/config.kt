@@ -149,6 +149,7 @@ data class JaunchConfig (
             throw IllegalArgumentException("Config versions are incompatible: ${config.jaunchVersion} != $jaunchVersion")
         }
         return JaunchConfig(
+            jaunchVersion = config.jaunchVersion ?: jaunchVersion,
             programName = config.programName ?: programName,
             includes = config.includes + includes,
             supportedOptions = config.supportedOptions + supportedOptions,
