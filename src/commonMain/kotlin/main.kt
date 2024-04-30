@@ -148,7 +148,7 @@ private fun findConfigDirectory(appDir: File): File {
         appDir / ".config" / "jaunch"
     )
     val configDir = configDirs.find { it.isDirectory }
-        ?: error("Jaunch config directory not found. Please place config in one of: $configDirs")
+        ?: fail("Jaunch config directory not found. Please place config in one of: $configDirs")
     debug("configDir -> ", configDir)
     return configDir
 }
@@ -166,7 +166,7 @@ private fun readConfigFile(configDir: File, exeFile: File?): JaunchConfig {
         if (dash < 0) break
         fileName = fileName.substring(0, dash)
     }
-    error("No config file found for $fileName")
+    fail("No config file found for $fileName")
 }
 
 /**
@@ -264,18 +264,18 @@ private fun classifyArguments(
         val argVal = if (equals >= 0) arg.substring(equals + 1) else null
 
         if (argKey == "--") {
-            if (argVal != null) error("Divider symbol (--) does not accept a parameter")
-            if (i - 1 != divider) error("Divider symbol (--) may only be given once")
+            if (argVal != null) fail("Divider symbol (--) does not accept a parameter")
+            if (i - 1 != divider) fail("Divider symbol (--) may only be given once")
         } else if ((divider < 0 || i <= divider) && argKey in supportedOptions) {
             // The argument is declared in Jaunch's configuration. Deal with it appropriately.
             val option: JaunchOption = supportedOptions[argKey]!!
             if (option.assignment == null) {
                 // standalone option
-                if (argVal != null) error("Option $argKey does not accept a parameter")
+                if (argVal != null) fail("Option $argKey does not accept a parameter")
             } else {
                 // option with value assignment
                 val v = argVal ?: if (i < inputArgs.size) inputArgs[i++] else
-                    error("No parameter value given for argument $argKey")
+                    fail("No parameter value given for argument $argKey")
 
                 // Normalize the argument to the primary flag on the comma-separated list.
                 // Then strip leading dashes: --class-path becomes class-path, -v becomes v, etc.
@@ -381,7 +381,7 @@ fun validateUserArgs(
     // unless allow-unrecognized-args is set to true.
     val strict = config.allowUnrecognizedArgs != true
     for (arg in userArgs.runtime) {
-        if (strict && unknownArg(runtimes, arg)) error("Unrecognized runtime argument: $arg")
+        if (strict && unknownArg(runtimes, arg)) fail("Unrecognized runtime argument: $arg")
     }
 }
 
@@ -471,10 +471,10 @@ private fun executeDirectives(
         var success = false
         for (runtime in activatedRuntimes) {
             val myArgs = argsInContext[runtime.prefix]
-                ?: error("No contextual args for {runtime.prefix} runtime?!")
+                ?: fail("No contextual args for {runtime.prefix} runtime?!")
             success = success || runtime.tryDirective(directive, myArgs)
         }
-        if (!success) error("Invalid directive: $directive")
+        if (!success) fail("Invalid directive: $directive")
     }
 
     // Emit launch-side directives.

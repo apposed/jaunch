@@ -79,7 +79,7 @@ private fun glob(prefixes: List<String>, remaining: String?): List<String> {
 
 fun glob(path: String): List<String> {
     // Expand tilde home character.
-    val expanded = path.replace("~", USER_HOME ?: error("WTF no user home"))
+    val expanded = path.replace("~", USER_HOME ?: fail("USER_HOME variable is unset?!"))
     // Standardize slashes.
     val p = expanded.replace("/", SLASH).replace("\\", SLASH)
 

@@ -49,7 +49,7 @@ actual fun stdinLines(): Array<String> {
         // Passing the line count as the first line lets us stop reading from stdin once we have
         // seen those lines, even though the pipe is still technically open. This avoids deadlocks.
         val numLines = fgets(buffer, BUFFER_SIZE, stdin)?.toKString()?.trim()?.toInt() ?:
-            error("Expected input line count as the first line of input")
+            fail("Expected input line count as the first line of input")
         for (i in 0..<numLines) {
             val input = fgets(buffer, BUFFER_SIZE, stdin)?.toKString()?.trim() ?: break
             lines += input

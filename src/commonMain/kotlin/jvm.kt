@@ -74,7 +74,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
                 break
             }
         }
-        if (java == null) error("No Java installation found.")
+        if (java == null) fail("No Java installation found.")
         debug("Successfully discovered Java installation:")
         debug("* rootPath -> ", java.rootPath)
         debug("* libjvmPath -> ", java.libjvmPath ?: "<null>")
@@ -140,8 +140,8 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     override fun launch(args: ProgramArgs): List<String> {
-        val libjvmPath = java?.libjvmPath ?: error("No matching Java installations found.")
-        val mainClass = mainProgram ?: error("No Java main program specified.")
+        val libjvmPath = java?.libjvmPath ?: fail("No matching Java installations found.")
+        val mainClass = mainProgram ?: fail("No Java main program specified.")
         return buildList {
             add(libjvmPath)
             add(args.runtime.size.toString())
@@ -169,11 +169,11 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     fun javaHome(): String {
-        return java?.rootPath ?: error("No matching Java installations found.")
+        return java?.rootPath ?: fail("No matching Java installations found.")
     }
 
     fun javaInfo(): String {
-        return java?.toString() ?: error("No matching Java installations found.")
+        return java?.toString() ?: fail("No matching Java installations found.")
     }
 }
 

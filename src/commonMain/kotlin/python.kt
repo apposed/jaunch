@@ -63,7 +63,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
                 break
             }
         }
-        if (python == null) error("No Python installation found.")
+        if (python == null) fail("No Python installation found.")
         debug("Successfully discovered Python installation:")
         debug("* rootPath -> ", python.rootPath)
         debug("* libPythonPath -> ", python.libPythonPath ?: "<null>")
@@ -99,7 +99,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     override fun launch(args: ProgramArgs): List<String> {
-        val libPythonPath = python?.libPythonPath ?: error("No matching Python installations found.")
+        val libPythonPath = python?.libPythonPath ?: fail("No matching Python installations found.")
         return buildList {
             add(libPythonPath)
             addAll(args.runtime)
@@ -120,11 +120,11 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     fun pythonHome(): String {
-        return python?.rootPath ?: error("No matching Python installations found.")
+        return python?.rootPath ?: fail("No matching Python installations found.")
     }
 
     fun pythonInfo(): String {
-        return python?.toString() ?: error("No matching Python installations found.")
+        return python?.toString() ?: fail("No matching Python installations found.")
     }
 }
 
