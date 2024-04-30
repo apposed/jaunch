@@ -76,7 +76,6 @@ fun main(args: Array<String>) {
 
     val runtimes = configureRuntimes(config, configDir, hints, vars)
     val (launchDirectives, configDirectives) = calculateDirectives(config, hints, vars)
-    val activatedRuntimes = runtimes.filter { it.directive in launchDirectives }
 
     // Ensure that the user arguments meet our expectations.
     validateUserArgs(config, runtimes, userArgs)
@@ -102,8 +101,7 @@ fun main(args: Array<String>) {
     // Finally, execute all the directives! \^_^/
     executeDirectives(globalDirectiveFunctions,
         configDirectives, launchDirectives,
-        runtimes, activatedRuntimes,
-        userArgs, argsInContext)
+        runtimes, userArgs, argsInContext)
 }
 
 // -- Program flow functions --
@@ -452,7 +450,6 @@ private fun executeDirectives(
     configDirectives: List<String>,
     launchDirectives: List<String>,
     runtimes: List<RuntimeConfig>,
-    activatedRuntimes: List<RuntimeConfig>,
     userArgs: ProgramArgs,
     argsInContext: Map<String, ProgramArgs>
 ) {
@@ -469,7 +466,7 @@ private fun executeDirectives(
 
         // Not a global directive -- delegate execution to activated runtimes.
         var success = false
-        for (runtime in activatedRuntimes) {
+        for (runtime in runtimes) {
             val myArgs = argsInContext[runtime.prefix]
                 ?: fail("No contextual args for {runtime.prefix} runtime?!")
             success = success || runtime.tryDirective(directive, myArgs)
@@ -482,8 +479,9 @@ private fun executeDirectives(
     debug("Emitting launch directives to stdout...")
     // HACK: If STOP appears in the launch directives, don't also launch other things.
     // Further thought and config wrangling needed, but it gets the job done for now.
-    val tweakedLaunchDirectives = if ("STOP" in launchDirectives) listOf("STOP") else launchDirectives
-    for (directive in tweakedLaunchDirectives) {
+    val finalDirectives =
+        if (launchDirectives.isEmpty() || "STOP" in launchDirectives) listOf("STOP") else launchDirectives
+    for (directive in finalDirectives) {
         val runtime = runtimes.firstOrNull { it.directive == directive }
         val lines = runtime?.launch(argsInContext[runtime.prefix]!!) ?: emptyList()
         println(directive)

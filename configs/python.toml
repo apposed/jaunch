@@ -20,8 +20,6 @@ supported-options = [
 
 modes = [
     'LAUNCH:PYTHON',
-    '--print-python-home|!LAUNCH:PYTHON',
-    '--print-python-info|!LAUNCH:PYTHON',
 ]
 
 # ==============================================================================
@@ -35,8 +33,8 @@ modes = [
 
 directives = [
     'LAUNCH:PYTHON|PYTHON',
-    '--print-python-home|print-python-home',
-    '--print-python-info|print-python-info',
+    '--print-python-home|print-python-home,STOP',
+    '--print-python-info|print-python-info,STOP',
 ]
 
 # ==============================================================================

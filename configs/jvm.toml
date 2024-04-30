@@ -39,9 +39,6 @@ supported-options = [
 
 modes = [
     'LAUNCH:JVM',
-    '--print-classpath|!LAUNCH:JVM',
-    '--print-java-home|!LAUNCH:JVM',
-    '--print-java-info|!LAUNCH:JVM',
 ]
 
 # ==============================================================================
@@ -55,9 +52,9 @@ modes = [
 
 directives = [
     'LAUNCH:JVM|JVM',
-    '--print-classpath|print-classpath',
-    '--print-java-home|print-java-home',
-    '--print-java-info|print-java-info',
+    '--print-classpath|print-classpath,STOP',
+    '--print-java-home|print-java-home,STOP',
+    '--print-java-info|print-java-info,STOP',
 ]
 
 # ==============================================================================
