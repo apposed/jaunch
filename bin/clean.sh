@@ -7,10 +7,5 @@ echo -e "\033[1;33m[clean]\033[0m"
 rm -rfv \
   build \
   dist \
-  app/Contents \
-  app/jaunch \
-  app/jy* \
-  app/parsy* \
-  app/paunch* \
-  app/repl* \
+  app \
   jaunch.tar.gz

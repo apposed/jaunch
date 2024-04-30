@@ -1,4 +1,5 @@
 /.gradle/
+/.lib/
 /.upx/
 /app/
 /build/
