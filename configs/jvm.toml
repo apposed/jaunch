@@ -61,6 +61,13 @@ directives = [
 ]
 
 # ==============================================================================
+# jvm.enabled
+# ==============================================================================
+# Set this to true to enable searching for and launching with a JVM.
+
+jvm.enabled = true
+
+# ==============================================================================
 # jvm.recognized-args
 # ==============================================================================
 # The list of arguments that Jaunch will recognize as belonging to the JVM,

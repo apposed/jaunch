@@ -44,6 +44,9 @@ data class JaunchConfig (
 
     // -- Python-specific configuration fields --
 
+    /** If true, search for suitable Python installations. */
+    val pythonEnabled: Boolean? = null,
+
     /**
      * The list of arguments that Jaunch will recognize as belonging to the Python interpreter,
      * as opposed to the application's main program.
@@ -75,6 +78,9 @@ data class JaunchConfig (
     val pythonMainArgs: Array<String> = emptyArray(),
 
     // -- JVM-specific configuration fields --
+
+    /** If true, search for suitable JVM installations. */
+    val jvmEnabled: Boolean? = null,
 
     /**
      * The list of arguments that Jaunch will recognize as belonging to the JVM,
@@ -152,6 +158,7 @@ data class JaunchConfig (
             directives = config.directives + directives,
             allowUnrecognizedArgs = config.allowUnrecognizedArgs ?: allowUnrecognizedArgs,
 
+            pythonEnabled = config.pythonEnabled ?: pythonEnabled,
             pythonRecognizedArgs = config.pythonRecognizedArgs + pythonRecognizedArgs,
             pythonRootPaths = config.pythonRootPaths + pythonRootPaths,
             pythonLibSuffixes = config.pythonLibSuffixes + pythonLibSuffixes,
@@ -162,6 +169,7 @@ data class JaunchConfig (
             pythonMainScript = config.pythonMainScript + pythonMainScript,
             pythonMainArgs = config.pythonMainArgs + pythonMainArgs,
 
+            jvmEnabled = config.jvmEnabled ?: jvmEnabled,
             jvmRecognizedArgs = config.jvmRecognizedArgs + jvmRecognizedArgs,
             jvmAllowWeirdRuntimes = config.jvmAllowWeirdRuntimes ?: jvmAllowWeirdRuntimes,
             jvmVersionMin = config.jvmVersionMin ?: jvmVersionMin,
@@ -206,6 +214,7 @@ fun readConfig(
     var modes: List<String>? = null
     var directives: List<String>? = null
     var allowUnrecognizedArgs: Boolean? = null
+    var pythonEnabled: Boolean? = null
     var pythonRecognizedArgs: List<String>? = null
     var pythonRootPaths: List<String>? = null
     var pythonLibSuffixes: List<String>? = null
@@ -215,6 +224,7 @@ fun readConfig(
     var pythonRuntimeArgs: List<String>? = null
     var pythonMainScript: List<String>? = null
     var pythonMainArgs: List<String>? = null
+    var jvmEnabled: Boolean? = null
     var jvmRecognizedArgs: List<String>? = null
     var jvmAllowWeirdRuntimes: Boolean? = null
     var jvmVersionMin: String? = null
@@ -259,6 +269,7 @@ fun readConfig(
                     "modes" -> modes = asList(value)
                     "directives" -> directives = asList(value)
                     "allow-unrecognized-args" -> allowUnrecognizedArgs = asBoolean(value)
+                    "python.enabled" -> pythonEnabled = asBoolean(value)
                     "python.recognized-args" -> pythonRecognizedArgs = asList(value)
                     "python.root-paths" -> pythonRootPaths = asList(value)
                     "python.lib-suffixes" -> pythonLibSuffixes = asList(value)
@@ -268,6 +279,7 @@ fun readConfig(
                     "python.runtime-args" -> pythonRuntimeArgs = asList(value)
                     "python.script-path" -> pythonMainScript = asList(value)
                     "python.main-args" -> pythonMainArgs = asList(value)
+                    "jvm.enabled" -> jvmEnabled = asBoolean(value)
                     "jvm.recognized-args" -> jvmRecognizedArgs = asList(value)
                     "jvm.allow-weird-runtimes" -> jvmAllowWeirdRuntimes = asBoolean(value)
                     "jvm.version-min" -> jvmVersionMin = asString(value)
@@ -303,6 +315,7 @@ fun readConfig(
         modes = asArray(modes),
         directives = asArray(directives),
         allowUnrecognizedArgs = allowUnrecognizedArgs,
+        pythonEnabled = pythonEnabled,
         pythonRecognizedArgs = asArray(pythonRecognizedArgs),
         pythonRootPaths = asArray(pythonRootPaths),
         pythonLibSuffixes = asArray(pythonLibSuffixes),
@@ -312,6 +325,7 @@ fun readConfig(
         pythonRuntimeArgs = asArray(pythonRuntimeArgs),
         pythonMainScript = asArray(pythonMainScript),
         pythonMainArgs = asArray(pythonMainArgs),
+        jvmEnabled = jvmEnabled,
         jvmRecognizedArgs = asArray(jvmRecognizedArgs),
         jvmAllowWeirdRuntimes = jvmAllowWeirdRuntimes,
         jvmVersionMin = jvmVersionMin,

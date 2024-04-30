@@ -339,11 +339,10 @@ private fun configureRuntimes(
     debug()
     debug("Configuring runtimes...")
 
-    // Define the list of supported runtimes.
-    val runtimes = listOf(
-        JvmRuntimeConfig(config.jvmRecognizedArgs),
-        PythonRuntimeConfig(config.pythonRecognizedArgs),
-    )
+    // Build the list of enabled runtimes.
+    val runtimes = mutableListOf<RuntimeConfig>()
+    if (config.jvmEnabled == true) runtimes += JvmRuntimeConfig(config.jvmRecognizedArgs)
+    if (config.pythonEnabled == true) runtimes += PythonRuntimeConfig(config.pythonRecognizedArgs)
 
     // Discover the runtime installations.
     for (r in runtimes) r.configure(configDir, config, hints, vars)
