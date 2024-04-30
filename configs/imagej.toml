@@ -13,6 +13,8 @@ program-name = 'ImageJ'
 
 includes = ['jvm.toml']
 
+modes = ['LAUNCH:JVM']
+
 jvm.root-paths = [
     '${app-dir}',
 ]

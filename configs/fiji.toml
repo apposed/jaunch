@@ -56,6 +56,8 @@ supported-options = [
 ]
 
 modes = [
+  'LAUNCH:JVM',
+
   # Decide which mode to launch: default, original-imagej, legacy-fiji, or custom-main.
   '--dont-patch-ij1|MODE:original-imagej',
   '--ij1|MODE:original-imagej',

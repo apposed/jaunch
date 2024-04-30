@@ -18,9 +18,7 @@ supported-options = [
 #
 # * LAUNCH:PYTHON - when set, PYTHON will be included in the directives.
 
-modes = [
-    'LAUNCH:PYTHON',
-]
+#modes = ['LAUNCH:PYTHON']
 
 # ==============================================================================
 # Python-specific directives:

@@ -22,8 +22,6 @@ supported-options = [
 # Only launch Python when --python flag is given.
 # Only launch the JVM when --jshell flag is given.
 modes = [
-    '!LAUNCH:PYTHON',
-    '!LAUNCH:JVM',
     '--python|LAUNCH:PYTHON',
     '--jshell|LAUNCH:JVM',
 ]

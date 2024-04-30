@@ -13,6 +13,8 @@ program-name = 'QuPath'
 
 includes = ['jvm.toml']
 
+modes = ['LAUNCH:JVM']
+
 jvm.version-min = '21'
 
 jvm.classpath = [

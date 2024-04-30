@@ -13,6 +13,8 @@ program-name = 'Parsy'
 
 includes = ['jvm.toml']
 
+modes = ['LAUNCH:JVM']
+
 jvm.version-min = '8'
 
 jvm.classpath = [

@@ -37,9 +37,7 @@ supported-options = [
 #
 # * LAUNCH:JVM - when set, JVM will be included in the directives.
 
-modes = [
-    'LAUNCH:JVM',
-]
+#modes = ['LAUNCH:JVM']
 
 # ==============================================================================
 # JVM-specific directives:
