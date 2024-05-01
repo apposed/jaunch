@@ -40,6 +40,11 @@ abstract class RuntimeConfig(
     /** Gets the launch directive block for this runtime configuration. */
     abstract fun launch(args: ProgramArgs): List<String>
 
+    /** @return true iff the given argument matches one of the [recognizedArgs]. */
+    fun recognizes(arg: String): Boolean {
+        return arg in recognizedArgs
+    }
+
     /**
      * Attempt to execute the given directive.
      * @param directive The directive to maybe execute.

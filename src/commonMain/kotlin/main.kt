@@ -428,7 +428,7 @@ private fun contextualizeArgsForRuntime(
         // Note that if we are at this point in the code and scenario (3) happens, it must be because the
         // allow-unrecognized-args flag was set to true (otherwise the validateUserArgs check would have failed),
         // so it makes sense to throw up our hands and pass this weird argument to all enabled runtimes.
-        if (arg in runtime.recognizedArgs || unknownArg(runtimes, arg)) resolved.runtime += arg
+        if (runtime.recognizes(arg) || unknownArg(runtimes, arg)) resolved.runtime += arg
     }
 
     // Add user-specified arguments intended as main args. Nothing tricky here.
@@ -437,7 +437,7 @@ private fun contextualizeArgsForRuntime(
     // Finally: we need to sort through the ambiguous user arguments.
     // If the user used the minus-minus (--) separator, this list will be empty.
     for (arg in userArgs.ambiguous) {
-        if (arg in runtime.recognizedArgs) resolved.runtime += arg
+        if (runtime.recognizes(arg)) resolved.runtime += arg
         else if (unknownArg(runtimes, arg)) resolved.main += arg
         // else some other runtime will snarf up this arg, so this one should ignore it.
     }
@@ -455,7 +455,7 @@ private fun unknownArg(
     runtimes: List<RuntimeConfig>,
     arg: String
 ): Boolean {
-    return runtimes.firstOrNull { arg in it.recognizedArgs } == null
+    return runtimes.firstOrNull { it.recognizes(arg) } == null
 }
 
 private fun interpolateArgs(argsInContext: Map<String, ProgramArgs>, vars: Map<String, String>) {
