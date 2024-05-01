@@ -31,8 +31,8 @@ supported-options = [
 
 directives = [
     'LAUNCH:PYTHON|PYTHON',
-    '--print-python-home|print-python-home,STOP',
-    '--print-python-info|print-python-info,STOP',
+    '--print-python-home|print-python-home,ABORT',
+    '--print-python-info|print-python-info,ABORT',
 ]
 
 # ==============================================================================

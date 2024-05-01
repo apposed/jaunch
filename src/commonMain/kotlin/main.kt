@@ -477,10 +477,10 @@ private fun executeDirectives(
     // Emit launch-side directives.
     debug()
     debug("Emitting launch directives to stdout...")
-    // HACK: If STOP appears in the launch directives, don't also launch other things.
+    // HACK: If ABORT appears in the launch directives, don't also launch other things.
     // Further thought and config wrangling needed, but it gets the job done for now.
     val finalDirectives =
-        if (launchDirectives.isEmpty() || "STOP" in launchDirectives) listOf("STOP") else launchDirectives
+        if (launchDirectives.isEmpty() || "ABORT" in launchDirectives) listOf("ABORT") else launchDirectives
     for (directive in finalDirectives) {
         val runtime = runtimes.firstOrNull { it.directive == directive }
         val lines = runtime?.launch(argsInContext[runtime.prefix]!!) ?: emptyList()

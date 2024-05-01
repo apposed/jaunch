@@ -177,8 +177,8 @@ int main(const int argc, const char *argv[]) {
         index += 2 + dir_argc; // Advance index past this directive block.
 
         // Call the directive's associated function.
-        if (strcmp(directive, "STOP") == 0) {
-            if (dir_argc > 0) error("Ignoring %zu extra STOP lines.", dir_argc);
+        if (strcmp(directive, "ABORT") == 0) {
+            if (dir_argc > 0) error("Ignoring %zu extra ABORT lines.", dir_argc);
             const size_t extra = out_argc - index;
             if (extra > 0) error("Ignoring %zu trailing output lines.", extra);
             break;

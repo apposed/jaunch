@@ -132,7 +132,7 @@ then responsible for outputting the following things via its stdout:
 2. Directive for the native launcher to perform, or else an error message to display.
    - `JVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
    - `PYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
-   - `STOP` to launch nothing.
+   - `ABORT` to launch nothing.
 3. A sequence of lines corresponding to the directive:
    - For the JVM:
      1. A path to jvm native library.

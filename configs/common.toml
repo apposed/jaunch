@@ -173,8 +173,8 @@ modes = []
 # answer is: we can't. The configurator program that ships with Jaunch has some
 # built-in directives, and that's it. As of this writing, those are:
 #
-# * STOP               - Abort the launch without displaying an error message.
-# * ERROR              - Abort the launch and display an error message to the user.
+# * ABORT              - Cancel the launch without displaying an error message.
+# * ERROR              - Cancel the launch and display an error message to the user.
 #
 # * help               - Display the usage text, built from the supported-options above.
 # * dry-run            - Display the final launch command with runtime args + main args.
@@ -192,11 +192,11 @@ modes = []
 # remove the `--help` and `-h` lines below to do so.
 
 directives = [
-  '--help|help,STOP',
-  '-h|help,STOP',
+  '--help|help,ABORT',
+  '-h|help,ABORT',
   '--print-app-dir|print-app-dir',
   '--print-config-dir|print-config-dir',
-  '--dry-run|dry-run,STOP',
+  '--dry-run|dry-run,ABORT',
 ]
 
 # ==============================================================================

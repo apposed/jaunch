@@ -50,9 +50,9 @@ supported-options = [
 
 directives = [
     'LAUNCH:JVM|JVM',
-    '--print-classpath|print-classpath,STOP',
-    '--print-java-home|print-java-home,STOP',
-    '--print-java-info|print-java-info,STOP',
+    '--print-classpath|print-classpath,ABORT',
+    '--print-java-home|print-java-home,ABORT',
+    '--print-java-info|print-java-info,ABORT',
 ]
 
 # ==============================================================================
