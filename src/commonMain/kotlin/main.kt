@@ -419,16 +419,24 @@ private fun contextualizeArgsForRuntime(
     resolved.main += runtime.mainArgs
 
     // Add user-specified arguments intended as runtime args.
-    for (arg in userArgs.runtime) {
-        // There are three scenarios here:
-        // 1) This runtime recognizes the argument, so we add it to this runtime's list of runtime args.
-        // 2) This runtime does not recognize it, but some other runtime(s) do, in which case we skip it.
-        // 3) No runtime recognizes the argument, so we add it to this (and all) runtime's list of runtime args.
-        //
-        // Note that if we are at this point in the code and scenario (3) happens, it must be because the
-        // allow-unrecognized-args flag was set to true (otherwise the validateUserArgs check would have failed),
-        // so it makes sense to throw up our hands and pass this weird argument to all enabled runtimes.
-        if (runtime.recognizes(arg) || unknownArg(runtimes, arg)) resolved.runtime += arg
+    //
+    // For each such argument, there are three scenarios:
+    // 1) This runtime recognizes the argument, so we add it to this runtime's list of runtime args.
+    // 2) This runtime does not recognize it, but some other runtime(s) do, in which case we skip it.
+    // 3) No runtime recognizes the argument, so we add it to this (and all) runtime's list of runtime args.
+    //
+    // Note that if scenario (3) happens here, it must be because the allow-unrecognized-args
+    // flag was set to true (otherwise the validateUserArgs check would have failed), so it
+    // makes sense to throw up our hands and pass this weird argument to all enabled runtimes.
+    var i = 0
+    while (i < userArgs.runtime.size) {
+        val arg = userArgs.runtime[i++]
+        val r = runtime.recognizes(arg)
+        if (r > 0 || unknownArg(runtimes, arg)) {
+            // Case (1) or (3).
+            i = appendRuntimeArg(i - 1, r, userArgs.runtime, resolved)
+        }
+        // else case (2): another runtime will snarf up this arg, so this one should ignore it.
     }
 
     // Add user-specified arguments intended as main args. Nothing tricky here.
@@ -436,10 +444,19 @@ private fun contextualizeArgsForRuntime(
 
     // Finally: we need to sort through the ambiguous user arguments.
     // If the user used the minus-minus (--) separator, this list will be empty.
-    for (arg in userArgs.ambiguous) {
-        if (runtime.recognizes(arg)) resolved.runtime += arg
-        else if (unknownArg(runtimes, arg)) resolved.main += arg
-        // else some other runtime will snarf up this arg, so this one should ignore it.
+    i = 0
+    while (i < userArgs.ambiguous.size) {
+        val arg = userArgs.ambiguous[i++]
+        val r = runtime.recognizes(arg)
+        if (r > 0) {
+            // This runtime recognizes the argument.
+            i = appendRuntimeArg(i - 1, r, userArgs.ambiguous, resolved)
+        }
+        else if (unknownArg(runtimes, arg)) {
+            // No runtime recognizes it; treat it as a main argument.
+            resolved.main += arg
+        }
+        // else another runtime will snarf up this arg, so this one should ignore it.
     }
 
     debug("* ${runtime.prefix}:runtime -> ${resolved.runtime}")
@@ -449,13 +466,34 @@ private fun contextualizeArgsForRuntime(
 }
 
 /**
+ * Append the argument at the given index, along with any parameter arguments.
+ *
+ * @return The advanced index beyond the appended arguments.
+ */
+private fun appendRuntimeArg(
+    index: Int,
+    r: Int,
+    args: List<String>,
+    resolved: ProgramArgs
+): Int {
+    var endIndex = index + r
+    if (endIndex > args.size) {
+        // This parameterized argument is missing needed parameters.
+        warn("Argument ${args[index]} has too few parameters.")
+        endIndex = args.size
+    }
+    resolved.runtime += args.slice(index..<endIndex)
+    return endIndex
+}
+
+/**
  * @return True iff the given argument is unrecognized by *all* runtimes on the list.
  */
 private fun unknownArg(
     runtimes: List<RuntimeConfig>,
     arg: String
 ): Boolean {
-    return runtimes.firstOrNull { it.recognizes(arg) } == null
+    return runtimes.firstOrNull { it.recognizes(arg) > 0 } == null
 }
 
 private fun interpolateArgs(argsInContext: Map<String, ProgramArgs>, vars: Map<String, String>) {

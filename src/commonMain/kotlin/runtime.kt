@@ -37,12 +37,26 @@ abstract class RuntimeConfig(
         vars: MutableMap<String, String>
     )
 
-    /** Gets the launch directive block for this runtime configuration. */
+    /** Get the launch directive block for this runtime configuration. */
     abstract fun launch(args: ProgramArgs): List<String>
 
-    /** @return true iff the given argument matches one of the [recognizedArgs]. */
-    fun recognizes(arg: String): Boolean {
-        return arg in recognizedArgs
+    /**
+     * Check whether the given argument matches one of the [recognizedArgs].
+     *
+     * - For a non-matching argument, returns 0.
+     * - For a standalone matching argument, returns 1.
+     * - For an argument that takes additional space-separated arguments as parameters,
+     *   returns 1 + the number of parameters. For example, the argument `-c` will return 2 when
+     *   queried against a runtime like Python which has `-c cmd` on its [recognizedArgs] list.
+     *
+     * @return a non-negative integer as described above.
+     */
+    fun recognizes(arg: String): Int {
+        return recognizedArgs.map {
+            val tokens = it.split(" ")
+            val number = tokens.size
+            if (number > 0 && argMatches(tokens[0], arg)) number else 0
+        }.firstOrNull { it > 0 } ?: 0
     }
 
     /**
@@ -56,5 +70,16 @@ abstract class RuntimeConfig(
         debug("$prefix: executing directive: $directive")
         doDirective(args)
         return true
+    }
+
+    private fun argMatches(expected: String, actual: String): Boolean {
+        return when {
+            expected.isEmpty() -> false
+            expected.endsWith("*") -> {
+                val prefix = expected.substring(0, expected.length - 1)
+                actual.startsWith(prefix)
+            }
+            else -> expected == actual
+        }
     }
 }
