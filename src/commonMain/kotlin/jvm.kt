@@ -20,7 +20,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     var java: JavaInstallation? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
-        "dry-run" to { printlnErr(dryRun()) },
+        "dry-run" to { args -> printlnErr(dryRun(args)) },
         "print-class-path" to { printlnErr(classpath() ?: "<none>") },
         "print-java-home" to { printlnErr(javaHome()) },
         "print-java-info" to { printlnErr(javaInfo()) },
@@ -159,12 +159,12 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         return classpathArg.substring(prefix.length).replace(COLON, divider)
     }
 
-    fun dryRun(): String {
+    fun dryRun(args: ProgramArgs): String {
         return buildString {
             append(java?.binJava ?: "java")
-            runtimeArgs.forEach { append(" $it") }
+            args.runtime.forEach { append(" $it") }
             append(" $mainProgram")
-            mainArgs.forEach { append(" $it") }
+            args.main.forEach { append(" $it") }
         }
     }
 

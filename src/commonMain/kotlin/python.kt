@@ -15,7 +15,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     var python: PythonInstallation? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
-        "dry-run" to { printlnErr(dryRun()) },
+        "dry-run" to { args -> printlnErr(dryRun(args)) },
         "print-python-home" to { printlnErr(pythonHome()) },
         "print-python-info" to { printlnErr(pythonInfo()) },
     )
@@ -110,12 +110,12 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
 
     // -- Directive handlers --
 
-    fun dryRun(): String {
+    fun dryRun(args: ProgramArgs): String {
         return buildString {
             append(python?.binPython ?: "python")
-            runtimeArgs.forEach { append(" $it") }
+            args.runtime.forEach { append(" $it") }
             append(" $mainProgram")
-            mainArgs.forEach { append(" $it") }
+            args.main.forEach { append(" $it") }
         }
     }
 
