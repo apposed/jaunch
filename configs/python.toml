@@ -166,7 +166,8 @@ python.root-paths = [
     '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\python\win64\*',         # bundled (Windows x86-64)
     '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\python\win32\*',         # bundled (Windows x86-32)
     'OS:WINDOWS|${LOCALAPPDATA}\Programs\Python\*',                    # system
-    '${CONDA_PREFIX}/envs/*',                                          # Conda
+    '${CONDA_PREFIX}',                                                 # activated Conda env
+    '${CONDA_PREFIX}/envs/*',                                          # all Conda envs
 ]
 
 # ==============================================================================
