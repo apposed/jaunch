@@ -45,7 +45,32 @@ python.enabled = true
 # ==============================================================================
 # python.recognized-args
 # ==============================================================================
-# TODO
+# The list of arguments that Jaunch will recognize as belonging to Python,
+# rather than to `sys.argv` within the Python script itself.
+#
+# These are used to guess, when the minus-minus divider (--) is absent,
+# whether each arg is a Python (runtime) one or a main one.
+#
+# The asterisk wildcard symbol (*) is allowed as a suffix,
+# if you want to match all arguments with a particular prefix.
+#
+# About main arguments: Jaunch's philosophy is to remain agnostic of the options
+# your application supports, rather than trying to constrain them in its configuration
+# and checking them itself. As such, it is your application's responsibility to emit
+# error messages as appropriate if it encounters displeasing arguments.
+#
+# For example, suppose the user invokes:
+#
+#     ./fizzbuzz 1 2 3 4 5 -i
+#
+# Because '-i' is on the python.recognized-args list out of the box,
+# Jaunch will translate this invocation to:
+#
+#     python -i fizzbuzz.py 1 2 3 4 5
+#
+# Even though the Python argument appears after the main arguments. Users can mix
+# and match to their hearts' content, being as sloppy as they want, and Jaunch will
+# sort out the mess. As long as the Python args are on the list here, of course.
 
 python.recognized-args = [
     '-b', '-bb',
