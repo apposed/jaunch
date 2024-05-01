@@ -190,8 +190,26 @@ python.root-paths = [
 # TODO: Verify this list for all platforms.
 python.lib-suffixes = [
     'OS:LINUX|lib/libpython3.so',
+    'OS:LINUX|lib/libpython3.13.so',
+    'OS:LINUX|lib/libpython3.12.so',
+    'OS:LINUX|lib/libpython3.11.so',
+    'OS:LINUX|lib/libpython3.10.so',
+    'OS:LINUX|lib/libpython3.9.so',
+    'OS:LINUX|lib/libpython3.8.so',
     'OS:MACOSX|lib/libpython3.dylib',
+    'OS:MACOSX|lib/libpython3.13.dylib',
+    'OS:MACOSX|lib/libpython3.12.dylib',
+    'OS:MACOSX|lib/libpython3.11.dylib',
+    'OS:MACOSX|lib/libpython3.10.dylib',
+    'OS:MACOSX|lib/libpython3.9.dylib',
+    'OS:MACOSX|lib/libpython3.8.dylib',
     'OS:WINDOWS|lib\libpython3.dll',
+    'OS:WINDOWS|lib\libpython3.13.dll',
+    'OS:WINDOWS|lib\libpython3.12.dll',
+    'OS:WINDOWS|lib\libpython3.11.dll',
+    'OS:WINDOWS|lib\libpython3.10.dll',
+    'OS:WINDOWS|lib\libpython3.9.dll',
+    'OS:WINDOWS|lib\libpython3.8.dll',
 ]
 
 # ==============================================================================
