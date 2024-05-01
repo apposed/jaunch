@@ -80,10 +80,7 @@ fun main(args: Array<String>) {
     // Ensure that the user arguments meet our expectations.
     validateUserArgs(config, runtimes, userArgs)
 
-    // Calculate program arguments *in context* -- i.e. with respect to each runtime.
-    // This is a map from each runtime prefix to its contextualized arguments (bundle of runtime and main args).
-    val argsInContext = runtimes.associate { it.prefix to contextualizeArgs(runtimes, it, userArgs) }
-    vars += argsInContext.entries.associate { (k, v) -> k to v.toString() }
+    val argsInContext = contextualizeArgs(runtimes, userArgs, vars)
 
     // Now evaluate any expressions in the contextualized arguments.
     // We do this in a subsequent step separated from the previous one because the expressions
@@ -383,7 +380,34 @@ fun validateUserArgs(
     }
 }
 
-fun contextualizeArgs(
+/**
+ * Calculate program arguments *in context* -- i.e. with respect to each runtime.
+ *
+ * For example, the `-b` argument holds meaning to `python`, enabling warnings relating
+ * to byte arrays and strings, whereas `-b` it is not a valid argument to `java`.
+ * As such, an ambiguous `-b` will be treated as a runtime argument for the Python runtime,
+ * and therefore *discarded* for the JVM runtime, since Python has "claimed" it.
+ *
+ * If no runtime recognizes an ambiguous argument, it will be treated as a main argument to all runtimes.
+ *
+ * @return A map from each runtime prefix to its contextualized arguments (bundle of runtime and main args).
+ */
+private fun contextualizeArgs(
+    runtimes: List<RuntimeConfig>,
+    userArgs: ProgramArgs,
+    vars: MutableMap<String, String>
+): Map<String, ProgramArgs> {
+    debug("Contextualizing user arguments...")
+    val argsInContext = runtimes.associate { it.prefix to contextualizeArgsForRuntime(runtimes, it, userArgs) }
+    vars += argsInContext.entries.associate { (k, v) -> k to v.toString() }
+    return argsInContext
+}
+
+/**
+ * Calculate program arguments in context for a *particular runtime*.
+ * Helper method of [contextualizeArgs].
+ */
+private fun contextualizeArgsForRuntime(
     runtimes: List<RuntimeConfig>,
     runtime: RuntimeConfig,
     userArgs: ProgramArgs
@@ -418,9 +442,15 @@ fun contextualizeArgs(
         // else some other runtime will snarf up this arg, so this one should ignore it.
     }
 
+    debug("* ${runtime.prefix}:runtime -> ${resolved.runtime}")
+    debug("* ${runtime.prefix}:main -> ${resolved.main}")
+
     return resolved
 }
 
+/**
+ * @return True iff the given argument is unrecognized by *all* runtimes on the list.
+ */
 private fun unknownArg(
     runtimes: List<RuntimeConfig>,
     arg: String
