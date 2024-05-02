@@ -72,7 +72,7 @@ data class JaunchConfig (
     val pythonRuntimeArgs: Array<String> = emptyArray(),
 
     /** A list of candidate Python scripts, one of which will get launched. */
-    val pythonMainScript: Array<String> = emptyArray(),
+    val pythonScriptPath: Array<String> = emptyArray(),
 
     /** Arguments to pass to the Python program itself. */
     val pythonMainArgs: Array<String> = emptyArray(),
@@ -167,7 +167,7 @@ data class JaunchConfig (
             pythonVersionMax = config.pythonVersionMax ?: pythonVersionMax,
             pythonPackages = config.pythonPackages + pythonPackages,
             pythonRuntimeArgs = config.pythonRuntimeArgs + pythonRuntimeArgs,
-            pythonMainScript = config.pythonMainScript + pythonMainScript,
+            pythonScriptPath = config.pythonScriptPath + pythonScriptPath,
             pythonMainArgs = config.pythonMainArgs + pythonMainArgs,
 
             jvmEnabled = config.jvmEnabled ?: jvmEnabled,
@@ -223,7 +223,7 @@ fun readConfig(
     var pythonVersionMax: String? = null
     var pythonPackages: List<String>? = null
     var pythonRuntimeArgs: List<String>? = null
-    var pythonMainScript: List<String>? = null
+    var pythonScriptPath: List<String>? = null
     var pythonMainArgs: List<String>? = null
     var jvmEnabled: Boolean? = null
     var jvmRecognizedArgs: List<String>? = null
@@ -278,7 +278,7 @@ fun readConfig(
                     "python.version-max" -> pythonVersionMax = asString(value)
                     "python.packages" -> pythonPackages = asList(value)
                     "python.runtime-args" -> pythonRuntimeArgs = asList(value)
-                    "python.script-path" -> pythonMainScript = asList(value)
+                    "python.script-path" -> pythonScriptPath = asList(value)
                     "python.main-args" -> pythonMainArgs = asList(value)
                     "jvm.enabled" -> jvmEnabled = asBoolean(value)
                     "jvm.recognized-args" -> jvmRecognizedArgs = asList(value)
@@ -324,7 +324,7 @@ fun readConfig(
         pythonVersionMax = pythonVersionMax,
         pythonPackages = asArray(pythonPackages),
         pythonRuntimeArgs = asArray(pythonRuntimeArgs),
-        pythonMainScript = asArray(pythonMainScript),
+        pythonScriptPath = asArray(pythonScriptPath),
         pythonMainArgs = asArray(pythonMainArgs),
         jvmEnabled = jvmEnabled,
         jvmRecognizedArgs = asArray(jvmRecognizedArgs),

@@ -87,8 +87,8 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         // Calculate main script.
         debug()
         debug("Calculating main script path...")
-        val mainScriptPaths = calculate(config.pythonMainScript, hints, vars)
-        mainProgram = mainScriptPaths.firstOrNull()
+        val scriptPaths = calculate(config.pythonScriptPath, hints, vars)
+        mainProgram = scriptPaths.firstOrNull()
         debug("mainProgram -> ", mainProgram ?: "<null>")
 
         // Calculate main args.

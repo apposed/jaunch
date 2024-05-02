@@ -251,7 +251,7 @@ python.packages = []
 python.runtime-args = []
 
 # ==============================================================================
-# python.main-script
+# python.script-path
 # ==============================================================================
 # A list of paths to candidate main scripts, one of which will get launched.
 #
@@ -261,9 +261,9 @@ python.runtime-args = []
 # This field is useful if you want to launch a different main script depending on
 # criteria such as OS, CPU architecture, or which options are given on the CLI.
 
-#python.main-script = [
+#python.script-path = [
 #    '--fizzbuzz|fizzbuzz.py'
-#    '--main-script|${main-script}',
+#    '--script-path|${script-path}',
 #    'main.py', # default behavior
 #]
 
