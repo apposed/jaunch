@@ -12,7 +12,24 @@ class Vars(appDir: File, configDir: File, exeFile: File?) {
     }
 
     fun interpolateInto(args: MutableList<String>) {
-        // TODO: something ;-)
+        val noo = mutableListOf<String>()
+        for (arg in args) {
+            // Check for the special `@{...}` syntax referencing a list.
+            // In this case, we want to replace this item with the elements of
+            // the list, rather than stringifying the list object itself.
+            if (arg.startsWith("@{") && arg.endsWith("}")) {
+                // interpolate list
+                val name = arg.substring(2, arg.length - 1)
+                val list = vars[name]
+                if (list is Iterable<*>) {
+                    noo += list.map { it.toString() }
+                    continue
+                }
+            }
+            noo += interpolate(arg)
+        }
+        args.clear()
+        args += noo
     }
 
     operator fun get(key: String): Any? { return vars[key] }
