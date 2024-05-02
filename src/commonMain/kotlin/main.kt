@@ -532,13 +532,28 @@ private fun executeDirectives(
             continue
         }
 
-        // Not a global directive -- delegate execution to activated runtimes.
+        // Not a global directive -- delegate execution to the runtimes.
         var success = false
-        for (runtime in runtimes) {
+        val (activatedRuntimes, dormantRuntimes) =
+            runtimes.partition { it.directive in launchDirectives }
+
+        // First, we try the activated runtimes.
+        for (runtime in activatedRuntimes) {
             val myArgs = argsInContext[runtime.prefix]
                 ?: fail("No contextual args for {runtime.prefix} runtime?!")
             success = success || runtime.tryDirective(directive, myArgs)
         }
+
+        if (!success) {
+            // None of the activated runtimes wanted to handle it,
+            // so now we give the remaining ones a chance.
+            for (runtime in dormantRuntimes) {
+                val myArgs = argsInContext[runtime.prefix]
+                    ?: fail("No contextual args for {runtime.prefix} runtime?!")
+                success = success || runtime.tryDirective(directive, myArgs)
+            }
+        }
+
         if (!success) fail("Invalid directive: $directive")
     }
 
