@@ -98,6 +98,14 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         this.python = python
     }
 
+    override fun injectInto(vars: Vars) {
+        maybeAssign(vars, "scriptPath", mainProgram)
+        maybeAssign(vars, "rootPath", python?.rootPath)
+        maybeAssign(vars, "libPythonPath", python?.libPythonPath)
+        maybeAssign(vars, "binPython", python?.binPython)
+        maybeAssign(vars, "version", python?.version)
+    }
+
     override fun launch(args: ProgramArgs): List<String> {
         val libPythonPath = python?.libPythonPath ?: fail("No matching Python installations found.")
         return buildList {

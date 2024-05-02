@@ -33,8 +33,8 @@ class Vars(appDir: File, configDir: File, exeFile: File?) {
     }
 
     operator fun get(key: String): Any? { return vars[key] }
-    operator fun set(varName: String, value: String) { vars[varName] = value }
-    operator fun plusAssign(items: Map<String, String>) { vars += items }
+    operator fun set(varName: String, value: Any) { vars[varName] = value }
+    operator fun plusAssign(items: Map<String, Any>) { vars += items }
 
     private fun String.evaluate(hints: Set<String>): String? {
         val tokens = split('|')

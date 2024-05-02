@@ -386,7 +386,11 @@ private fun contextualizeArgs(
 ): Map<String, ProgramArgs> {
     debug("Contextualizing user arguments...")
     val argsInContext = runtimes.associate { it.prefix to contextualizeArgsForRuntime(runtimes, it, userArgs) }
-    vars += argsInContext.entries.associate { (k, v) -> k to v.toString() }
+
+    // Inject runtime configuration values into the variables.
+    vars += argsInContext.entries.associate { (k, v) -> "$k.runtimeArgs" to v.runtime }
+    vars += argsInContext.entries.associate { (k, v) -> "$k.mainArgs" to v.main }
+    runtimes.forEach { it.injectInto(vars) } // Runtime-specific keys.
     return argsInContext
 }
 

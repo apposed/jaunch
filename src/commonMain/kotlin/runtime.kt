@@ -37,6 +37,9 @@ abstract class RuntimeConfig(
         vars: Vars
     )
 
+    /** Populate variables with information about this runtime. */
+    abstract fun injectInto(vars: Vars)
+
     /** Get the launch directive block for this runtime configuration. */
     abstract fun launch(args: ProgramArgs): List<String>
 
@@ -70,6 +73,11 @@ abstract class RuntimeConfig(
         debug("$prefix: executing directive: $directive")
         doDirective(args)
         return true
+    }
+
+    /** Helper method for [injectInto]. */
+    protected fun maybeAssign(vars: Vars, key: String, value: Any?) {
+        if (value != null) vars["$prefix.$key"] = value
     }
 
     private fun argMatches(expected: String, actual: String): Boolean {

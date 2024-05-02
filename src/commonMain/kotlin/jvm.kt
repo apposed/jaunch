@@ -17,7 +17,7 @@ data class JvmConstraints(
 class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     RuntimeConfig("jvm", "JVM", recognizedArgs)
 {
-    var java: JavaInstallation? = null
+    private var java: JavaInstallation? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
         "dry-run" to { args -> printlnErr(dryRun(args)) },
@@ -137,6 +137,17 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         debugList("Main arguments calculated:", mainArgs)
 
         this.java = java
+    }
+
+    override fun injectInto(vars: Vars) {
+        maybeAssign(vars, "mainClass", mainProgram)
+        maybeAssign(vars, "rootPath", java?.rootPath)
+        maybeAssign(vars, "libjvmPath", java?.libjvmPath)
+        maybeAssign(vars, "binJava", java?.binJava)
+        maybeAssign(vars, "version", java?.version)
+        maybeAssign(vars, "distro", java?.distro)
+        maybeAssign(vars, "osName", java?.osName)
+        maybeAssign(vars, "cpuArch", java?.cpuArch)
     }
 
     override fun launch(args: ProgramArgs): List<String> {
