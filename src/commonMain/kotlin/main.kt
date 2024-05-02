@@ -149,7 +149,7 @@ private fun findConfigDirectory(appDir: File): File {
 }
 
 private fun readConfigFile(configDir: File, exeFile: File?): JaunchConfig {
-    var fileName = if (exeFile == null) "jaunch" else "${exeFile.base.name}"
+    var fileName = exeFile?.base?.name ?: "jaunch"
     // The launcher might have trailing suffixes such as OS_NAME and/or CPU_ARCH.
     // For example: fizzbuzz-linux-x64. In such a situation, we want to look for
     // fizzbuzz-linux-x64.toml, fizzbuzz-linux.toml, and fizzbuzz.toml.
