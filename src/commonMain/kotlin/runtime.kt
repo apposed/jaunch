@@ -34,7 +34,7 @@ abstract class RuntimeConfig(
         configDir: File,
         config: JaunchConfig,
         hints: MutableSet<String>,
-        vars: MutableMap<String, String>
+        vars: Vars
     )
 
     /** Get the launch directive block for this runtime configuration. */

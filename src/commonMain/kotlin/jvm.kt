@@ -30,10 +30,10 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         configDir: File,
         config: JaunchConfig,
         hints: MutableSet<String>,
-        vars: MutableMap<String, String>
+        vars: Vars
     ) {
         // Calculate all the places to search for Java.
-        val jvmRootPaths = calculate(config.jvmRootPaths, hints, vars)
+        val jvmRootPaths = vars.calculate(config.jvmRootPaths, hints)
                 .flatMap { glob(it) }
                 .filter { File(it).isDirectory }
                 .toSet()
@@ -43,7 +43,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         jvmRootPaths.forEach { debug("* ", it) }
 
         // Calculate all the places to look for the JVM library.
-        val libjvmSuffixes = calculate(config.jvmLibSuffixes, hints, vars)
+        val libjvmSuffixes = vars.calculate(config.jvmLibSuffixes, hints)
 
         debug()
         debug("Suffixes to check for libjvm:")
@@ -51,10 +51,10 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
 
         // Calculate Java distro and version constraints.
         val allowWeirdJvms = config.jvmAllowWeirdRuntimes ?: false
-        val distrosAllowed = calculate(config.jvmDistrosAllowed, hints, vars)
-        val distrosBlocked = calculate(config.jvmDistrosBlocked, hints, vars)
-        val osAliases = calculate(config.osAliases, hints, vars)
-        val archAliases = calculate(config.archAliases, hints, vars)
+        val distrosAllowed = vars.calculate(config.jvmDistrosAllowed, hints)
+        val distrosBlocked = vars.calculate(config.jvmDistrosBlocked, hints)
+        val osAliases = vars.calculate(config.osAliases, hints)
+        val archAliases = vars.calculate(config.archAliases, hints)
         val constraints = JvmConstraints(
             configDir, libjvmSuffixes,
             allowWeirdJvms, config.jvmVersionMin, config.jvmVersionMax,
@@ -91,13 +91,13 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         debug("* hints -> ", hints)
 
         // Calculate classpath.
-        val rawClasspath = calculate(config.jvmClasspath, hints, vars)
+        val rawClasspath = vars.calculate(config.jvmClasspath, hints)
         debugList("Classpath to calculate:", rawClasspath)
         val classpath = rawClasspath.flatMap { glob(it) }
         debugList("Classpath calculated:", classpath)
 
         // Calculate JVM arguments.
-        runtimeArgs += calculate(config.jvmRuntimeArgs, hints, vars)
+        runtimeArgs += vars.calculate(config.jvmRuntimeArgs, hints)
         debugList("JVM arguments calculated:", runtimeArgs)
 
         // Append or amend argument declaring classpath elements.
@@ -128,12 +128,12 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         // Calculate main class.
         debug()
         debug("Calculating main class name...")
-        val mainClassNames = calculate(config.jvmMainClass, hints, vars)
+        val mainClassNames = vars.calculate(config.jvmMainClass, hints)
         mainProgram = mainClassNames.firstOrNull()
         debug("mainProgram -> ", mainProgram ?: "<null>")
 
         // Calculate main args.
-        mainArgs += calculate(config.jvmMainArgs, hints, vars)
+        mainArgs += vars.calculate(config.jvmMainArgs, hints)
         debugList("Main arguments calculated:", mainArgs)
 
         this.java = java

@@ -24,10 +24,10 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         configDir: File,
         config: JaunchConfig,
         hints: MutableSet<String>,
-        vars: MutableMap<String, String>
+        vars: Vars
     ) {
         // Calculate all the places to search for Python.
-        val pythonRootPaths = calculate(config.pythonRootPaths, hints, vars)
+        val pythonRootPaths = vars.calculate(config.pythonRootPaths, hints)
                 .flatMap { glob(it) }
                 .filter { File(it).isDirectory }
                 .toSet()
@@ -37,7 +37,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         pythonRootPaths.forEach { debug("* ", it) }
 
         // Calculate all the places to look for the Python library.
-        val libPythonSuffixes = calculate(config.pythonLibSuffixes, hints, vars)
+        val libPythonSuffixes = vars.calculate(config.pythonLibSuffixes, hints)
 
         debug()
         debug("Suffixes to check for libpython:")
@@ -81,18 +81,18 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         debug("* hints -> ", hints)
 
         // Calculate runtime arguments.
-        runtimeArgs += calculate(config.pythonRuntimeArgs, hints, vars)
+        runtimeArgs += vars.calculate(config.pythonRuntimeArgs, hints)
         debugList("Python arguments calculated:", runtimeArgs)
 
         // Calculate main script.
         debug()
         debug("Calculating main script path...")
-        val scriptPaths = calculate(config.pythonScriptPath, hints, vars)
+        val scriptPaths = vars.calculate(config.pythonScriptPath, hints)
         mainProgram = scriptPaths.firstOrNull()
         debug("mainProgram -> ", mainProgram ?: "<null>")
 
         // Calculate main args.
-        mainArgs += calculate(config.pythonMainArgs, hints, vars)
+        mainArgs += vars.calculate(config.pythonMainArgs, hints)
         debugList("Main arguments calculated:", mainArgs)
 
         this.python = python

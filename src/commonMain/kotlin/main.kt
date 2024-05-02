@@ -66,7 +66,10 @@ fun main(args: Array<String>) {
     val supportedOptions: JaunchOptions = parseSupportedOptions(config.supportedOptions.asIterable())
 
     val hints = createHints()
-    val vars = createVars(appDir, configDir, exeFile)
+
+    // Declare a set to store option parameter values.
+    // It will be populated at argument parsing time.
+    val vars = Vars(appDir, configDir, exeFile)
 
     // Sort out the arguments, keeping the user-specified runtime and main arguments in a struct. At this point,
     // it may yet be ambiguous whether certain user args belong with the runtime, the main program, or neither.
@@ -88,7 +91,10 @@ fun main(args: Array<String>) {
     // Why? So that we can e.g. pass the final JVM arguments to a PYTHON launch, where the
     // Python script being invoked will itself start up a JVM with those given JVM arguments.
     // In the case of cyclic variable references between runtimes, the interpolation will be incomplete.
-    interpolateArgs(argsInContext, vars)
+    for (programArgs in argsInContext.values) {
+        vars.interpolateInto(programArgs.runtime)
+        vars.interpolateInto(programArgs.main)
+    }
 
     // Declare the global (runtime-agnostic) directives.
     val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
@@ -208,25 +214,6 @@ private fun createHints(): MutableSet<String> {
 }
 
 /**
- * Declare a set to store option parameter values.
- * It will be populated at argument parsing time.
- */
-private fun createVars(
-    appDir: File,
-    configDir: File,
-    exeFile: File?
-): MutableMap<String, String> {
-    val vars = mutableMapOf(
-        // Special variable containing application directory path.
-        "app-dir" to appDir.path,
-        // Special variable containing config directory path.
-        "config-dir" to configDir.path,
-    )
-    if (exeFile?.exists == true) vars["executable"] = exeFile.path
-    return vars
-}
-
-/**
  * Categorize the configurator's input arguments.
  *
  * An input argument matching one of Jaunch's supported options becomes an active hint.
@@ -244,7 +231,7 @@ private fun createVars(
 private fun classifyArguments(
     inputArgs: List<String>,
     supportedOptions: JaunchOptions,
-    vars: MutableMap<String, String>,
+    vars: Vars,
     hints: MutableSet<String>
 ): ProgramArgs {
     val userArgs = ProgramArgs()
@@ -312,9 +299,9 @@ private fun classifyArguments(
 private fun applyModeHints(
     modes: Array<String>,
     hints: MutableSet<String>,
-    vars: MutableMap<String, String>
+    vars: Vars
 ) {
-    for (mode in calculate(modes, hints, vars)) {
+    for (mode in vars.calculate(modes, hints)) {
         if (mode.startsWith("!")) {
             // Negated mode expression: remove the mode hint.
             hints -= mode.substring(1)
@@ -329,7 +316,7 @@ private fun configureRuntimes(
     config: JaunchConfig,
     configDir: File,
     hints: MutableSet<String>,
-    vars: MutableMap<String, String>
+    vars: Vars
 ): List<RuntimeConfig> {
     debug()
     debug("Configuring runtimes...")
@@ -349,9 +336,9 @@ private fun configureRuntimes(
 private fun calculateDirectives(
     config: JaunchConfig,
     hints: MutableSet<String>,
-    vars: MutableMap<String, String>
+    vars: Vars
 ): Pair<List<String>, List<String>> {
-    val directives = calculate(config.directives, hints, vars).flatMap { it.split(",") }.toSet()
+    val directives = vars.calculate(config.directives, hints).flatMap { it.split(",") }.toSet()
     val (launchDirectives, configDirectives) = directives.partition { it == it.uppercase() }
 
     debug()
@@ -395,7 +382,7 @@ fun validateUserArgs(
 private fun contextualizeArgs(
     runtimes: List<RuntimeConfig>,
     userArgs: ProgramArgs,
-    vars: MutableMap<String, String>
+    vars: Vars
 ): Map<String, ProgramArgs> {
     debug("Contextualizing user arguments...")
     val argsInContext = runtimes.associate { it.prefix to contextualizeArgsForRuntime(runtimes, it, userArgs) }
@@ -494,23 +481,6 @@ private fun unknownArg(
     arg: String
 ): Boolean {
     return runtimes.firstOrNull { it.recognizes(arg) > 0 } == null
-}
-
-private fun interpolateArgs(argsInContext: Map<String, ProgramArgs>, vars: Map<String, String>) {
-    // TODO: something ;-)
-    /*
-    for (args in argsInContext.values) {
-        val nooRuntime = mutableListOf<String>()
-        for (arg in args.runtime) nooRuntime += interpolate(arg)
-        args.runtime.clear()
-        args.runtime += nooRuntime
-
-        val nooMain = mutableListOf<String>()
-        for (arg in args.main) nooMain += interpolate(arg)
-        args.main.clear()
-        args.main += nooMain
-    }
-    */
 }
 
 private fun executeDirectives(
