@@ -128,7 +128,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     // Clean up.
     // =======================================================================
 
-    debug("[JAUNCH-JVM] DESTROYING JAVA VM");
+    debug("[JAUNCH-JVM] AWAITING JVM DESTRUCTION");
     (*jvm)->DestroyJavaVM(jvm);
     debug("[JAUNCH-JVM] CLOSING LIBJVM");
     lib_close(jvm_library);
