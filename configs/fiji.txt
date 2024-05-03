@@ -22,6 +22,8 @@ However, the following features of the ImageJ Launcher are no longer supported:
   parameters on macOS. We need to keep the entire Fiji.app immutable in the
   future, to facilitate code signing for better distribution mechanisms.
 
+* Best-effort automatic detection of headless mode on macOS and Linux.
+
 * TODO: Decide about all the various `net.imagej.launcher.*` features...
 
 See also https://github.com/scijava/jaunch/issues.
