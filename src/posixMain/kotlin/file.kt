@@ -1,4 +1,5 @@
 import kotlinx.cinterop.*
+import kotlinx.cinterop.nativeHeap.alloc
 import platform.posix.*
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
@@ -65,6 +66,35 @@ actual class File actual constructor(private val rawPath: String) {
 
     override fun toString(): String {
         return path
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun mv(dest: File): Boolean {
+        memScoped {
+            return rename(path, dest.path) == 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rm(): Boolean {
+        memScoped {
+            return remove(path) == 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rmdir(): Boolean {
+        memScoped {
+            return rmdir(path) == 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun stat(): Long {
+        memScoped {
+            val statBuf = alloc<stat>()
+            return stat(path, statBuf.ptr).toLong()
+        }
     }
 
 }

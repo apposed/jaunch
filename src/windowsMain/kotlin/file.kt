@@ -1,4 +1,5 @@
 import kotlinx.cinterop.*
+import kotlinx.cinterop.internal.CCall
 import platform.windows.*
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
@@ -92,6 +93,68 @@ actual class File actual constructor(private val rawPath: String) {
 
     override fun toString(): String {
         return path
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun mv(dest: File): Boolean {
+        memScoped {
+            val pathW = path.wcstr.ptr
+            val destW = dest.path.wcstr.ptr
+            val flags = MOVEFILE_REPLACE_EXISTING.toUInt()
+            return MoveFileEx!!(pathW, destW, flags) != 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rm(): Boolean {
+        memScoped {
+            return DeleteFileW(path) != 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rmdir(): Boolean {
+        memScoped {
+            return RemoveDirectoryW(path) != 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun stat(): Long {
+        memScoped {
+            // Open the file to get a handle
+            val fileHandle = CreateFileW(
+                path,
+                GENERIC_READ, // Open for reading
+                0u, // No sharing
+                null, // Default security
+                OPEN_EXISTING.toUInt(),
+                0u, // Default attributes
+                null // No template
+            )
+
+            // Check if file handle is valid
+            if (fileHandle == INVALID_HANDLE_VALUE) {
+                println("Failed to open the file: ${GetLastError()}")
+                return -1
+            }
+
+            // Prepare to get file information
+            val fileInfo = alloc<BY_HANDLE_FILE_INFORMATION>()
+
+            // Get file information
+            val success = GetFileInformationByHandle(fileHandle, fileInfo.ptr) != 0
+            CloseHandle(fileHandle) // Close the file handle
+
+            if (success) {
+                val highSize = fileInfo.nFileSizeHigh.toLong() shl 32
+                val lowSize = fileInfo.nFileSizeLow.toLong()
+                return highSize + lowSize
+            } else {
+                println("Failed to get file information: ${GetLastError()}")
+                return -1
+            }
+        }
     }
 }
 @OptIn(ExperimentalForeignApi::class)
