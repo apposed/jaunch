@@ -63,7 +63,10 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
                 break
             }
         }
-        if (python == null) fail("No Python installation found.")
+        if (python == null) {
+            debug("No Python installation found.")
+            return
+        }
         debug("Successfully discovered Python installation:")
         debug("* rootPath -> ", python.rootPath)
         debug("* libPythonPath -> ", python.libPythonPath ?: "<null>")

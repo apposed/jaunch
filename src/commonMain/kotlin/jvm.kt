@@ -74,7 +74,10 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
                 break
             }
         }
-        if (java == null) fail("No Java installation found.")
+        if (java == null) {
+            debug("No Java installation found.")
+            return
+        }
         debug("Successfully discovered Java installation:")
         debug("* rootPath -> ", java.rootPath)
         debug("* libjvmPath -> ", java.libjvmPath ?: "<null>")
