@@ -1,3 +1,5 @@
+// Platform-specific File class and functions.
+
 const val BUFFER_SIZE = 65536
 
 /** Abstract representation of file and directory pathnames. Always canonical! */

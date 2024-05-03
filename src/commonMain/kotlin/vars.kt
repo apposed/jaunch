@@ -1,3 +1,5 @@
+// Vars class and related functions for working with variables.
+
 class Vars(appDir: File, configDir: File, exeFile: File?) {
     private val vars = mutableMapOf<String, Any>()
 
