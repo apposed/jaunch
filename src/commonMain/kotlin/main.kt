@@ -78,6 +78,8 @@ fun main(args: Array<String>) {
     val runtimes = configureRuntimes(config, configDir, hints, vars)
     val (launchDirectives, configDirectives) = calculateDirectives(config, hints, vars)
 
+    debugBanner("BUILDING ARGUMENT LISTS")
+
     // Ensure that the user arguments meet our expectations.
     validateUserArgs(config, runtimes, userArgs)
 
@@ -336,6 +338,8 @@ private fun calculateDirectives(
     hints: MutableSet<String>,
     vars: Vars
 ): Pair<List<String>, List<String>> {
+    debugBanner("CALCULATING DIRECTIVES")
+
     val directives = vars.calculate(config.directives, hints).flatMap { it.split(",") }.toSet()
     val (launchDirectives, configDirectives) = directives.partition { it == it.uppercase() }
 
@@ -493,6 +497,8 @@ private fun executeDirectives(
     userArgs: ProgramArgs,
     argsInContext: Map<String, ProgramArgs>
 ) {
+    debugBanner("EXECUTING DIRECTIVES")
+
     // Execute the configurator-side directives.
     debug()
     debug("Executing configurator-side directives...")
