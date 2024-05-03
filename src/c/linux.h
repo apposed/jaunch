@@ -18,7 +18,7 @@ int is_command_available(const char *command) {
 void init_threads() {
     void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
     if (libX11Handle != NULL) {
-        debug("Running XInitThreads\n");
+        debug("[JAUNCH] Running XInitThreads");
         xinit_threads_reference = dlsym(libX11Handle, "XInitThreads");
 
         if (xinit_threads_reference != NULL) {
