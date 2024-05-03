@@ -7,13 +7,13 @@ same manner.
 
 However, the following features of the ImageJ Launcher are no longer supported:
 
-* No longer supports launching in "Fiji1" mode (fiji.Main).
+* Launching in "Fiji1" mode (fiji.Main).
 
-* No longer supports launching in "IJ1" mode without ImageJ2 support.
+* Launching in "IJ1" mode without ImageJ2 support.
   A separate `imagej` launcher configuration now exists for this use case.
   But it does not use the ImageJ.cfg file; you must edit imagej.toml.
 
-* No longer supports launching versions of ImageJ2 before 2.0.0-beta-8
+* Launching versions of ImageJ2 before 2.0.0-beta-8
   (released 2014-05-16) when the component+package structure was finalized.
 
 * TODO: Decide about all the various `net.imagej.launcher.*` features...
