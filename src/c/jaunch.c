@@ -191,6 +191,9 @@ int main(const int argc, const char *argv[]) {
             exit_code = launch(launch_python, dir_argc, dir_argv);
             if (exit_code != SUCCESS) break;
         }
+        else if (strcmp(directive, "INIT_THREADS") == 0) {
+            init_threads();
+        }
         else if (strcmp(directive, "ERROR") == 0) {
             // =======================================================================
             // Parse the arguments, which must conform to the following structure:
