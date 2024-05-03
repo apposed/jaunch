@@ -51,7 +51,8 @@ int launch(const LaunchFunc launch_func,
 
 int debug_mode = 0;
 
-void error(const char *fmt, ...) {
+void print_at_level(int verbosity, const char *fmt, ...) {
+    if (debug_mode < verbosity) return;
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
@@ -60,28 +61,20 @@ void error(const char *fmt, ...) {
     fflush(stderr);
 }
 
-void debug(const char *fmt, ...) {
-    if (!debug_mode) return;
-    va_list ap;
-    int i;
-    va_list nothing;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    fputc('\n', stderr);
-    fflush(stderr);
-}
+#define error(fmt, ...) print_at_level(0, fmt, ##__VA_ARGS__)
+#define debug(fmt, ...) print_at_level(1, fmt, ##__VA_ARGS__)
+#define debug_verbose(fmt, ...) print_at_level(2, fmt, ##__VA_ARGS__)
 
 #define CHECK_ARGS(prefix, name, argc, min, max, argv) \
     do { \
-        debug("[%s] %s_argc = %zu", (prefix), (name), (argc)); \
+        debug_verbose("[%s] %s_argc = %zu", (prefix), (name), (argc)); \
         if ((argc) < (min) || (argc) > (max)) { \
             error("Error: %s_argc value %d is out of bounds [%d, %d]\n", \
                 name, (argc), (min), (max)); \
             return ERROR_ARGC_OUT_OF_BOUNDS; \
         } \
         for (size_t a = 0; a < (argc); a++) { \
-            debug("[%s] %s_argv[%zu] = %s", (prefix), (name), a, argv[a]); \
+            debug_verbose("[%s] %s_argv[%zu] = %s", (prefix), (name), a, argv[a]); \
         } \
     } while(0)
 

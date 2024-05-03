@@ -37,7 +37,7 @@ int run_command(const char *command,
     int stdinPipe[2];
     int stdoutPipe[2];
 
-    debug("[JAUNCH] run_command: opening pipes to/from configurator");
+    debug_verbose("[JAUNCH] run_command: opening pipes to/from configurator");
     if (pipe(stdinPipe) == -1 || pipe(stdoutPipe) == -1) {
       error("Failed to open pipes to/from configurator");
       return ERROR_PIPE;
@@ -80,20 +80,20 @@ int run_command(const char *command,
         close(stdoutPipe[1]);
 
         // Write to the child process's stdin
-        debug("[JAUNCH] run_command: writing to jaunch stdin");
+        debug_verbose("[JAUNCH] run_command: writing to jaunch stdin");
         // Passing the input line count as the first line tells the child process what
         // to expect, so that it can stop reading from stdin once it has received
         // those lines, even though the pipe is not yet closed. This avoids deadlocks.
         dprintf(stdinPipe[1], "%zu\n", numInput);
-        debug("[JAUNCH] run_command: wrote numInput: %d", numInput);
+        debug_verbose("[JAUNCH] run_command: wrote numInput: %d", numInput);
         for (size_t i = 0; i < numInput; i++) {
             dprintf(stdinPipe[1], "%s\n", input[i]);
-            debug("[JAUNCH] run_command: wrote input #%d: %s", i, input[i]);
+            debug_verbose("[JAUNCH] run_command: wrote input #%d: %s", i, input[i]);
         }
 
         // Close the write end of stdin to signal the end of input
         close(stdinPipe[1]);
-        debug("[JAUNCH] run_command: closed jaunch stdin pipe");
+        debug_verbose("[JAUNCH] run_command: closed jaunch stdin pipe");
 
         // Read from the child process's stdout
         char buffer[1024];
