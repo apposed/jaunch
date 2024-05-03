@@ -18,6 +18,10 @@ However, the following features of the ImageJ Launcher are no longer supported:
 
 * The undocumented `--tools-jar` nor `--only-tools-jar` options.
 
+* Usage of Info.plist `<key>` elements to get and set launch configuration
+  parameters on macOS. We need to keep the entire Fiji.app immutable in the
+  future, to facilitate code signing for better distribution mechanisms.
+
 * TODO: Decide about all the various `net.imagej.launcher.*` features...
 
 See also https://github.com/scijava/jaunch/issues.
