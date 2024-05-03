@@ -15,8 +15,8 @@ mkdir -p build
 compile() {
   compiler=$1
   command -v "$compiler" >/dev/null 2>&1 || {
-    echo "[WARNING] Skipping invocation: $@"
-    return
+    echo "[ERROR] No compiler installed: $compiler"
+    exit 1
   }
   shift
   (set -x; "$compiler" \
