@@ -15,6 +15,14 @@ fun debugList(message: String, items: Collection<String>) {
     items.forEach { debug("* $it") }
 }
 
+fun debugBanner(message: String) {
+    val dashes = "-".repeat(message.length + 2)
+    debug()
+    debug("/$dashes\\")
+    debug("| $message |")
+    debug("\\$dashes/")
+}
+
 fun warn(vararg args: Any) { report("WARNING", *args) }
 
 fun fail(message: String): Nothing {

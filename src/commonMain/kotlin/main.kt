@@ -318,16 +318,16 @@ private fun configureRuntimes(
     hints: MutableSet<String>,
     vars: Vars
 ): List<RuntimeConfig> {
-    debug()
-    debug("Configuring runtimes...")
-
     // Build the list of enabled runtimes.
     val runtimes = mutableListOf<RuntimeConfig>()
     if (config.jvmEnabled == true) runtimes += JvmRuntimeConfig(config.jvmRecognizedArgs)
     if (config.pythonEnabled == true) runtimes += PythonRuntimeConfig(config.pythonRecognizedArgs)
 
     // Discover the runtime installations.
-    for (r in runtimes) r.configure(configDir, config, hints, vars)
+    for (r in runtimes) {
+        debugBanner("CONFIGURING RUNTIME: ${r.directive}")
+        r.configure(configDir, config, hints, vars)
+    }
 
     return runtimes
 }
