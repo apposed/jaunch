@@ -1,6 +1,7 @@
 // Main entry point for Jaunch configurator.
 
 import platform.posix.exit
+import platform.posix.rename
 
 const val USAGE_MESSAGE = """
 Hello! You have found the Jaunch configurator.
@@ -98,7 +99,8 @@ fun main(args: Array<String>) {
 
     // Declare the global (runtime-agnostic) directives.
     val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
-        "help" to { _ -> help(exeFile, programName, supportedOptions) }
+        "help" to { _ -> help(exeFile, programName, supportedOptions) },
+        "install-pending-updates" to { _ -> applyUpdate(appDir, appDir / "update") }
     )
 
     // Finally, execute all the directives! \^_^/
@@ -571,4 +573,26 @@ private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOp
     printlnErr("In addition, the following options are supported:")
     val optionsUnique = linkedSetOf(*supportedOptions.values.toTypedArray())
     optionsUnique.forEach { printlnErr(it.help()) }
+}
+
+private fun applyUpdate(appDir: File, updateSubDir: File) {
+    if (!updateSubDir.exists) return
+
+    // Recursively copy over all files in the update subdir
+    for (file in updateSubDir.ls()) {
+        if (file.isDirectory) applyUpdate(appDir, file)
+        else {
+            val dest = appDir / file.path.substring((appDir / "update").path.length)
+            if (file.stat() == 0L) {
+                val rmDest = dest.rm()
+                if (!rmDest) error("Couldn't remove $dest")
+                val rmFile = file.rm()
+                if (!rmFile) error("Couldn't remove $file")
+            } else {
+                file.mv(dest) || error("Couldn't replace $dest")
+            }
+        }
+    }
+
+    updateSubDir.rmdir()
 }
