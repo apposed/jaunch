@@ -89,6 +89,7 @@ modes = [
 
 directives = [
   '--print-ij-dir|print-app-dir,ABORT', # For backwards compatibility.
+  'LAUNCH:JVM|INIT_THREADS',
 ]
 
 # /============================================================================\
