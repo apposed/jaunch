@@ -11,7 +11,7 @@ jaunch-version = 1
 
 program-name = 'Fiji'
 
-includes = ['jvm.toml']
+includes = ['jvm.toml', 'python.toml']
 
 supported-options = [
     '--print-ij-dir|print where Fiji thinks it is located',
@@ -24,6 +24,7 @@ supported-options = [
     '--no-splash|suppress showing a splash screen upon startup',
 
     # Options for Fiji:
+    '--python|launch in Python mode!',
     '--dont-patch-ij1|do not try to runtime-patch ImageJ (implies --ij1)',
     '--ij2,--imagej|no effect -- here for backwards compatibility only', #NO
     '--ij1|start in original ImageJ mode', #NO
@@ -56,7 +57,9 @@ supported-options = [
 ]
 
 modes = [
-  'LAUNCH:JVM',
+  '!--python|LAUNCH:JVM',
+  '--python|LAUNCH:PYTHON',
+  '--python|--full-classpath',
 
   # Decide which mode to launch: default, original-imagej, legacy-fiji, or custom-main.
   '--dont-patch-ij1|MODE:original-imagej',
@@ -86,14 +89,28 @@ modes = [
 
 directives = [
   '--print-ij-dir|print-app-dir,ABORT', # For backwards compatibility.
-  'JVM',
 ]
 
 # /============================================================================\
 # |                               PYTHON CONFIG                                |
 # \============================================================================/
 
-# TODO
+python.min-version = '3.8'
+
+python.packages = [
+  'pyimagej>=1.4.1',
+  'scyjava>=1.9.1',
+]
+
+python.script-path = ['fiji.py']
+
+python.main-args = [
+    '${jvm.libjvmPath}',
+    '@{jvm.runtimeArgs}',
+    '--',
+    '${jvm.mainClass}',
+    '@{jvm.mainArgs}',
+]
 
 # /============================================================================\
 # |                                JAVA CONFIG                                 |
@@ -105,7 +122,7 @@ jvm.root-paths = [
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
 ]
 
-jvm.version-min = '8'
+jvm.version-min = '21'
 
 jvm.classpath = [
     '--full-classpath|${app-dir}/jars/*.jar',
