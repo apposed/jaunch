@@ -160,8 +160,7 @@ private fun canonicalize(path: String): String {
     val bufferLength = MAX_PATH
     memScoped {
         val buffer = allocArray<UShortVar>(bufferLength)
-        val fullPathLength = GetFullPathName?.let { it(p.wcstr.ptr, bufferLength.toUInt(), buffer, null) } ?:
-            throw RuntimeException("GetFullPathName function not available")
+        val fullPathLength = GetFullPathName!!(p.wcstr.ptr, bufferLength.toUInt(), buffer, null)
         if (fullPathLength == 0u) throw RuntimeException("Failed to get full path: ${GetLastError()}")
         return buffer.toKString()
     }
