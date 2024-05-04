@@ -583,7 +583,7 @@ private fun applyUpdate(appDir: File, updateSubDir: File) {
         if (file.isDirectory) applyUpdate(appDir, file)
         else {
             val dest = appDir / file.path.substring((appDir / "update").path.length)
-            if (file.stat() == 0L) {
+            if (file.length == 0L) {
                 val rmDest = dest.rm()
                 if (!rmDest) error("Couldn't remove $dest")
                 val rmFile = file.rm()

@@ -13,12 +13,12 @@ expect class File(rawPath: String) {
     val isFile: Boolean
     val isDirectory: Boolean
     val isRoot: Boolean
+    val length : Long
     fun ls(): List<File>
     fun lines(): List<String>
     fun mv(dest:File): Boolean
     fun rm() : Boolean
     fun rmdir() : Boolean
-    fun stat() : Long
 }
 
 // -- Platform-agnostic File members --
