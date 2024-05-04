@@ -584,10 +584,8 @@ private fun applyUpdate(appDir: File, updateSubDir: File) {
         else {
             val dest = appDir / file.path.substring((appDir / "update").path.length)
             if (file.length == 0L) {
-                val rmDest = dest.rm()
-                if (!rmDest) error("Couldn't remove $dest")
-                val rmFile = file.rm()
-                if (!rmFile) error("Couldn't remove $file")
+                dest.rm() || error("Couldn't remove $dest")
+                file.rm() || error("Couldn't remove $file")
             } else {
                 file.mv(dest) || error("Couldn't replace $dest")
             }
