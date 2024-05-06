@@ -87,6 +87,26 @@ actual class File actual constructor(private val rawPath: String) {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun mkdir(): Boolean {
+        memScoped {
+            // Create the directory, returning false if it fails
+            val result = CreateDirectoryW(path, null)
+
+            if (result == 0) {
+                val errorCode = GetLastError()
+                if (errorCode == ERROR_ALREADY_EXISTS.toUInt()) {
+                    return true // The directory already exists
+                } else {
+                    println("Error creating directory '$path': $errorCode")
+                    return false
+                }
+            }
+
+            return true
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun mv(dest: File): Boolean {
         memScoped {
             val pathW = path.wcstr.ptr
