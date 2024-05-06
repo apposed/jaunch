@@ -580,9 +580,12 @@ private fun applyUpdate(appDir: File, updateSubDir: File) {
 
     // Recursively copy over all files in the update subdir
     for (file in updateSubDir.ls()) {
-        if (file.isDirectory) applyUpdate(appDir, file)
+        val dest = appDir / file.path.substring((appDir / "update").path.length)
+        if (file.isDirectory) {
+            dest.mkdir() || error("Couldn't create path $dest")
+            applyUpdate(appDir, file)
+        }
         else {
-            val dest = appDir / file.path.substring((appDir / "update").path.length)
             if (file.length == 0L) {
                 dest.rm() || error("Couldn't remove $dest")
                 file.rm() || error("Couldn't remove $file")
