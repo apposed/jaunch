@@ -1,5 +1,6 @@
 import kotlinx.cinterop.*
 import platform.windows.*
+import kotlin.math.min
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class File actual constructor(private val rawPath: String) {
@@ -16,14 +17,19 @@ actual class File actual constructor(private val rawPath: String) {
 
     actual val isDirectory: Boolean get() = isMode(FILE_ATTRIBUTE_DIRECTORY)
 
-    private fun isMode(modeBits: Int): Boolean {
-        val attrs = GetFileAttributesA(path)
-        return attrs != INVALID_FILE_ATTRIBUTES && (attrs.toInt() and modeBits) != 0
-    }
-
     actual val isRoot: Boolean =
         // Is it a drive letter plus backslash (e.g. `C:\`)?
         path.length == 3 && (path[0] in 'a'..'z' || path[0] in 'A'..'Z') && path[1] == ':' && path[2] == '\\'
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual val length: Long get() {
+        val fileHandle = openFile(path) ?: return -1
+        try {
+            return fileSize(fileHandle) ?: -1
+        } finally {
+            CloseHandle(fileHandle)
+        }
+    }
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun ls(): List<File> {
@@ -55,45 +61,90 @@ actual class File actual constructor(private val rawPath: String) {
     @OptIn(ExperimentalForeignApi::class)
     actual fun lines(): List<String> {
         val lines = mutableListOf<String>()
-
         memScoped {
-            val fileHandle = CreateFileA(
-                path,
-                GENERIC_READ,
-                FILE_SHARE_READ.toUInt(),
-                null,
-                OPEN_EXISTING.toUInt(),
-                FILE_ATTRIBUTE_NORMAL.toUInt(),
-                null
-            )
-
-            if (fileHandle == INVALID_HANDLE_VALUE) {
-                println("Error opening file: ${GetLastError()}")
-                return emptyList()
-            }
-
+            val fileHandle = openFile(path) ?: return lines
             try {
-                val fileSize = GetFileSize(fileHandle, null).toInt()
-                val buffer = allocArray<ByteVar>(fileSize)
+                val fileSize = fileSize(fileHandle) ?: return lines
+                val size = min(fileSize, Int.MAX_VALUE.toLong()).toInt()
+                if (size < fileSize) warn("Reading only $size bytes of large file $path")
+                val buffer = allocArray<ByteVar>(size)
                 val bytesRead = alloc<DWORDVar>()
                 // TODO: Is bytesRead < fileSize possible? If so, do we need to loop here?
-                if (ReadFile(fileHandle, buffer, fileSize.toUInt(), bytesRead.ptr, null) != 0) {
+                if (ReadFile(fileHandle, buffer, size.toUInt(), bytesRead.ptr, null) != 0) {
                     lines.addAll(buffer.toKString().split(Regex("(\\r\\n|\\n)")))
                 } else {
-                    println("Error reading file: ${GetLastError()}")
+                    printlnErr("Error reading file: ${GetLastError()}")
                 }
             } finally {
                 CloseHandle(fileHandle)
             }
         }
-
         return lines
     }
 
     override fun toString(): String {
         return path
     }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun mv(dest: File): Boolean {
+        memScoped {
+            val pathW = path.wcstr.ptr
+            val destW = dest.path.wcstr.ptr
+            val flags = MOVEFILE_REPLACE_EXISTING.toUInt()
+            return MoveFileEx!!(pathW, destW, flags) != 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rm(): Boolean {
+        memScoped {
+            return DeleteFileW(path) != 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rmdir(): Boolean {
+        memScoped {
+            return RemoveDirectoryW(path) != 0
+        }
+    }
+
+    private fun isMode(modeBits: Int): Boolean {
+        val attrs = GetFileAttributesA(path)
+        return attrs != INVALID_FILE_ATTRIBUTES && (attrs.toInt() and modeBits) != 0
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    private fun openFile(path: String): HANDLE? {
+        val fileHandle = CreateFileW(
+            path,
+            GENERIC_READ,
+            FILE_SHARE_READ.toUInt(),
+            null,
+            OPEN_EXISTING.toUInt(),
+            FILE_ATTRIBUTE_NORMAL.toUInt(),
+            null
+        )
+
+        if (fileHandle == INVALID_HANDLE_VALUE) {
+            warn("Error opening file: ${GetLastError()}")
+            return null
+        }
+        return fileHandle
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    private fun fileSize(fileHandle: HANDLE): Long? = memScoped {
+        val fileSize = alloc<LARGE_INTEGER>()
+        if (GetFileSizeEx(fileHandle, fileSize.ptr) == 0) {
+            warn("Error getting file size: ${GetLastError()}")
+            return null
+        }
+        return fileSize.QuadPart
+    }
 }
+
 @OptIn(ExperimentalForeignApi::class)
 private fun canonicalize(path: String): String {
     if (path.isEmpty()) return canonicalize(".")
@@ -109,8 +160,7 @@ private fun canonicalize(path: String): String {
     val bufferLength = MAX_PATH
     memScoped {
         val buffer = allocArray<UShortVar>(bufferLength)
-        val fullPathLength = GetFullPathName?.let { it(p.wcstr.ptr, bufferLength.toUInt(), buffer, null) } ?:
-            throw RuntimeException("GetFullPathName function not available")
+        val fullPathLength = GetFullPathName!!(p.wcstr.ptr, bufferLength.toUInt(), buffer, null)
         if (fullPathLength == 0u) throw RuntimeException("Failed to get full path: ${GetLastError()}")
         return buffer.toKString()
     }

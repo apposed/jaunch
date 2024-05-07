@@ -98,7 +98,8 @@ fun main(args: Array<String>) {
 
     // Declare the global (runtime-agnostic) directives.
     val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
-        "help" to { _ -> help(exeFile, programName, supportedOptions) }
+        "help" to { _ -> help(exeFile, programName, supportedOptions) },
+        "apply-update" to { _ -> applyUpdate(appDir, appDir / "update") }
     )
 
     // Finally, execute all the directives! \^_^/
@@ -571,4 +572,31 @@ private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOp
     printlnErr("In addition, the following options are supported:")
     val optionsUnique = linkedSetOf(*supportedOptions.values.toTypedArray())
     optionsUnique.forEach { printlnErr(it.help()) }
+}
+
+private fun applyUpdate(appDir: File, updateSubDir: File) {
+    if (!updateSubDir.exists) return
+
+    // Recursively copy over all files in the update subdir
+    for (file in updateSubDir.ls()) {
+        val dest = appDir / file.path.substring((appDir / "update").path.length)
+        if (file.isDirectory) {
+            debug("+ mkdir '$dest'")
+            dest.mkdir() || error("Couldn't create path $dest")
+            applyUpdate(appDir, file)
+        }
+        else {
+            if (file.length == 0L) {
+                debug("+ rm '$dest'")
+                dest.rm() || error("Couldn't remove $dest")
+                debug("+ rm '$file'")
+                file.rm() || error("Couldn't remove $file")
+            } else {
+                debug("+ mv '$file' '$dest'")
+                file.mv(dest) || error("Couldn't replace $dest")
+            }
+        }
+    }
+
+    updateSubDir.rmdir()
 }

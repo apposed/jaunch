@@ -14,6 +14,13 @@ actual class File actual constructor(private val rawPath: String) {
     actual val isRoot: Boolean = path == SLASH
 
     @OptIn(ExperimentalForeignApi::class)
+    actual val length: Long get() = memScoped {
+        val statResult = alloc<stat>()
+        stat(path, statResult.ptr)
+        return statResult.st_size
+    }
+
+    @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
     private fun isMode(modeBits: Int): Boolean {
         val statMode = memScoped {
             val statResult = alloc<stat>()
@@ -67,6 +74,26 @@ actual class File actual constructor(private val rawPath: String) {
         return path
     }
 
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun mv(dest: File): Boolean {
+        memScoped {
+            return rename(path, dest.path) == 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rm(): Boolean {
+        memScoped {
+            return remove(path) == 0
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun rmdir(): Boolean {
+        memScoped {
+            return rmdir(path) == 0
+        }
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)

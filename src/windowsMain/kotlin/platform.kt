@@ -64,6 +64,23 @@ actual fun stdinLines(): Array<String> {
 }
 
 @OptIn(ExperimentalForeignApi::class)
+actual fun mkdir(path: String): Boolean {
+    memScoped {
+        val result = CreateDirectoryW(path, null)
+        if (result == 0) {
+            val errorCode = GetLastError()
+            if (errorCode == ERROR_ALREADY_EXISTS.toUInt()) {
+                return true
+            } else {
+                warn("Error creating directory '$path': $errorCode")
+                return false
+            }
+        }
+        return true
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
 actual fun memInfo(): MemoryInfo {
     val memInfo = MemoryInfo()
     memScoped {
@@ -75,7 +92,7 @@ actual fun memInfo(): MemoryInfo {
             memInfo.total = memoryStatus.ullTotalPhys.toLong()
             memInfo.free = memoryStatus.ullAvailPhys.toLong()
         } else {
-            println("Error getting memory status: ${GetLastError()}")
+            printlnErr("Error getting memory status: ${GetLastError()}")
         }
     }
     return memInfo
