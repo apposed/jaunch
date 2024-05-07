@@ -100,7 +100,7 @@ fun main(args: Array<String>) {
     // Declare the global (runtime-agnostic) directives.
     val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
         "help" to { _ -> help(exeFile, programName, supportedOptions) },
-        "install-pending-updates" to { _ -> applyUpdate(appDir, appDir / "update") }
+        "apply-update" to { _ -> applyUpdate(appDir, appDir / "update") }
     )
 
     // Finally, execute all the directives! \^_^/
