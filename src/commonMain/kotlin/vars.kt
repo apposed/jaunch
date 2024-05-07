@@ -80,4 +80,8 @@ class Vars(appDir: File, configDir: File, exeFile: File?) {
             pos = end + 1
         }
     }
+
+    override fun toString(): String {
+        return vars.toString()
+    }
 }
