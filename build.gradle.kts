@@ -39,17 +39,23 @@ kotlin {
         val posixMain by creating {
             dependsOn(commonMain.get())
         }
+        val macosMain by creating {
+          dependsOn(posixMain)
+        }
+        val linuxMain by creating {
+          dependsOn(posixMain)
+        }
         val macosArm64Main by getting {
-            dependsOn(posixMain)
+            dependsOn(macosMain)
         }
         val macosX64Main by getting {
-            dependsOn(posixMain)
+            dependsOn(macosMain)
         }
         val linuxArm64Main by getting {
-            dependsOn(posixMain)
+            dependsOn(linuxMain)
         }
         val linuxX64Main by getting {
-            dependsOn(posixMain)
+            dependsOn(linuxMain)
         }
         // HACK: Prevent "Variable is never used" warnings.
         // Unfortunately, @Suppress("UNUSED_PARAMETER") does not do the trick.

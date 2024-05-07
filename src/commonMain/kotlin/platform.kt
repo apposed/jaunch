@@ -16,6 +16,8 @@ expect fun printlnErr(s: String = "")
 
 expect fun stdinLines(): Array<String>
 
+expect fun mkdir(path: String): Boolean
+
 data class MemoryInfo(var total: Long? = null, var free: Long? = null)
 
 expect fun memInfo(): MemoryInfo

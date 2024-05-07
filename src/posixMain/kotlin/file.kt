@@ -21,7 +21,7 @@ actual class File actual constructor(private val rawPath: String) {
         return statResult.st_size
     }
 
-    @OptIn(ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
     private fun isMode(modeBits: Int): Boolean {
         val statMode = memScoped {
             val statResult = alloc<stat>()
@@ -73,27 +73,6 @@ actual class File actual constructor(private val rawPath: String) {
 
     override fun toString(): String {
         return path
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    actual fun mkdir(): Boolean {
-        if (exists && ! isDirectory) {
-            println("Error: '$path' already exists but is not a directory.")
-            return false
-        }
-        memScoped {
-            // Default permissions for new directories (read/write for owner)
-            val mode = S_IRWXU.toUInt() // User can read, write, execute
-
-            // Create the directory, returning false if it fails
-            if (mkdir(path, mode) != 0) {
-                val errorCode = errno
-                println("Error creating directory '$path': ${strerror(errorCode)?.toKString()}")
-                return false
-            }
-
-            return true // Successful directory creation
-        }
     }
 
     @OptIn(ExperimentalForeignApi::class)

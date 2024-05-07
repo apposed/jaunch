@@ -16,7 +16,6 @@ expect class File(rawPath: String) {
     val length : Long
     fun ls(): List<File>
     fun lines(): List<String>
-    fun mkdir(): Boolean
     fun mv(dest:File): Boolean
     fun rm() : Boolean
     fun rmdir() : Boolean
@@ -48,6 +47,15 @@ val File.base: File
         val dot = path.lastIndexOf('.')
         return if (dot < lastSlash(path)) this else File(path.substring(0, dot))
     }
+
+fun File.mkdir(): Boolean {
+    if (!exists) return mkdir(path)
+    if (!isDirectory) {
+        warn("Error: '$path' already exists but is not a directory.")
+        return false
+    }
+    return true
+}
 
 operator fun File.div(p: String): File = File("$path$SLASH$p")
 
