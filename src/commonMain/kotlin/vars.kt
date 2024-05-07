@@ -7,6 +7,24 @@ class Vars(appDir: File, configDir: File, exeFile: File?) {
         vars["app-dir"] = appDir.path
         vars["config-dir"] = configDir.path
         if (exeFile?.exists == true) vars["executable"] = exeFile.path
+
+        // Read matching .cfg files, containing key=value pairs, from the app-dir.
+        var cfgName = exeFile?.base?.name
+        val cfgFiles = mutableListOf<File>()
+        while (cfgName != null) {
+            val cfgFile = appDir / "$cfgName.cfg"
+            if (cfgFile.exists) cfgFiles += cfgFile
+            val dash = cfgName.lastIndexOf("-")
+            cfgName = if (dash < 0) null else cfgName.substring(0, dash)
+        }
+        for (cfgFile in cfgFiles.reversed()) {
+            vars += cfgFile.lines()
+                .filter { it.indexOf("=") >= 0 }
+                .associate {
+                    val eq = it.indexOf("=")
+                    it.substring(0, eq).trim() to it.substring(eq + 1).trim()
+                }
+        }
     }
 
     fun calculate(items: Array<String>, hints: Set<String>): List<String> {
