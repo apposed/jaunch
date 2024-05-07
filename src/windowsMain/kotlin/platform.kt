@@ -75,7 +75,7 @@ actual fun memInfo(): MemoryInfo {
             memInfo.total = memoryStatus.ullTotalPhys.toLong()
             memInfo.free = memoryStatus.ullAvailPhys.toLong()
         } else {
-            println("Error getting memory status: ${GetLastError()}")
+            printlnErr("Error getting memory status: ${GetLastError()}")
         }
     }
     return memInfo

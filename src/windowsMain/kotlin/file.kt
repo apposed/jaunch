@@ -73,7 +73,7 @@ actual class File actual constructor(private val rawPath: String) {
                 if (ReadFile(fileHandle, buffer, size.toUInt(), bytesRead.ptr, null) != 0) {
                     lines.addAll(buffer.toKString().split(Regex("(\\r\\n|\\n)")))
                 } else {
-                    println("Error reading file: ${GetLastError()}")
+                    printlnErr("Error reading file: ${GetLastError()}")
                 }
             } finally {
                 CloseHandle(fileHandle)
