@@ -128,7 +128,7 @@ jvm.version-min = '21'
 
 jvm.classpath = [
     '--full-classpath|${app-dir}/jars/*.jar',
-    '--full-classpath|${app-dir}/jars/bio-formats/*.jar',
+    '--full-classpath|${app-dir}/jars/*/*.jar',
     '--full-classpath|${app-dir}/plugins/*.jar',
     '!--full-classpath|${app-dir}/jars/imagej-launcher*.jar',
     '--main-class|.', # Weird behavior, but it's what the ImageJ Launcher does.
