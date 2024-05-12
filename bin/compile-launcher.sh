@@ -20,8 +20,9 @@ mkdir -p build
 compile() {
   compiler=$1
   command -v "$compiler" >/dev/null 2>&1 || {
-    echo "[ERROR] No compiler installed: $compiler"
-    exit 1
+    echo "[WARNING] No compiler installed: $compiler"
+    echo "[WARNING] Skipping invocation: $@"
+    return
   }
   shift
   (set -x; "$compiler" \
