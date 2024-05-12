@@ -9,6 +9,11 @@ echo -e "\033[1;33m[compile-launcher]\033[0m"
 jdkdir=$JAVA_HOME
 test -d "$jdkdir" || jdkdir=$(test ! -x update-java-alternatives || update-java-alternatives -l | head -n1 | sed 's/.* //')
 test -d "$jdkdir" || jdkdir=$(test ! -x /usr/libexec/java_home || /usr/libexec/java_home)
+test -d "$jdkdir" || {
+  echo "[ERROR] The jni.h header is needed to compile Jaunch."
+  echo "[ERROR] Please set JAVA_HOME to point to an OpenJDK installation."
+  exit 1
+}
 
 mkdir -p build
 
