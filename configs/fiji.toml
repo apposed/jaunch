@@ -124,7 +124,7 @@ jvm.root-paths = [
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
 ]
 
-jvm.version-min = '21'
+jvm.version-min = '8'
 
 jvm.classpath = [
     '--full-classpath|${app-dir}/jars/*.jar',
