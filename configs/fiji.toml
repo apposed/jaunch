@@ -97,7 +97,7 @@ directives = [
 # |                               PYTHON CONFIG                                |
 # \============================================================================/
 
-python.min-version = '3.8'
+python.version-min = '3.8'
 
 python.packages = [
   'pyimagej>=1.4.1',
