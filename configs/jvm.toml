@@ -93,7 +93,6 @@ jvm.enabled = true
 # sort out the mess. As long as the JVM args are on the list here, of course.
 
 jvm.recognized-args = [
-    '-?', '-help',
     '-D*',
     '-X*',
     '-agentlib:*', '-agentpath:*', '-javaagent:*',
