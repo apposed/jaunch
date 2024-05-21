@@ -417,6 +417,7 @@ jvm.root-paths = [
     '!--system|${app-dir}/lib/runtime',                              # jpackage
     '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux aarch64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',         # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-amd64/*',     # bundled (Linux x84-64, alt)
     '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',         # bundled (Linux x86-32)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*/Contents/Home', # bundled (macOS aarch64)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS aarch64)
