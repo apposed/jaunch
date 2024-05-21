@@ -480,6 +480,7 @@ jvm.lib-suffixes = [
     'OS:MACOSX|lib/libjli.dylib',                       # Java 12+
     'OS:MACOSX|lib/jli/libjli.dylib',                   # Java 9-11
     'OS:MACOSX|jre/lib/jli/libjli.dylib',               # Java 8
+    'OS:MACOSX|zulu-21.jdk/Contents/MacOS/libjli.dylib',# Zulu Java 21
     'OS:WINDOWS|bin\server\jvm.dll',                    # Java 9+
     'OS:WINDOWS|bin\client\jvm.dll',                    # Java 9+
     'OS:WINDOWS|jre\bin\server\jvm.dll',                # Java 8
