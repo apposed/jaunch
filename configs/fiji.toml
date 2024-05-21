@@ -207,6 +207,9 @@ jvm.runtime-args = [
     'JAVA:9+|--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
     'JAVA:9+|--add-opens=java.base/sun.util.calendar=ALL-UNNAMED',
 
+    # Allow access to com.sun.tools.example.debug.tty.TTY class.
+    'JAVA:9+|--jdb|--add-opens=jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED',
+
     # Avoid Jython's huge startup cost.
     '-Dpython.cachedir.skip=true',
 
@@ -255,6 +258,9 @@ jvm.main-args = [
 
     # TODO: -classpath is a flag for the ClassLauncher and JarLauncher mains!
     # Go back through and put in the right -classpath stuff here.
+
+    # Handle ClassLauncher-specific main args (not custom-main).
+    '--jdb|!MODE:custom-main|-jdb',
 
     # Handle main args for the default main mode (neither original-imagej nor custom-main).
     '!MODE:original-imagej|!MODE:custom-main|-ijjarpath',
