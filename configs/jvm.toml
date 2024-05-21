@@ -422,6 +422,9 @@ jvm.root-paths = [
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS aarch64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/Contents/Home', # bundled (macOS x86-64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*',         # bundled (macOS x86-64)
+    # Fiji used to ship versions of OpenJDK 8 with a mangled directory structure.
+    # The mangling was done to work around limitations of the old ImageJ Launcher.
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
     '!--system|OS:WINDOWS|ARCH:X64|${app-dir}/java\win64\*',         # bundled (Windows x86-64)
     '!--system|OS:WINDOWS|ARCH:X86|${app-dir}/java\win32\*',         # bundled (Windows x86-32)
     '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                         # Conda (openjdk 9+)
