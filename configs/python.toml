@@ -78,7 +78,7 @@ python.recognized-args = [
     '-c cmd',
     '-d',
     '-E',
-    '-h', '-?', # --help is reserved for Jaunch
+    '-?', # --help and -h are reserved for Jaunch
     '-i',
     '-I',
     '-m mod',
