@@ -72,4 +72,23 @@ kotlin {
             }
         }
     }
+
+    // NB: Tell the GNU linker to only link to shared libraries as needed.
+    // We do this in particular to avoid libcrypt being linked into the
+    // executable somehow; this matters for certain distros (e.g. Manjaro
+    // Linux) that do not come with libcrypt out of the box.
+    linuxX64 {
+        binaries {
+            all {
+                linkerOpts += "-Wl,--as-needed"
+            }
+        }
+    }
+    linuxArm64 {
+        binaries {
+            all {
+                linkerOpts += "-Wl,--as-needed"
+            }
+        }
+    }
 }
