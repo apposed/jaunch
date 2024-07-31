@@ -21,7 +21,7 @@ includes = ['common.toml']
 # jvm.runtime-args section toward the bottom of the file. Be patient, we'll get there!)
 
 supported-options = [
-    '--java-home=<path>|specify JAVA_HOME explicitly',
+    '--java-home=<path>|specify Java installation path explicitly',
     '--print-java-home|print path to the selected Java',
     '--print-java-info|print information about the selected Java',
     '--headless|run in text mode',
@@ -406,13 +406,12 @@ jvm.distros-blocked = []
 # --java-home hint will be set, and the java-home variable will be set to /the-best-jdk.
 # So not only will the line match, but the root path to check will become /the-best-jdk.
 # 
-# Similarly, variable expressions are also sourced from environment variables, so
-# the '${JAVA_HOME}' line will be populated with the JAVA_HOME environment variable.
+# Similarly, variable expressions are also sourced from environment variables, so the
+# lines containing '${CONDA_PREFIX}' will use the CONDA_PREFIX environment variable.
 
 jvm.root-paths = [
     '--java-home|${java-home}',                                      # user override (CLI flag)
     '${jvm.app-configured}',                                         # read from <app>.cfg
-    '${JAVA_HOME}',                                                  # user override (env var)
     '!--system|${app-dir}/lib/runtime',                              # jpackage
     '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux aarch64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',         # bundled (Linux x86-64)
