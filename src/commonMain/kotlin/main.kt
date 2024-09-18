@@ -75,8 +75,20 @@ fun main(args: Array<String>) {
 
     applyModeHints(config.modes, hints, vars)
 
-    val runtimes = configureRuntimes(config, configDir, hints, vars)
     val (launchDirectives, configDirectives) = calculateDirectives(config, hints, vars)
+
+    // Declare the global (runtime-agnostic) directives.
+    val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
+        "help" to { _ -> help(exeFile, programName, supportedOptions) },
+        "apply-update" to { _ -> applyUpdate(appDir, appDir / "update") }
+    )
+
+    // Execute the global directives (e.g. applying updates) before configuring
+    // runtimes (e.g. building classpaths)
+    val nonGlobalDirectives = executeGlobalDirectives(globalDirectiveFunctions,
+        configDirectives, userArgs)
+
+    val runtimes = configureRuntimes(config, configDir, hints, vars)
 
     debugBanner("BUILDING ARGUMENT LISTS")
 
@@ -96,16 +108,9 @@ fun main(args: Array<String>) {
         vars.interpolateInto(programArgs.main)
     }
 
-    // Declare the global (runtime-agnostic) directives.
-    val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
-        "help" to { _ -> help(exeFile, programName, supportedOptions) },
-        "apply-update" to { _ -> applyUpdate(appDir, appDir / "update") }
-    )
-
     // Finally, execute all the directives! \^_^/
-    executeDirectives(globalDirectiveFunctions,
-        configDirectives, launchDirectives,
-        runtimes, userArgs, argsInContext)
+    executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, userArgs,
+        argsInContext)
 }
 
 // -- Program flow functions --
@@ -490,8 +495,39 @@ private fun unknownArg(
     return runtimes.firstOrNull { it.recognizes(arg) > 0 } == null
 }
 
-private fun executeDirectives(
+/**
+ * Executes any global (runtime-independent) directives in the given
+ * configDirectives list.
+ *
+ * Returns a new immutable list containing any directives that could not be
+ * executed globally.
+ */
+private fun executeGlobalDirectives(
     globalDirectiveFunctions: DirectivesMap,
+    configDirectives: List<String>,
+    userArgs: ProgramArgs
+): List<String> {
+    debugBanner("EXECUTING GLOBAL DIRECTIVES")
+
+    // Execute the runtime-independent directives.
+    debug()
+    debug("Executing runtime-independent directives...")
+    val runtimeDirectives = mutableListOf<String>()
+    for (directive in configDirectives) {
+        // Execute the directive globally if possible.
+        val doDirective = globalDirectiveFunctions[directive]
+        if (doDirective != null) {
+            doDirective(userArgs)
+            continue
+        }
+
+        // Any non-global directives will need to be handled by the runtimes
+        runtimeDirectives.add(directive)
+    }
+    return runtimeDirectives.toList()
+}
+
+private fun executeDirectives(
     configDirectives: List<String>,
     launchDirectives: List<String>,
     runtimes: List<RuntimeConfig>,
@@ -504,14 +540,6 @@ private fun executeDirectives(
     debug()
     debug("Executing configurator-side directives...")
     for (directive in configDirectives) {
-        // Execute the directive globally if possible.
-        val doDirective = globalDirectiveFunctions[directive]
-        if (doDirective != null) {
-            doDirective(userArgs)
-            continue
-        }
-
-        // Not a global directive -- delegate execution to the runtimes.
         var success = false
         val (activatedRuntimes, dormantRuntimes) =
             runtimes.partition { it.directive in launchDirectives }
