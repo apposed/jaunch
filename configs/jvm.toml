@@ -391,10 +391,10 @@ jvm.distros-blocked = []
 #
 # For example, consider the following jvm.root-paths line:
 #
-#     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',
+#     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x64/*',
 #
 # The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path of
-# ${app-dir}/java/linux64/* will only be considered on 64-bit Linux systems, and
+# ${app-dir}/java/linux-x64/* will only be considered on 64-bit Linux systems, and
 # only when the --system option was *not* given as part of the launcher invocation.
 #
 # This is also the first field where we see Jaunch's variables in use:
@@ -413,9 +413,12 @@ jvm.root-paths = [
     '${jvm.app-configured}',                                         # read from <app>.cfg
     '!--system|${app-dir}/lib/runtime',                              # jpackage
     '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux aarch64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x64/*',       # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-amd64/*',     # bundled (Linux x86-64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',         # bundled (Linux x86-64)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-amd64/*',     # bundled (Linux x84-64, alt)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x32/*',       # bundled (Linux x86-32)
     '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',         # bundled (Linux x86-32)
+    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux/*',           # bundled (Linux x86-32)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*/Contents/Home', # bundled (macOS aarch64)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS aarch64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/Contents/Home', # bundled (macOS x86-64)
