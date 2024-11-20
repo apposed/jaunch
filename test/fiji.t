@@ -98,8 +98,6 @@ Test command line argument combinations.
                       set Java's heap size to <amount> (e.g. 512M)
   --class-path, --classpath, -classpath, --cp, -cp <path>
                       append <path> to the class path
-  --jar-path, --jarpath, -jarpath <path>
-                      append .jar files in <path> to the class path
   --ext <path>
                       set Java's extension directory to <path>
   --debugger <port>[,suspend]
