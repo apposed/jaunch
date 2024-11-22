@@ -60,21 +60,33 @@ actual class File actual constructor(private val rawPath: String) {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun lines(): List<String> {
-        val lines = mutableListOf<String>()
+        var lines = listOf<String>()
         memScoped {
             val fileHandle = openFile(path) ?: return lines
             try {
-                val fileSize = fileSize(fileHandle) ?: return lines
-                val size = min(fileSize, Int.MAX_VALUE.toLong()).toInt()
-                if (size < fileSize) warn("Reading only $size bytes of large file $path")
-                val buffer = allocArray<ByteVar>(size)
+                val buffer = ByteArray(1024)
                 val bytesRead = alloc<DWORDVar>()
-                // TODO: Is bytesRead < fileSize possible? If so, do we need to loop here?
-                if (ReadFile(fileHandle, buffer, size.toUInt(), bytesRead.ptr, null) != 0) {
-                    lines.addAll(buffer.toKString().split(Regex("(\\r\\n|\\n)")))
-                } else {
-                    printlnErr("Error reading file: ${GetLastError()}")
-                }
+                val content = StringBuilder()
+                do {
+                    buffer.usePinned { pinned ->
+                        if (ReadFile(
+                                fileHandle,
+                                pinned.addressOf(0),
+                                buffer.size.toUInt(),
+                                bytesRead.ptr,
+                                null
+                            ) != 0
+                        ) {
+                            val readCount = bytesRead.value.toInt()
+                            if (readCount > 0) {
+                                content.append(buffer.decodeToString(0, readCount));
+                            }
+                        } else {
+                            printlnErr("Error reading file: ${GetLastError()}")
+                        }
+                    }
+                } while (bytesRead.value > 0U)
+                lines = content.split(Regex("\\r\\n|\\n"))
             } finally {
                 CloseHandle(fileHandle)
             }
