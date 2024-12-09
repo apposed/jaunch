@@ -1,12 +1,22 @@
 // Vars class and related functions for working with variables.
 
-class Vars(appDir: File, configDir: File, exeFile: File?) {
+class Vars(
+    appDir: File,
+    configDir: File,
+    exeFile: File?,
+    cfgVars: Map<String, Any>
+) {
     private val vars = mutableMapOf<String, Any>()
 
     init {
         vars["app-dir"] = appDir.path
         vars["config-dir"] = configDir.path
         if (exeFile?.exists == true) vars["executable"] = exeFile.path
+
+        // Parse any Vars that were previously defined in toml.
+        if (cfgVars is Map) {
+            vars.putAll(cfgVars)
+        }
 
         // Build the list of config files
         val cfgFiles = mutableListOf<File>()
