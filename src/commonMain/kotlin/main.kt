@@ -88,13 +88,19 @@ fun main(args: Array<String>) {
     val nonGlobalDirectives = executeGlobalDirectives(globalDirectiveFunctions,
         configDirectives, userArgs)
 
+    // FIXME chicken or egg problem here
+    //  At SOME point `cfg.max-heap` is interpolated but it is not until
+    //  we're actually executing directives
+    printlnErr("Max heap before runtime config: " + config.jvmMaxHeap)
     val runtimes = configureRuntimes(config, configDir, hints, vars)
 
     debugBanner("BUILDING ARGUMENT LISTS")
 
+    printlnErr("Max heap before user arg vlidation: " + config.jvmMaxHeap)
     // Ensure that the user arguments meet our expectations.
     validateUserArgs(config, runtimes, userArgs)
 
+    printlnErr("Max heap before arg contextualization: " + config.jvmMaxHeap)
     val argsInContext = contextualizeArgs(runtimes, userArgs, vars)
 
     // Now evaluate any expressions in the contextualized arguments.
@@ -104,9 +110,12 @@ fun main(args: Array<String>) {
     // Python script being invoked will itself start up a JVM with those given JVM arguments.
     // In the case of cyclic variable references between runtimes, the interpolation will be incomplete.
     for (programArgs in argsInContext.values) {
+        printlnErr("Max heap before program arg interpolation: " + config.jvmMaxHeap)
         vars.interpolateInto(programArgs.runtime)
+        printlnErr("Max heap before main arg interpolation: " + config.jvmMaxHeap)
         vars.interpolateInto(programArgs.main)
     }
+    printlnErr("Max heap before executing directives: " + config.jvmMaxHeap)
 
     // Finally, execute all the directives! \^_^/
     executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, userArgs,
