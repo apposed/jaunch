@@ -19,7 +19,9 @@ actual class File actual constructor(private val rawPath: String) {
 
     actual val isRoot: Boolean =
         // Is it a drive letter plus backslash (e.g. `C:\`)?
-        path.length == 3 && (path[0] in 'a'..'z' || path[0] in 'A'..'Z') && path[1] == ':' && path[2] == '\\'
+        path.length == 3 &&
+          (path[0] in 'a'..'z' || path[0] in 'A'..'Z') &&
+          path[1] == ':' && path[2] == '\\'
 
     @OptIn(ExperimentalForeignApi::class)
     actual val length: Long get() {
