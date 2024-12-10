@@ -109,8 +109,7 @@ fun main(args: Array<String>) {
     }
 
     // Finally, execute all the directives! \^_^/
-    executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, userArgs,
-        argsInContext)
+    executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, argsInContext)
 }
 
 // -- Program flow functions --
@@ -531,7 +530,6 @@ private fun executeDirectives(
     configDirectives: List<String>,
     launchDirectives: List<String>,
     runtimes: List<RuntimeConfig>,
-    userArgs: ProgramArgs,
     argsInContext: Map<String, ProgramArgs>
 ) {
     debugBanner("EXECUTING DIRECTIVES")
