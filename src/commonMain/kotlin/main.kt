@@ -109,8 +109,9 @@ fun main(args: Array<String>) {
     }
 
     // Finally, execute all the directives! \^_^/
-    executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, userArgs,
-        argsInContext)
+    executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, argsInContext)
+
+    debugBanner("JAUNCH CONFIGURATION COMPLETE")
 }
 
 // -- Program flow functions --
@@ -127,6 +128,11 @@ private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
 
     // Enable debug mode when --debug flag is present.
     debugMode = inputArgs.contains("--debug")
+
+    // Note: We need to let parseArguments set the debugMode
+    // flag in response to the --debug argument being passed.
+    // So we wait until now to emit this initial debugging bookend message.
+    debugBanner("PROCEEDING WITH JAUNCH CONFIGURATION")
 
     debug("executable -> ", executable ?: "<null>")
     debug("inputArgs -> ", inputArgs)
@@ -531,7 +537,6 @@ private fun executeDirectives(
     configDirectives: List<String>,
     launchDirectives: List<String>,
     runtimes: List<RuntimeConfig>,
-    userArgs: ProgramArgs,
     argsInContext: Map<String, ProgramArgs>
 ) {
     debugBanner("EXECUTING DIRECTIVES")
