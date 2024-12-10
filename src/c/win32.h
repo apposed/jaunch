@@ -13,6 +13,23 @@ static void setupConsole() {
     // First, try to attach to an existing console
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         hasConsole = TRUE;
+
+        // Reopen stdin/stdout/stderr to connect to the console
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+
+        // Get and set proper console mode for input
+        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+        if (hStdin != INVALID_HANDLE_VALUE) {
+            DWORD mode;
+            if (GetConsoleMode(hStdin, &mode)) {
+                // Enable standard input processing
+                mode |= ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+                SetConsoleMode(hStdin, mode);
+            }
+        }
+
         return;
     }
 
@@ -23,6 +40,7 @@ static void setupConsole() {
         return;
     }
 
+    // No console needed/available
     // We could create a new console here with AllocConsole() if needed
     // But for now, we'll just run without one
     hasConsole = FALSE;
