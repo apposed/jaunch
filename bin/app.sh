@@ -43,15 +43,28 @@ do
       (set -x; cp "$f" "$targetDir/$app$suffix")
     done
   fi
+
+  # Populate GUI apps.
+  test "$f" != "${f%-console.exe}" && winConsole=true || winConsole=false
+  if [ "$winConsole" = false ]
+  then
+    for app in hello
+    do
+      (set -x; cp "$f" "$targetDir/$app$suffix")
+    done
+  fi
 done
 
 # Copy wrapper launch scripts.
-for app in jy parsy paunch repl
+for app in jy parsy paunch repl hello
 do (
   set -x
   cp --preserve=mode configs/launcher.sh "$appDir/$app"
   cp configs/launcher.bat "$appDir/$app.bat"
 ) done
+
+# Copy hello app Java program.
+(set -x; cp configs/HelloSwing.class "$appDir/")
 
 # Copy jaunch configurator binaries.
 echo "Copying jaunch configurator binaries..."
@@ -67,6 +80,7 @@ echo "Copying configuration files and helpers..."
 for f in \
   Props.class \
   common.toml \
+  hello.toml \
   jvm.toml \
   jy.toml \
   parsy.toml \
