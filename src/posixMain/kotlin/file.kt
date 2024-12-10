@@ -70,10 +70,6 @@ actual class File actual constructor(private val rawPath: String) {
         return lines
     }
 
-    override fun toString(): String {
-        return path
-    }
-
     @OptIn(ExperimentalForeignApi::class)
     actual fun mv(dest: File): Boolean {
         memScoped {
@@ -93,6 +89,10 @@ actual class File actual constructor(private val rawPath: String) {
         memScoped {
             return rmdir(path) == 0
         }
+    }
+
+    override fun toString(): String {
+        return path
     }
 }
 
