@@ -126,6 +126,13 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
                 runtimeArgs += "-Xmx$maxHeap"
                 debug("Added maxHeap arg: ${runtimeArgs.last()}")
             }
+        } else {
+            val memArg = runtimeArgs[mxIndex].substring(4)
+            val maxHeap = calculateMaxHeap(memArg)
+            if (maxHeap != null && maxHeap != memArg) {
+                runtimeArgs[mxIndex] = "-Xmx$maxHeap";
+                debug("Updated maxHeap arg: ${runtimeArgs[mxIndex]}")
+            }
         }
 
         // Calculate main class.
