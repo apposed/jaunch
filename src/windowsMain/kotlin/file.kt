@@ -82,7 +82,7 @@ actual class File actual constructor(private val rawPath: String) {
                                 content.append(buffer.decodeToString(0, readCount));
                             }
                         } else {
-                            printlnErr("Error reading file: ${GetLastError()}")
+                            printlnErr("Error reading file '$this': ${lastError()}")
                         }
                     }
                 } while (bytesRead.value > 0U)
@@ -140,7 +140,7 @@ actual class File actual constructor(private val rawPath: String) {
         )
 
         if (fileHandle == INVALID_HANDLE_VALUE) {
-            warn("Error opening file: ${GetLastError()}")
+            warn("Error opening file '$this': ${lastError()}")
             return null
         }
         return fileHandle
@@ -150,7 +150,7 @@ actual class File actual constructor(private val rawPath: String) {
     private fun fileSize(fileHandle: HANDLE): Long? = memScoped {
         val fileSize = alloc<LARGE_INTEGER>()
         if (GetFileSizeEx(fileHandle, fileSize.ptr) == 0) {
-            warn("Error getting file size: ${GetLastError()}")
+            warn("Error getting size of file '$this': ${lastError()}")
             return null
         }
         return fileSize.QuadPart
@@ -173,7 +173,31 @@ private fun canonicalize(path: String): String {
     memScoped {
         val buffer = allocArray<UShortVar>(bufferLength)
         val fullPathLength = GetFullPathName!!(p.wcstr.ptr, bufferLength.toUInt(), buffer, null)
-        if (fullPathLength == 0u) throw RuntimeException("Failed to get full path: ${GetLastError()}")
+        if (fullPathLength == 0u) throw RuntimeException("Failed to get full path of '$path': ${lastError()}")
         return buffer.toKString()
+    }
+}
+
+/** Converts Windows numeric error codes to human-friendly strings. */
+@OptIn(ExperimentalForeignApi::class)
+private fun lastError(): String {
+    memScoped {
+        val errorCode = GetLastError()
+        val buffer = alloc<CPointerVar<WCHARVar>>()
+
+        val messageLength = FormatMessageW(
+            (FORMAT_MESSAGE_ALLOCATE_BUFFER or FORMAT_MESSAGE_FROM_SYSTEM or FORMAT_MESSAGE_IGNORE_INSERTS).toUInt(),
+            null,
+            errorCode,
+            0.toUInt(), // Default language
+            buffer.ptr.reinterpret(),
+            0.toUInt(),
+            null
+        )
+        val errorMessage = if (messageLength > 0U) buffer.value!!.toKString().trim() else "Unknown error"
+
+        if (messageLength > 0U) LocalFree(buffer.value)
+
+        return errorMessage;
     }
 }

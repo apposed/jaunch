@@ -34,7 +34,7 @@ actual class File actual constructor(private val rawPath: String) {
     actual fun ls(): List<File> {
         if (!isDirectory) throw IllegalArgumentException("Not a directory: $path")
 
-        val directory = opendir(path) ?: throw IllegalArgumentException("Failed to open directory")
+        val directory = opendir(path) ?: throw IllegalArgumentException("Failed to open directory: $path")
         val files = mutableListOf<File>()
 
         try {
@@ -55,7 +55,7 @@ actual class File actual constructor(private val rawPath: String) {
     actual fun lines(): List<String> {
         val lines = mutableListOf<String>()
         memScoped {
-            val file = fopen(path, "r") ?: throw RuntimeException("Failed to open file")
+            val file = fopen(path, "r") ?: throw RuntimeException("Failed to open file: $this")
             try {
                 while (true) {
                     val buffer = ByteArray(BUFFER_SIZE)
