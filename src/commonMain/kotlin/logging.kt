@@ -5,6 +5,9 @@ import platform.posix.exit
 private const val EXIT_CODE_ON_FAIL = 20
 
 var debugMode = getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
+var logFilePath = getenv("JAUNCH_LOGFILE") ?: "jaunch.log"
+
+private var logFile: File? = null
 
 fun debug(vararg args: Any) { if (debugMode) report("DEBUG", *args) }
 
@@ -37,8 +40,18 @@ fun fail(message: String): Nothing {
 }
 
 private fun report(prefix: String, vararg args: Any) {
-    printlnErr(buildString {
+    val s = buildString {
         append("[$prefix] ")
         args.forEach { append(it) }
-    })
+    }
+    printlnErr(s)
+    if (debugMode) {
+        val log = logFile ?: File(logFilePath)
+        if (logFile == null) {
+            // Overwrite any log file from previous run.
+            if (log.exists) log.rm()
+            logFile = log
+        }
+        log.write("$s$NL")
+    }
 }
