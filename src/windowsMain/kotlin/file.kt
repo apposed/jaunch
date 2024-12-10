@@ -97,6 +97,35 @@ actual class File actual constructor(private val rawPath: String) {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun write(s: String) {
+        val handle = openFile(path, write = true) ?:
+            throw RuntimeException("Failed to open file: $this")
+        try {
+            memScoped {
+                val bytes = s.encodeToByteArray()
+                bytes.usePinned { pinnedBytes ->
+                    val bytesWritten = alloc<UIntVar>()
+
+                    val result = WriteFile(
+                        handle,
+                        pinnedBytes.addressOf(0).reinterpret(),
+                        bytes.size.toUInt(),
+                        bytesWritten.ptr,
+                        null
+                    )
+
+                    if (result == 0) {  // 0 indicates failure in Windows
+                        throw RuntimeException("Error writing to file '$this': ${lastError()}")
+                    }
+                }
+            }
+        }
+        finally {
+            CloseHandle(handle)
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun mv(dest: File): Boolean {
         memScoped {
             val pathW = path.wcstr.ptr
@@ -130,13 +159,13 @@ actual class File actual constructor(private val rawPath: String) {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun openFile(path: String): HANDLE? {
+    private fun openFile(path: String, write: Boolean = false): HANDLE? {
         val fileHandle = CreateFileW(
             path,
-            GENERIC_READ,
-            FILE_SHARE_READ.toUInt(),
+            if (write) FILE_APPEND_DATA.toUInt() else GENERIC_READ,
+            if (write) FILE_SHARE_WRITE.toUInt() else FILE_SHARE_READ.toUInt(),
             null,
-            OPEN_EXISTING.toUInt(),
+            if (write) OPEN_ALWAYS.toUInt() else OPEN_EXISTING.toUInt(),
             FILE_ATTRIBUTE_NORMAL.toUInt(),
             null
         )

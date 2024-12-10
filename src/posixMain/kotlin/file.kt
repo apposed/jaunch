@@ -71,6 +71,18 @@ actual class File actual constructor(private val rawPath: String) {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun write(s: String) {
+        val file = fopen(path, "a") ?:
+            throw RuntimeException("Failed to open file: $this")
+        try {
+            fputs(s, file)
+        }
+        finally {
+            fclose(file)
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun mv(dest: File): Boolean {
         memScoped {
             return rename(path, dest.path) == 0
