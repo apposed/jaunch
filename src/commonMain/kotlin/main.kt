@@ -69,7 +69,7 @@ fun main(args: Array<String>) {
 
     // Declare a set to store option parameter values.
     // It will be populated at argument parsing time.
-    val vars = Vars(appDir, configDir, exeFile)
+    val vars = Vars(appDir, configDir, exeFile, config.cfgVars)
 
     // Sort out the arguments, keeping the user-specified runtime and main arguments in a struct. At this point,
     // it may yet be ambiguous whether certain user args belong with the runtime, the main program, or neither.
