@@ -110,6 +110,15 @@ fun main(args: Array<String>) {
         vars.interpolateInto(programArgs.main)
     }
 
+    // Now that our program arguments have been fully interpolated, we offer the
+    // runtimes an additional opportunity to perform any runtime-specific
+    // custom logic (for example, resolving %'s in -Xmx notation).
+    for (programArgs in argsInContext.values) {
+        for (runtime in runtimes) {
+            runtime.processArgs(programArgs.runtime)
+        }
+    }
+
     // Finally, execute all the directives! \^_^/
     executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, argsInContext)
 

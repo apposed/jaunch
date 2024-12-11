@@ -119,6 +119,10 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         }
     }
 
+    override fun processArgs(args: MutableList<String>) {
+        // No-op
+    }
+
     // -- Directive handlers --
 
     fun dryRun(args: ProgramArgs): String {
