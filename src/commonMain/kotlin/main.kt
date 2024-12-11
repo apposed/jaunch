@@ -56,7 +56,9 @@ fun main(args: Array<String>) {
     val (exeFile, inputArgs) = parseArguments(args)
     val appDir = discernAppDirectory(exeFile)
     val configDir = findConfigDirectory(appDir)
-    val config = readConfigFile(configDir, exeFile)
+    val configFile = findConfigFile(configDir, exeFile)
+    if (logFilePath == null) logFilePath = "${configFile.base.name}.log"
+    val config = readConfig(configFile)
 
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
@@ -166,7 +168,7 @@ private fun findConfigDirectory(appDir: File): File {
     return configDir
 }
 
-private fun readConfigFile(configDir: File, exeFile: File?): JaunchConfig {
+private fun findConfigFile(configDir: File, exeFile: File?): File {
     var fileName = exeFile?.base?.name ?: "jaunch"
     // The launcher might have trailing suffixes such as OS_NAME and/or CPU_ARCH.
     // For example: fizzbuzz-linux-x64. In such a situation, we want to look for
@@ -174,7 +176,7 @@ private fun readConfigFile(configDir: File, exeFile: File?): JaunchConfig {
     while (true) {
         val configFile = configDir / "$fileName.toml"
         debug("Looking for config file: $configFile")
-        if (configFile.exists) return readConfig(configFile)
+        if (configFile.exists) return configFile
         val dash = fileName.lastIndexOf("-")
         if (dash < 0) break
         fileName = fileName.substring(0, dash)

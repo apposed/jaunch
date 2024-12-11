@@ -5,8 +5,8 @@ import platform.posix.exit
 private const val EXIT_CODE_ON_FAIL = 20
 
 var debugMode = getenv("DEBUG") !in listOf(null, "", "0", "false", "FALSE")
-var logFilePath = getenv("JAUNCH_LOGFILE") ?: "jaunch.log"
-
+var logFilePath = getenv("JAUNCH_LOGFILE")
+private val logLines = mutableListOf<String>()
 private var logFile: File? = null
 
 fun debug(vararg args: Any) { if (debugMode) report("DEBUG", *args) }
@@ -46,12 +46,27 @@ private fun report(prefix: String, vararg args: Any) {
     }
     printlnErr(s)
     if (debugMode) {
-        val log = logFile ?: File(logFilePath)
-        if (logFile == null) {
-            // Overwrite any log file from previous run.
-            if (log.exists) log.rm()
-            logFile = log
+        // Also log the line to the appropriate log file.
+        val path = logFilePath
+        var file = logFile
+        if (path == null) {
+            // Log file path is not yet known; save line to buffer.
+            logLines += s
         }
-        log.write("$s$NL")
+        else {
+            if (file == null) {
+                file = File(path)
+                logFile = file
+
+                // Overwrite any log file from previous run.
+                if (file.exists) file.rm()
+
+                // Write out previously buffered lines.
+                logLines.forEach { file.write("$it$NL") }
+                logLines.clear()
+            }
+            // Write out the new line.
+            file.write("$s$NL")
+        }
     }
 }
