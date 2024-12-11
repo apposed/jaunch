@@ -19,7 +19,9 @@ actual class File actual constructor(private val rawPath: String) {
 
     actual val isRoot: Boolean =
         // Is it a drive letter plus backslash (e.g. `C:\`)?
-        path.length == 3 && (path[0] in 'a'..'z' || path[0] in 'A'..'Z') && path[1] == ':' && path[2] == '\\'
+        path.length == 3 &&
+          (path[0] in 'a'..'z' || path[0] in 'A'..'Z') &&
+          path[1] == ':' && path[2] == '\\'
 
     @OptIn(ExperimentalForeignApi::class)
     actual val length: Long get() {
@@ -82,7 +84,7 @@ actual class File actual constructor(private val rawPath: String) {
                                 content.append(buffer.decodeToString(0, readCount));
                             }
                         } else {
-                            printlnErr("Error reading file: ${GetLastError()}")
+                            printlnErr("Error reading file '$this': ${lastError()}")
                         }
                     }
                 } while (bytesRead.value > 0U)
@@ -94,8 +96,33 @@ actual class File actual constructor(private val rawPath: String) {
         return lines
     }
 
-    override fun toString(): String {
-        return path
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun write(s: String) {
+        val handle = openFile(path, write = true) ?:
+            throw RuntimeException("Failed to open file: $this")
+        try {
+            memScoped {
+                val bytes = s.encodeToByteArray()
+                bytes.usePinned { pinnedBytes ->
+                    val bytesWritten = alloc<UIntVar>()
+
+                    val result = WriteFile(
+                        handle,
+                        pinnedBytes.addressOf(0).reinterpret(),
+                        bytes.size.toUInt(),
+                        bytesWritten.ptr,
+                        null
+                    )
+
+                    if (result == 0) {  // 0 indicates failure in Windows
+                        throw RuntimeException("Error writing to file '$this': ${lastError()}")
+                    }
+                }
+            }
+        }
+        finally {
+            CloseHandle(handle)
+        }
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -122,25 +149,29 @@ actual class File actual constructor(private val rawPath: String) {
         }
     }
 
+    override fun toString(): String {
+        return path
+    }
+
     private fun isMode(modeBits: Int): Boolean {
         val attrs = GetFileAttributesA(path)
         return attrs != INVALID_FILE_ATTRIBUTES && (attrs.toInt() and modeBits) != 0
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun openFile(path: String): HANDLE? {
+    private fun openFile(path: String, write: Boolean = false): HANDLE? {
         val fileHandle = CreateFileW(
             path,
-            GENERIC_READ,
-            FILE_SHARE_READ.toUInt(),
+            if (write) FILE_APPEND_DATA.toUInt() else GENERIC_READ,
+            if (write) FILE_SHARE_WRITE.toUInt() else FILE_SHARE_READ.toUInt(),
             null,
-            OPEN_EXISTING.toUInt(),
+            if (write) OPEN_ALWAYS.toUInt() else OPEN_EXISTING.toUInt(),
             FILE_ATTRIBUTE_NORMAL.toUInt(),
             null
         )
 
         if (fileHandle == INVALID_HANDLE_VALUE) {
-            warn("Error opening file: ${GetLastError()}")
+            warn("Error opening file '$this': ${lastError()}")
             return null
         }
         return fileHandle
@@ -150,7 +181,7 @@ actual class File actual constructor(private val rawPath: String) {
     private fun fileSize(fileHandle: HANDLE): Long? = memScoped {
         val fileSize = alloc<LARGE_INTEGER>()
         if (GetFileSizeEx(fileHandle, fileSize.ptr) == 0) {
-            warn("Error getting file size: ${GetLastError()}")
+            warn("Error getting size of file '$this': ${lastError()}")
             return null
         }
         return fileSize.QuadPart
@@ -173,7 +204,31 @@ private fun canonicalize(path: String): String {
     memScoped {
         val buffer = allocArray<UShortVar>(bufferLength)
         val fullPathLength = GetFullPathName!!(p.wcstr.ptr, bufferLength.toUInt(), buffer, null)
-        if (fullPathLength == 0u) throw RuntimeException("Failed to get full path: ${GetLastError()}")
+        if (fullPathLength == 0u) throw RuntimeException("Failed to get full path of '$path': ${lastError()}")
         return buffer.toKString()
+    }
+}
+
+/** Converts Windows numeric error codes to human-friendly strings. */
+@OptIn(ExperimentalForeignApi::class)
+private fun lastError(): String {
+    memScoped {
+        val errorCode = GetLastError()
+        val buffer = alloc<CPointerVar<WCHARVar>>()
+
+        val messageLength = FormatMessageW(
+            (FORMAT_MESSAGE_ALLOCATE_BUFFER or FORMAT_MESSAGE_FROM_SYSTEM or FORMAT_MESSAGE_IGNORE_INSERTS).toUInt(),
+            null,
+            errorCode,
+            0.toUInt(), // Default language
+            buffer.ptr.reinterpret(),
+            0.toUInt(),
+            null
+        )
+        val errorMessage = if (messageLength > 0U) buffer.value!!.toKString().trim() else "Unknown error"
+
+        if (messageLength > 0U) LocalFree(buffer.value)
+
+        return errorMessage;
     }
 }
