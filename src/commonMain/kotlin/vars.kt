@@ -34,7 +34,7 @@ class Vars(
                 .filter { it.indexOf("=") >= 0 }
                 .associate {
                     val eq = it.indexOf("=")
-                    it.substring(0, eq).trim() to it.substring(eq + 1).trim()
+                    ("cfg." + it.substring(0, eq).trim()) to it.substring(eq + 1).trim()
                 }
         }
     }

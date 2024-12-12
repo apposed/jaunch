@@ -469,7 +469,7 @@ jvm.distros-blocked = []
 
 jvm.root-paths = [
     '--java-home|${java-home}',                                      # user override (CLI flag)
-    '!--system|${jvm.dir}',                                          # read from <app>.cfg
+    '!--system|${cfg.jvm-dir}',                                      # read from <app>.cfg
     '!--system|${app-dir}/lib/runtime',                              # jpackage
     '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux aarch64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x64/*',       # bundled (Linux x86-64)
