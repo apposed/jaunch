@@ -631,18 +631,18 @@ private fun applyUpdate(appDir: File, updateSubDir: File) {
         val dest = appDir / file.path.substring((appDir / "update").path.length)
         if (file.isDirectory) {
             debug("+ mkdir '$dest'")
-            dest.mkdir() || error("Couldn't create path $dest")
+            dest.mkdir() || fail("Couldn't create path $dest")
             applyUpdate(appDir, file)
         }
         else {
             if (file.length == 0L) {
                 debug("+ rm '$dest'")
-                dest.rm() || error("Couldn't remove $dest")
+                dest.rm() || fail("Couldn't remove $dest")
                 debug("+ rm '$file'")
-                file.rm() || error("Couldn't remove $file")
+                file.rm() || fail("Couldn't remove $file")
             } else {
                 debug("+ mv '$file' '$dest'")
-                file.mv(dest) || error("Couldn't replace $dest")
+                file.mv(dest) || fail("Couldn't replace $dest")
             }
         }
     }
