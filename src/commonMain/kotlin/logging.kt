@@ -29,8 +29,15 @@ fun debugBanner(message: String) {
 fun warn(vararg args: Any) { report("WARNING", *args) }
 
 fun fail(message: String): Nothing {
-    println("ERROR")
     val lines = message.split(NL)
+    if (debugMode) {
+        // In debug mode, print the error lines on stderr also,
+        // and ensure that all pending log lines are flushed too.
+        if (logFilePath == null) logFilePath = "jaunch.log"
+        report("ERROR", *lines.toTypedArray())
+    }
+    // Pass the error back to the Jaunch native launcher via stdout.
+    println("ERROR")
     println(lines.size + 1)
     println(EXIT_CODE_ON_FAIL)
     lines.forEach { println(it) }
