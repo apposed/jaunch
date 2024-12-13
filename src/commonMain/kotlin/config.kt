@@ -149,42 +149,48 @@ data class JaunchConfig (
             throw IllegalArgumentException("Config versions are incompatible: ${config.jaunchVersion} != $jaunchVersion")
         }
         return JaunchConfig(
+            // NB: when relevant, prefer values in the new config
             jaunchVersion = config.jaunchVersion ?: jaunchVersion,
             programName = config.programName ?: programName,
-            includes = config.includes + includes,
-            supportedOptions = config.supportedOptions + supportedOptions,
-            osAliases = config.osAliases + osAliases,
-            archAliases = config.archAliases + archAliases,
-            modes = config.modes + modes,
-            directives = config.directives + directives,
+            includes = merge(config.includes, includes),
+            supportedOptions = merge(config.supportedOptions, supportedOptions),
+            osAliases = merge(config.osAliases, osAliases),
+            archAliases = merge(config.archAliases, archAliases),
+            modes = merge(config.modes, modes),
+            directives = merge(config.directives, directives),
             allowUnrecognizedArgs = config.allowUnrecognizedArgs ?: allowUnrecognizedArgs,
 
             pythonEnabled = config.pythonEnabled ?: pythonEnabled,
-            pythonRecognizedArgs = config.pythonRecognizedArgs + pythonRecognizedArgs,
-            pythonRootPaths = config.pythonRootPaths + pythonRootPaths,
-            pythonLibSuffixes = config.pythonLibSuffixes + pythonLibSuffixes,
+            pythonRecognizedArgs = merge(config.pythonRecognizedArgs, pythonRecognizedArgs),
+            pythonRootPaths = merge(config.pythonRootPaths, pythonRootPaths),
+            pythonLibSuffixes = merge(config.pythonLibSuffixes, pythonLibSuffixes),
             pythonVersionMin = config.pythonVersionMin ?: pythonVersionMin,
             pythonVersionMax = config.pythonVersionMax ?: pythonVersionMax,
-            pythonPackages = config.pythonPackages + pythonPackages,
-            pythonRuntimeArgs = config.pythonRuntimeArgs + pythonRuntimeArgs,
-            pythonScriptPath = config.pythonScriptPath + pythonScriptPath,
-            pythonMainArgs = config.pythonMainArgs + pythonMainArgs,
+            pythonPackages = merge(config.pythonPackages, pythonPackages),
+            pythonRuntimeArgs = merge(config.pythonRuntimeArgs, pythonRuntimeArgs),
+            pythonScriptPath = merge(config.pythonScriptPath, pythonScriptPath),
+            pythonMainArgs = merge(config.pythonMainArgs, pythonMainArgs),
 
             jvmEnabled = config.jvmEnabled ?: jvmEnabled,
-            jvmRecognizedArgs = config.jvmRecognizedArgs + jvmRecognizedArgs,
+            jvmRecognizedArgs = merge(config.jvmRecognizedArgs, jvmRecognizedArgs),
             jvmAllowWeirdRuntimes = config.jvmAllowWeirdRuntimes ?: jvmAllowWeirdRuntimes,
             jvmVersionMin = config.jvmVersionMin ?: jvmVersionMin,
             jvmVersionMax = config.jvmVersionMax ?: jvmVersionMax,
-            jvmDistrosAllowed = config.jvmDistrosAllowed + jvmDistrosAllowed,
-            jvmDistrosBlocked = config.jvmDistrosBlocked + jvmDistrosBlocked,
-            jvmRootPaths = config.jvmRootPaths + jvmRootPaths,
-            jvmLibSuffixes = config.jvmLibSuffixes + jvmLibSuffixes,
-            jvmClasspath = config.jvmClasspath + jvmClasspath,
+            jvmDistrosAllowed = merge(config.jvmDistrosAllowed, jvmDistrosAllowed),
+            jvmDistrosBlocked = merge(config.jvmDistrosBlocked, jvmDistrosBlocked),
+            jvmRootPaths = merge(config.jvmRootPaths, jvmRootPaths),
+            jvmLibSuffixes = merge(config.jvmLibSuffixes, jvmLibSuffixes),
+            jvmClasspath = merge(config.jvmClasspath, jvmClasspath),
             jvmMaxHeap = config.jvmMaxHeap ?: jvmMaxHeap,
-            jvmRuntimeArgs = config.jvmRuntimeArgs + jvmRuntimeArgs,
-            jvmMainClass = config.jvmMainClass + jvmMainClass,
-            jvmMainArgs = config.jvmMainArgs + jvmMainArgs,
+            jvmRuntimeArgs = merge(config.jvmRuntimeArgs, jvmRuntimeArgs),
+            jvmMainClass = merge(config.jvmMainClass, jvmMainClass),
+            jvmMainArgs = merge(config.jvmMainArgs, jvmMainArgs),
         )
+    }
+
+    /** Helper method to combine arrays without duplication */
+    private fun merge(base: Array<String>, toMerge: Array<String>): Array<String> {
+        return (base + toMerge).distinct().toTypedArray()
     }
 }
 
@@ -302,7 +308,7 @@ fun readConfig(
 
     // Recursively read config file includes.
     for (path in includes ?: emptyList()) {
-        theConfig += readConfig(tomlFile.dir / path, theConfig, theVisited)
+        theConfig = readConfig(tomlFile.dir / path, theConfig, theVisited)
     }
 
     // Return the final result.
