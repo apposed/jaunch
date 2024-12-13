@@ -302,7 +302,7 @@ fun readConfig(
 
     // Recursively read config file includes.
     for (path in includes ?: emptyList()) {
-        theConfig += readConfig(tomlFile.dir / path, theConfig, theVisited)
+        theConfig = readConfig(tomlFile.dir / path, theConfig, theVisited)
     }
 
     // Return the final result.
