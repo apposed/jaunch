@@ -92,20 +92,79 @@ jvm.enabled = true
 # sort out the mess. As long as the JVM args are on the list here, of course.
 
 jvm.recognized-args = [
-    '-D*',
-    '-X*',
-    '-agentlib:*', '-agentpath:*', '-javaagent:*',
-    '-d32', '-d64',
-    '-da*', '-disableassertions*',
-    '-dsa', '-disablesystemassertions*',
-    '-ea*', '-enableassertions*',
-    '-esa', '-enablesystemassertions',
-    '-jre-restrict-search', '-no-jre-restrict-search',
-    '-server', '-client',
-    '-showversion',
-    '-splash:*',
-    '-verbose*',
-    '-version', '-version:*',
+    '-?',                        # 8, 11, 17, 21
+    '-D*',                       # 8, 11, 17, 21
+    '-X',                        # 8, 11, 17, 21
+    '-X*',                       # 8, 11, 17, 21
+    '-agentlib:*',               # 8, 11, 17, 21
+    '-agentpath:*',              # 8, 11, 17, 21
+    '-classpath <>',             # 8, 11, 17, 21
+    '-cp <>',                    # 8, 11, 17, 21
+    '-d <>',                     #    11, 17, 21
+    '-d32',                      # 8
+    '-d64',                      # 8
+    '-da',                       # 8, 11, 17, 21
+    '-da:*',                     # 8, 11, 17, 21
+    '-disable-@files',           #    11, 17
+    '-disableassertions',        # 8, 11, 17, 21
+    '-disableassertions:*',      # 8, 11, 17, 21
+    '-disablesystemassertions',  # 8, 11, 17, 21
+    '-dsa',                      # 8, 11, 17, 21
+    '-ea',                       # 8, 11, 17, 21
+    '-ea:*',                     # 8, 11, 17, 21
+    '-enableassertions',         # 8, 11, 17, 21
+    '-enableassertions:*',       # 8, 11, 17, 21
+    '-enablesystemassertions',   # 8, 11, 17, 21
+    '-esa'                       # 8, 11, 17, 21
+    '-h',                        #    11, 17, 21
+    '-help',                     # 8, 11, 17, 21
+    '-jar <>',                   # 8, 11, 17, 21
+    '-javaagent:*',              # 8, 11, 17, 21
+    '-jre-restrict-search',      # 8
+    '-m <>',                     #    11, 17, 21
+    '-no-jre-restrict-search',   # 8
+    '-p <>',                     #    11, 17, 21
+    '-server',                   # 8
+    '-showversion',              # 8, 11, 17, 21
+    '-splash:*',                 # 8, 11, 17, 21
+    '-truffle',                  #        17
+    '-verbose:class',            # 8, 11, 17, 21
+    '-verbose:gc',               # 8, 11, 17, 21
+    '-verbose:jni',              # 8, 11, 17, 21
+    '-verbose:module',           #    11, 17, 21
+    '-version',                  # 8, 11, 17, 21
+    '-version:*',                # 8
+    '--add-exports <>',          #    11, 17, 21
+    '--add-exports=*',           #    11, 17, 21
+    '--add-modules <>',          #    11, 17, 21
+    '--add-modules=*',           #    11, 17, 21
+    '--add-opens <>',            #    11, 17, 21
+    '--add-opens=*',             #    11, 17, 21
+    '--class-path <>',           #    11, 17, 21
+    '--class-path=*',            #    11, 17, 21
+    '--describe-module <>',      #    11, 17, 21
+    '--describe-module=*',       #    11, 17, 21
+    '--disable-@files',          #            21
+    '--dry-run',                 #    11, 17, 21
+    '--enable-native-access <>', #        17, 21
+    '--enable-native-access=*',  #        17, 21
+    '--enable-preview',          #    11, 17, 21
+    '--illegal-access <>',       #    11
+    '--illegal-access=*',        #    11
+    '--help',                    #    11, 17, 21
+    '--help-extra',              #    11, 17, 21
+    '--list-modules',            #    11, 17, 21
+    '--module=*',                #    11, 17, 21
+    '--module <>',               #    11, 17, 21
+    '--module-path <>',          #    11, 17, 21
+    '--module-path=*',           #    11, 17, 21
+    '--show-module-resolution',  #    11, 17, 21
+    '--show-version',            #    11, 17, 21
+    '--upgrade-module-path <>',  #    11, 17, 21
+    '--upgrade-module-path=*',   #    11, 17, 21
+    '--validate-modules',        #    11, 17, 21
+    '--version',                 #    11, 17, 21
+    '@*',                        #    11, 17, 21
 ]
 
 # ==============================================================================
