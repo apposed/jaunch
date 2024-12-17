@@ -167,9 +167,9 @@ data class JaunchConfig (
             pythonVersionMin = config.pythonVersionMin ?: pythonVersionMin,
             pythonVersionMax = config.pythonVersionMax ?: pythonVersionMax,
             pythonPackages = merge(config.pythonPackages, pythonPackages),
-            pythonRuntimeArgs = merge(config.pythonRuntimeArgs, pythonRuntimeArgs),
+            pythonRuntimeArgs = config.pythonRuntimeArgs + pythonRuntimeArgs,
             pythonScriptPath = merge(config.pythonScriptPath, pythonScriptPath),
-            pythonMainArgs = merge(config.pythonMainArgs, pythonMainArgs),
+            pythonMainArgs = config.pythonMainArgs + pythonMainArgs,
 
             jvmEnabled = config.jvmEnabled ?: jvmEnabled,
             jvmRecognizedArgs = merge(config.jvmRecognizedArgs, jvmRecognizedArgs),
@@ -182,9 +182,9 @@ data class JaunchConfig (
             jvmLibSuffixes = merge(config.jvmLibSuffixes, jvmLibSuffixes),
             jvmClasspath = merge(config.jvmClasspath, jvmClasspath),
             jvmMaxHeap = config.jvmMaxHeap ?: jvmMaxHeap,
-            jvmRuntimeArgs = merge(config.jvmRuntimeArgs, jvmRuntimeArgs),
+            jvmRuntimeArgs = config.jvmRuntimeArgs + jvmRuntimeArgs,
             jvmMainClass = merge(config.jvmMainClass, jvmMainClass),
-            jvmMainArgs = merge(config.jvmMainArgs, jvmMainArgs),
+            jvmMainArgs = config.jvmMainArgs + jvmMainArgs,
         )
     }
 
