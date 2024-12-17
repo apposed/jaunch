@@ -23,9 +23,9 @@ do
   suffix=${f#*/launcher}
   (
     set -x
-    cp "$f" "$targetDir/paunch$suffix"
     cp "$f" "$targetDir/jy$suffix"
     cp "$f" "$targetDir/parsy$suffix"
+    cp "$f" "$targetDir/paunch$suffix"
     cp "$f" "$targetDir/repl$suffix"
   )
 done
@@ -47,10 +47,10 @@ for f in \
   Props.class \
   common.toml \
   jvm.toml \
-  python.toml \
   jy.toml \
   parsy.toml \
   paunch.toml \
+  python.toml \
   repl.toml
 do
   if [ ! -f "app/jaunch/$f" ]
