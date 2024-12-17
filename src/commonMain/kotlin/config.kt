@@ -123,6 +123,9 @@ data class JaunchConfig (
 
     /** Arguments to pass to the main class on the Java side. */
     val jvmMainArgs: Array<String> = emptyArray(),
+
+    /** The list of options overridable by .cfg files understood by Jaunch. */
+    val cfgVars: Map<String, Any> = emptyMap(),
 ) {
     /** Return true iff the given argument is on the specified list of recognized args. */
     fun recognizes(arg: String, recognizedArgs: Array<String>): Boolean {
@@ -154,6 +157,7 @@ data class JaunchConfig (
             programName = config.programName ?: programName,
             includes = merge(config.includes, includes),
             supportedOptions = merge(config.supportedOptions, supportedOptions),
+            cfgVars = cfgVars + config.cfgVars,
             osAliases = merge(config.osAliases, osAliases),
             archAliases = merge(config.archAliases, archAliases),
             modes = merge(config.modes, modes),
@@ -246,6 +250,8 @@ fun readConfig(
     var jvmMainClass: List<String>? = null
     var jvmMainArgs: List<String>? = null
 
+    val cfgVars = mutableMapOf<String, Any>()
+
     // Parse TOML file lines into tokens.
     val tokens = mutableListOf<Any>()
     tomlFile.lines().forEach { appendTokens(it, tokens) }
@@ -300,6 +306,13 @@ fun readConfig(
                     "jvm.runtime-args" -> jvmRuntimeArgs = asList(value)
                     "jvm.main-class" -> jvmMainClass = asList(value)
                     "jvm.main-args" -> jvmMainArgs = asList(value)
+                    else -> {
+                        // Parse cfg.* variable assignments into a cfgVars map
+                        if (name.startsWith("cfg.") && value != null) {
+                            cfgVars[name] = value
+                        }
+                        else warn("[TOML] Unsupported key: '$name'")
+                    }
                 }
             }
             else -> warn("[TOML] Ignoring extraneous token: '$token' [${token::class.simpleName}]")
@@ -317,6 +330,7 @@ fun readConfig(
         programName = programName,
         includes = asArray(includes),
         supportedOptions = asArray(supportedOptions),
+        cfgVars = cfgVars,
         osAliases = asArray(osAliases),
         archAliases = asArray(archAliases),
         modes = asArray(modes),

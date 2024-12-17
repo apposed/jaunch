@@ -118,14 +118,11 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
             }
         }
 
-        // If not already declared, calculate and declare the max heap size.
+        // If not manually declared, add a max heap flag from the config.
         val mxIndex = runtimeArgs.indexOfFirst { it.startsWith("-Xmx") }
         if (mxIndex < 0) {
-            val maxHeap = calculateMaxHeap(config.jvmMaxHeap)
-            if (maxHeap != null) {
-                runtimeArgs += "-Xmx$maxHeap"
-                debug("Added maxHeap arg: ${runtimeArgs.last()}")
-            }
+            runtimeArgs += "-Xmx${config.jvmMaxHeap}"
+            debug("Added maxHeap arg: ${runtimeArgs.last()}")
         }
 
         // Calculate main class.
@@ -162,6 +159,22 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
             addAll(args.runtime)
             add(mainClass.replace(".", "/"))
             addAll(args.main)
+        }
+    }
+
+    override fun processArgs(args: MutableList<String>) {
+        val prefix = "-Xmx"
+        val memIndices = args.withIndex()
+            .filter{ (_, value) -> value.startsWith("-Xmx" ) }
+            .map{it.index}
+
+        for (memIdx in memIndices) {
+            if (args[memIdx].contains('%')) {
+                val memPercent = args[memIdx].substring(prefix.length)
+                val maxHeap = calculateMaxHeap(memPercent)
+                args[memIdx] = "$prefix$maxHeap";
+                debug("Expanded % in jvm runtime arg: ${args[memIdx]}")
+            }
         }
     }
 

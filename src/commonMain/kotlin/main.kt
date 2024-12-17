@@ -69,7 +69,7 @@ fun main(args: Array<String>) {
 
     // Declare a set to store option parameter values.
     // It will be populated at argument parsing time.
-    val vars = Vars(appDir, configDir, exeFile)
+    val vars = Vars(appDir, configDir, exeFile, config.cfgVars)
 
     // Sort out the arguments, keeping the user-specified runtime and main arguments in a struct. At this point,
     // it may yet be ambiguous whether certain user args belong with the runtime, the main program, or neither.
@@ -108,6 +108,15 @@ fun main(args: Array<String>) {
     for (programArgs in argsInContext.values) {
         vars.interpolateInto(programArgs.runtime)
         vars.interpolateInto(programArgs.main)
+    }
+
+    // Now that our program arguments have been fully interpolated, we offer the
+    // runtimes an additional opportunity to perform any runtime-specific
+    // custom logic (for example, resolving %'s in -Xmx notation).
+    for (programArgs in argsInContext.values) {
+        for (runtime in runtimes) {
+            runtime.processArgs(programArgs.runtime)
+        }
     }
 
     // Finally, execute all the directives! \^_^/

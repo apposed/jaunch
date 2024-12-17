@@ -44,6 +44,11 @@ abstract class RuntimeConfig(
     abstract fun launch(args: ProgramArgs): List<String>
 
     /**
+     * Perform any runtime-specific argument processing here.
+     */
+    abstract fun processArgs(args: MutableList<String>)
+
+    /**
      * Check whether the given argument matches one of the [recognizedArgs].
      *
      * - For a non-matching argument, returns 0.
