@@ -56,7 +56,7 @@ actual class File actual constructor(rawPath: String) {
             }
         }
 
-        return files
+        return files.sortedBy { it.path }
     }
 
     @OptIn(ExperimentalForeignApi::class)
