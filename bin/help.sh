@@ -6,6 +6,6 @@ echo "Available targets:
 	compile-all          - compile native launcher and Jaunch configurator
 	dist                 - generate Jaunch distribution
 	pack                 - compress Jaunch executables
-	app                  - generate example application
+	app                  - generate example applications
 	test                 - run automated test suite
 "
