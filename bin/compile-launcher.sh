@@ -44,6 +44,9 @@ case "$(uname)" in
     compile gcc -o build/launcher-macos-x64 -framework CoreFoundation -target x86_64-apple-macos10.12 &&
     (set -x; lipo -create -output build/launcher build/launcher-macos-x64 build/launcher-macos-arm64)
     ;;
-  MINGW*|MSYS*) compile gcc -o build/launcher-windows-x64.exe -mwindows ;;
+  MINGW*|MSYS*)
+    compile gcc -o build/launcher-windows-x64-console.exe -mconsole
+    compile gcc -o build/launcher-windows-x64-gui.exe -mwindows
+    ;;
   *) compile gcc -o build/launcher ;;
 esac

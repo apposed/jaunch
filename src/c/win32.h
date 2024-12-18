@@ -6,6 +6,53 @@
 #define SLASH "\\"
 #define EXE_SUFFIX ".exe"
 
+static BOOL hasConsole = FALSE;
+static BOOL isConsoleOwner = FALSE;
+
+static void setupConsole() {
+    // First, try to attach to an existing console
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        hasConsole = TRUE;
+
+        // Reopen stdin/stdout/stderr to connect to the console
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+
+        // Get and set proper console mode for input
+        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+        if (hStdin != INVALID_HANDLE_VALUE) {
+            DWORD mode;
+            if (GetConsoleMode(hStdin, &mode)) {
+                // Enable standard input processing
+                mode |= ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+                SetConsoleMode(hStdin, mode);
+            }
+        }
+
+        return;
+    }
+
+    // If that failed, see if we already have a console
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (console != INVALID_HANDLE_VALUE && console != NULL) {
+        hasConsole = TRUE;
+        return;
+    }
+
+    // No console needed/available
+    // We could create a new console here with AllocConsole() if needed
+    // But for now, we'll just run without one
+    hasConsole = FALSE;
+}
+
+// Helper function to cleanup console if we created one
+static void cleanupConsole() {
+    if (isConsoleOwner) {
+        FreeConsole();
+    }
+}
+
 void handle_error(const char* errorMessage) {
     fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
     exit(1);
@@ -86,17 +133,22 @@ int run_command(const char *command,
     si.dwFlags |= STARTF_USESTDHANDLES;
 
     // Create the subprocess
-    // NB: We pass a single "-" argument to indicate to the jaunch
-    // configurator that it should harvest the actual input arguments
-    // from the stdin stream. We do this to avoid issues with quoting.
+
+    // Add CREATE_NO_WINDOW flag to prevent console window from appearing
+    DWORD createFlags = CREATE_NO_WINDOW;
     char *commandPlusDash = malloc(strlen(command) + 3);
     if (commandPlusDash == NULL) {
         error("Failed to allocate memory (command plus dash)");
         return ERROR_MALLOC;
     }
     strcpy(commandPlusDash, command);
+    // NB: We pass a single "-" argument to indicate to the jaunch
+    // configurator that it should harvest the actual input arguments
+    // from the stdin stream. We do this to avoid issues with quoting.
     strcat(commandPlusDash, " -");
-    if (!CreateProcess(NULL, (LPSTR)commandPlusDash, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+    if (!CreateProcess(NULL, (LPSTR)commandPlusDash, NULL, NULL, TRUE,
+        createFlags, NULL, NULL, &si, &pi))
+    {
         free(commandPlusDash);
         handle_error("Error creating process");
     }
@@ -176,9 +228,13 @@ void show_alert(const char *title, const char *message) {
  * The Windows way of launching a runtime.
  *
  * It simply calls the given launch function directly. Easy peasy.
+ * Except... we need to wrangle Windows consoles. Good times!
  */
 int launch(const LaunchFunc launch_runtime,
     const size_t argc, const char **argv)
 {
-    return launch_runtime(argc, argv);
+    setupConsole();
+    int result = launch_runtime(argc, argv);
+    cleanupConsole();
+    return result;
 }

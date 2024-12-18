@@ -96,7 +96,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         // Calculate classpath.
         val rawClasspath = vars.calculate(config.jvmClasspath, hints)
         debugList("Classpath to calculate:", rawClasspath)
-        val classpath = rawClasspath.flatMap { glob(it) }
+        val classpath = rawClasspath.flatMap { glob(it) }.distinct()
         debugList("Classpath calculated:", classpath)
 
         // Calculate JVM arguments.

@@ -28,7 +28,6 @@ actual fun getcwd(): String {
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual fun setcwd(cwd: String) {
     SetCurrentDirectoryA(cwd)
 }

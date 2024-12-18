@@ -4,7 +4,15 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[app]\033[0m"
 
-if [ ! -d app/jaunch ]; then (set -x; mkdir -p app/jaunch); fi
+appDir=app
+
+targetDir() {
+  if [ "$1" ]; then result="$appDir/$1"; else result="$appDir"; fi
+  if [ ! -d "$result" ]; then (set -x; mkdir -p "$result"); fi
+  echo "$result"
+}
+
+if [ ! -d "$appDir/jaunch" ]; then (set -x; mkdir -p "$appDir"/jaunch); fi
 
 # Copy launcher binaries within the dist folder, duplicating to all demo apps.
 #
@@ -17,27 +25,53 @@ echo "Copying launcher binaries..."
 find dist -name 'launcher-*' | while read f
 do
   srcDir=${f%/launcher*}
-  targetDir="${srcDir#dist}"
-  if [ "$targetDir" ]; then targetDir="app/$targetDir"; else targetDir=app; fi
-  if [ ! -d "$targetDir" ]; then (set -x; mkdir -p "$targetDir"); fi
+  targetDir=$(targetDir "${srcDir#dist}")
   suffix=${f#*/launcher}
-  (
-    set -x
-    cp "$f" "$targetDir/paunch$suffix"
-    cp "$f" "$targetDir/jy$suffix"
-    cp "$f" "$targetDir/parsy$suffix"
-    cp "$f" "$targetDir/repl$suffix"
-  )
+
+  # Strip Windows-specific -console and -gui suffixes.
+  case "$suffix" in
+    *-console.exe) suffix="${suffix%-console.exe}.exe" ;;
+    *-gui.exe) suffix="${suffix%-gui.exe}.exe" ;;
+  esac
+
+  # Populate console apps.
+  test "$f" != "${f%-gui.exe}" && winGUI=true || winGUI=false
+  if [ "$winGUI" = false ]
+  then
+    for app in jy parsy paunch repl
+    do
+      (set -x; cp "$f" "$targetDir/$app$suffix")
+    done
+  fi
+
+  # Populate GUI apps.
+  test "$f" != "${f%-console.exe}" && winConsole=true || winConsole=false
+  if [ "$winConsole" = false ]
+  then
+    for app in hello
+    do
+      (set -x; cp "$f" "$targetDir/$app$suffix")
+    done
+  fi
 done
+
+# Copy wrapper launch scripts.
+for app in jy parsy paunch repl hello
+do (
+  set -x
+  cp --preserve=mode configs/launcher.sh "$appDir/$app"
+  cp configs/launcher.bat "$appDir/$app.bat"
+) done
+
+# Copy hello app Java program.
+(set -x; cp configs/HelloSwing.class "$appDir/")
 
 # Copy jaunch configurator binaries.
 echo "Copying jaunch configurator binaries..."
 find dist -name 'jaunch-*' | while read f
 do
   srcDir=${f%/jaunch-*}
-  targetDir="${srcDir#dist/}"
-  if [ "$targetDir" ]; then targetDir="app/$targetDir"; else targetDir=app; fi
-  if [ ! -d "$targetDir" ]; then (set -x; mkdir -p "$targetDir"); fi
+  targetDir=$(targetDir "${srcDir#dist/}")
   (set -x; cp "$f" "$targetDir/")
 done
 
@@ -46,11 +80,12 @@ echo "Copying configuration files and helpers..."
 for f in \
   Props.class \
   common.toml \
+  hello.toml \
   jvm.toml \
-  python.toml \
   jy.toml \
   parsy.toml \
   paunch.toml \
+  python.toml \
   repl.toml
 do
   if [ ! -f "app/jaunch/$f" ]

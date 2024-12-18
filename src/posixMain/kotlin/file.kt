@@ -48,7 +48,7 @@ actual class File actual constructor(private val rawPath: String) {
             closedir(directory)
         }
 
-        return files
+        return files.sortedBy { it.path }
     }
 
     @OptIn(ExperimentalForeignApi::class)

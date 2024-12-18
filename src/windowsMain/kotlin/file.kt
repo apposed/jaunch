@@ -1,9 +1,8 @@
 import kotlinx.cinterop.*
 import platform.windows.*
-import kotlin.math.min
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class File actual constructor(private val rawPath: String) {
+actual class File actual constructor(rawPath: String) {
 
     actual val path: String = canonicalize(rawPath)
 
@@ -57,7 +56,7 @@ actual class File actual constructor(private val rawPath: String) {
             }
         }
 
-        return files
+        return files.sortedBy { it.path }
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -81,7 +80,7 @@ actual class File actual constructor(private val rawPath: String) {
                         ) {
                             val readCount = bytesRead.value.toInt()
                             if (readCount > 0) {
-                                content.append(buffer.decodeToString(0, readCount));
+                                content.append(buffer.decodeToString(0, readCount))
                             }
                         } else {
                             printlnErr("Error reading file '$this': ${lastError()}")
@@ -229,6 +228,6 @@ private fun lastError(): String {
 
         if (messageLength > 0U) LocalFree(buffer.value)
 
-        return errorMessage;
+        return errorMessage
     }
 }
