@@ -57,11 +57,19 @@ done
 
 # Copy wrapper launch scripts.
 for app in jy parsy paunch repl hello
-do (
-  set -x
-  cp --preserve=mode configs/launcher.sh "$appDir/$app"
-  cp configs/launcher.bat "$appDir/$app.bat"
-) done
+do
+  case "$(uname -s)" in
+    MINGW*|MSYS*) (
+      set -x
+      cp configs/launcher.bat "$appDir/$app.bat"
+    );;
+    *) (
+      set -x
+      cp configs/launcher.sh "$appDir/$app"
+      chmod +x "$appDir/$app"
+    );;
+  esac
+done
 
 # Copy hello app Java program.
 (set -x; cp configs/HelloSwing.class "$appDir/")
