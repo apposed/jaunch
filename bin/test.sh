@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[test]\033[0m"
 
-test "$(uname)-$(uname -p)" = Linux-x86_64 || {
+test "$(uname -s)-$(uname -p)" = Linux-x86_64 || {
   echo "[ERROR] Sorry, tests only exist for Linux-x64 right now."
   exit 1
 }

@@ -16,7 +16,7 @@ sed -e "s/{{{VERSION}}}/$version/" -e "s/{{{GIT-HASH}}}/$gitHash/" src/commonMai
 
 # Call the appropriate Gradle targets for the current platform.
 set +e
-platform=$(uname)
+platform=$(uname -s)
 case "$platform" in
   Linux)
     (set -x; ./gradlew --no-daemon linkReleaseExecutableLinuxX64 linkReleaseExecutableLinuxArm64)

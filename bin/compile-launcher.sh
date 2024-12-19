@@ -34,7 +34,7 @@ compile() {
     src/c/jaunch.c $@)
 }
 
-case "$(uname)" in
+case "$(uname -s)" in
   Linux)
     compile gcc -o build/launcher-linux-x64 &&
     compile aarch64-linux-gnu-gcc -o build/launcher-linux-arm64

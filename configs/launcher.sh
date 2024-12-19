@@ -15,7 +15,7 @@ os=$(uname -s 2>/dev/null)
 case "$os" in
   Linux) os=linux ;;
   Darwin) os=macos ;;
-  MINGW*) os=windows ;;
+  MINGW*|MSYS*) os=windows ;;
   *) die "Unsupported operating system: $os" ;;
 esac
 
