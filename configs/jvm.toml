@@ -140,6 +140,8 @@ jvm.recognized-args = [
     '--add-modules=*',           #    11, 17, 21
     '--add-opens <>',            #    11, 17, 21
     '--add-opens=*',             #    11, 17, 21
+    '--add-reads <>',            #    11, 17, 21
+    '--add-reads=*',             #    11, 17, 21
     '--class-path <>',           #    11, 17, 21
     '--class-path=*',            #    11, 17, 21
     '--describe-module <>',      #    11, 17, 21
@@ -149,17 +151,23 @@ jvm.recognized-args = [
     '--enable-native-access <>', #        17, 21
     '--enable-native-access=*',  #        17, 21
     '--enable-preview',          #    11, 17, 21
-    '--illegal-access <>',       #    11
-    '--illegal-access=*',        #    11
     '--help',                    #    11, 17, 21
     '--help-extra',              #    11, 17, 21
+    '--illegal-access <>',       #    11
+    '--illegal-access=*',        #    11
+    '--limit-modules <>',        #    11, 17, 21
+    '--limit-modules=*',         #    11, 17, 21
     '--list-modules',            #    11, 17, 21
-    '--module=*',                #    11, 17, 21
     '--module <>',               #    11, 17, 21
+    '--module=*',                #    11, 17, 21
     '--module-path <>',          #    11, 17, 21
     '--module-path=*',           #    11, 17, 21
+    '--patch-module <>',         #    11, 17, 21
+    '--patch-module=*',          #    11, 17, 21
     '--show-module-resolution',  #    11, 17, 21
     '--show-version',            #    11, 17, 21
+    '--source <>',               #    11, 17, 21
+    '--source=*',                #    11, 17, 21
     '--upgrade-module-path <>',  #    11, 17, 21
     '--upgrade-module-path=*',   #    11, 17, 21
     '--validate-modules',        #    11, 17, 21
