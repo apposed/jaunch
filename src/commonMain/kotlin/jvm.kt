@@ -120,7 +120,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
 
         // If not manually declared, add a max heap flag from the config.
         val mxIndex = runtimeArgs.indexOfFirst { it.startsWith("-Xmx") }
-        if (mxIndex < 0) {
+        if (mxIndex < 0 && config.jvmMaxHeap != null) {
             runtimeArgs += "-Xmx${config.jvmMaxHeap}"
             debug("Added maxHeap arg: ${runtimeArgs.last()}")
         }
