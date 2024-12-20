@@ -38,7 +38,9 @@ int run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output);
 
-// implementations in linux.h, win32.h, macos.h
+// Implementations in linux.h, win32.h, macos.h
+void setup(const int argc, const char *argv[]);
+void teardown();
 void init_threads();
 void show_alert(const char *title, const char *message);
 typedef int (*LaunchFunc)(const size_t, const char **);

@@ -114,6 +114,9 @@ int main(const int argc, const char *argv[]) {
     for (size_t i = 0; i < argc; i++)
         if (strcmp(argv[i], "--debug") == 0) debug_mode = 1;
 
+    // Perform initial platform-specific setup (looking at you, Windows!).
+    setup(argc, argv);
+
     char *command = NULL;
     size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
     for (size_t i = 0; i < search_path_count; i++) {
@@ -219,6 +222,9 @@ int main(const int argc, const char *argv[]) {
         free(out_argv[i]);
     }
     free(out_argv);
+
+    // Do any final platform-specific cleanup.
+    teardown();
 
     return exit_code;
 }

@@ -41,6 +41,7 @@ actual fun getenv(name: String): String? {
 private val STDERR = fdopen(2, "w")
 @OptIn(ExperimentalForeignApi::class)
 actual fun printlnErr(s: String) {
+    //setvbuf(STDERR, null, _IOLBF, 0.toULong())
     fprintf(STDERR, "%s\n", s)
     fflush(STDERR)
 }

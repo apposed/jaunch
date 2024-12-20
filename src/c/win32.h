@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <tlhelp32.h>
 
 #include "common.h"
 
@@ -6,52 +7,9 @@
 #define SLASH "\\"
 #define EXE_SUFFIX ".exe"
 
-static BOOL hasConsole = FALSE;
-static BOOL isConsoleOwner = FALSE;
-
-static void setupConsole() {
-    // First, try to attach to an existing console
-    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        hasConsole = TRUE;
-
-        // Reopen stdin/stdout/stderr to connect to the console
-        freopen("CONIN$", "r", stdin);
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
-
-        // Get and set proper console mode for input
-        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-        if (hStdin != INVALID_HANDLE_VALUE) {
-            DWORD mode;
-            if (GetConsoleMode(hStdin, &mode)) {
-                // Enable standard input processing
-                mode |= ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
-                SetConsoleMode(hStdin, mode);
-            }
-        }
-
-        return;
-    }
-
-    // If that failed, see if we already have a console
-    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (console != INVALID_HANDLE_VALUE && console != NULL) {
-        hasConsole = TRUE;
-        return;
-    }
-
-    // No console needed/available
-    // We could create a new console here with AllocConsole() if needed
-    // But for now, we'll just run without one
-    hasConsole = FALSE;
-}
-
-// Helper function to cleanup console if we created one
-static void cleanupConsole() {
-    if (isConsoleOwner) {
-        FreeConsole();
-    }
-}
+// ===========================================================
+//                      HELPER FUNCTIONS
+// ===========================================================
 
 void handle_error(const char* errorMessage) {
     fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
@@ -78,9 +36,190 @@ int file_exists(const char *path) {
     return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
 }
 
+typedef enum {
+    PARENT_UNKNOWN,
+    PARENT_CMD,
+    PARENT_POWERSHELL,
+    PARENT_BASH,
+    PARENT_EXPLORER,
+    PARENT_OTHER
+} ParentProcessType;
+
+static ParentProcessType getParentProcessType() {
+    DWORD parentPID = 0;
+    ParentProcessType result = PARENT_UNKNOWN;
+
+    // Get the parent process ID
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) return result;
+
+    PROCESSENTRY32W entry;
+    entry.dwSize = sizeof(entry);
+    DWORD currentPID = GetCurrentProcessId();
+
+    if (Process32FirstW(snapshot, &entry)) {
+        do {
+            if (entry.th32ProcessID == currentPID) {
+                parentPID = entry.th32ParentProcessID;
+                break;
+            }
+        } while (Process32NextW(snapshot, &entry));
+    }
+
+    if (parentPID) {
+        // Reset to start of process list
+        Process32FirstW(snapshot, &entry);
+        do {
+            if (entry.th32ProcessID == parentPID) {
+                debug("[JAUNCH-WIN32] PARENT PROCESS = %S", entry.szExeFile);
+                if (_wcsicmp(entry.szExeFile, L"cmd.exe") == 0) {
+                    result = PARENT_CMD;
+                }
+                else if (_wcsicmp(entry.szExeFile, L"powershell.exe") == 0 ||
+                         _wcsicmp(entry.szExeFile, L"pwsh.exe") == 0)
+                {
+                    result = PARENT_POWERSHELL;
+                }
+                else if (_wcsicmp(entry.szExeFile, L"bash.exe") == 0) {
+                    result = PARENT_BASH;
+                }
+                else if (_wcsicmp(entry.szExeFile, L"explorer.exe") == 0) {
+                    result = PARENT_EXPLORER;
+                }
+                else {
+                    result = PARENT_OTHER;
+                }
+                break;
+            }
+        } while (Process32NextW(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return result;
+}
+
+/** Thread helper function to read from configurator process's stderr. */
+DWORD WINAPI ReadStderrThread(LPVOID param) {
+    HANDLE stderrRead = (HANDLE)param;
+    char buffer[1024];
+    DWORD bytesRead;
+
+    while (ReadFile(stderrRead, buffer, sizeof(buffer), &bytesRead, NULL)) {
+        if (bytesRead <= 0) continue;
+
+        // Write directly to the main process stderr
+        HANDLE parentStderr = GetStdHandle(STD_ERROR_HANDLE);
+        WriteFile(parentStderr, buffer, bytesRead, NULL, NULL);
+    }
+    return 0;
+}
+
 // ===========================================================
 //              common.h FUNCTION IMPLEMENTATIONS
 // ===========================================================
+
+void setup(const int argc, const char *argv[]) {
+    // Ahh, the Windows console. Good times!
+    // See doc/WINDOWS.md for why this logic is here.
+
+    debug("[JAUNCH-WIN32] CONFIGURING CONSOLE");
+
+    // First, try to attach to an existing console
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        debug("[JAUNCH-WIN32] ATTACHED TO PARENT CONSOLE");
+
+        // Glean the parent process type.
+        ParentProcessType parentType = getParentProcessType();
+
+        // Reopen stdin/stdout/stderr to connect to the console.
+        if (parentType != PARENT_BASH) {
+            // Calling freopen when launched from a Git Bash prompt hoses the
+            // output -- maybe because it redirects it to a non-bash console?
+            // Conversely, if we're running from CMD or PowerShell, and we
+            // *don't* freopen the streams, they will not function properly.
+            // This, we do this step iff we're *not* running from Git Bash.
+            //
+            // Unfortunately, this approach is not foolproof: if running bash
+            // from inside a Command Prompt or PowerShell, the logic fails to
+            // produce any output whatsoever. In that case, we *do* need to
+            // freopen the streams to see output from the launcher process...
+            // but even if we do that, in that case, we won't see stderr from
+            // the configurator subprocess. So I'm throwing up my hands here.
+
+            freopen("CONIN$", "r", stdin);
+            freopen("CONOUT$", "w", stdout);
+            freopen("CONOUT$", "w", stderr);
+            debug("[JAUNCH-WIN32] REOPENED CONSOLE STREAMS");
+
+            // NB: In debug mode, we call getParentProcessType() again so
+            // that the name of the parent process gets emitted to stderr,
+            // because we probably didn't see it last time due to the console
+            // not yet being fully connected.
+            if (debug_mode) getParentProcessType();
+        }
+
+        // Warn if we're a GUI app running directly from a Windows shell.
+        // In theory, this check will always succeed, because in any other
+        // scenario the AttachConsole call above would have failed, and this
+        // case logic here wouldn't even be triggered. But this console
+        // logic has many edge cases, so let's check anyway, just in case.
+        DWORD binaryType;
+        const char* argv0 = argv[0];
+        if (GetBinaryTypeA(argv0, &binaryType) && (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY)) {
+            switch (parentType) {
+                case PARENT_CMD:
+                    error("");
+                    error("===========================================================");
+                    error("WARNING: GUI program launched from Command Prompt.");
+                    error("For proper console behavior, make sure to use:");
+                    error("    start /wait %s", argv0);
+                    error("Or launch from inside a batch script, or from Git Bash.");
+                    error("===========================================================");
+                    break;
+                case PARENT_POWERSHELL:
+                    error("");
+                    error("=======================================================");
+                    error("WARNING: GUI program launched from PowerShell.");
+                    error("For proper console behavior, make sure to use:");
+                    error("    Start-Process -Wait %s", argv0);
+                    error("Or launch from inside a batch script, or from Git Bash.");
+                    error("=======================================================");
+                    break;
+                case PARENT_BASH:
+                    debug("[JAUNCH-WIN32] Running from bash; all is well.");
+                    break;
+                case PARENT_EXPLORER:
+                    debug("[JAUNCH-WIN32] Running from Explorer; all is well.");
+                    break;
+                case PARENT_OTHER:
+                    error("");
+                    error("==========================================================");
+                    error("WARNING: GUI program launched from unknown parent process.");
+                    error("Console output may be unreliable.");
+                    error("==========================================================");
+                    break;
+                case PARENT_UNKNOWN:
+                    debug("[JAUNCH-WIN32] Failed to detect parent process type.");
+                    break;
+            }
+        }
+    }
+
+    // Check whether the console handles are functional.
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE hStderr = GetStdHandle(STD_ERROR_HANDLE);
+    if (hStdin != NULL && hStdin != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDIN IS VALID");
+    if (hStdout != NULL && hStdout != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDOUT IS VALID");
+    if (hStderr != NULL && hStderr != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDERR IS VALID");
+}
+
+void teardown() {
+    // Note: Since we always attach to an existing console, we never own our
+    // console, meaning we are not the one responsible for cleaning it up.
+    // But if we ever add a case that calls AllocConsole, we will need a
+    // corresponding FreeConsole() here to dispose of it.
+}
 
 void *lib_open(const char *path) { return LoadLibrary(path); }
 void *lib_sym(void *library, const char *symbol) { return GetProcAddress(library, symbol); }
@@ -112,12 +251,13 @@ int run_command(const char *command,
     size_t *numOutput, char ***output)
 {
     // Create pipes for stdin and stdout
-    HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite;
+    HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite, stderrRead, stderrWrite;
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
-    debug("run_command: opening pipes to/from jaunch");
+    debug("[JAUNCH-WIN32] OPENING STREAMS TO/FROM SUBPROCESS");
     if (!CreatePipe(&stdinRead, &stdinWrite, &sa, 0) ||
-        !CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0))
+        !CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0) ||
+        !CreatePipe(&stderrRead, &stderrWrite, &sa, 0))
     {
         handle_error("Error creating pipes");
     }
@@ -129,7 +269,7 @@ int run_command(const char *command,
     // Specify that the process should inherit the handles
     si.hStdInput = stdinRead;
     si.hStdOutput = stdoutWrite;
-    si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    si.hStdError = stderrWrite;
     si.dwFlags |= STARTF_USESTDHANDLES;
 
     // Create the subprocess
@@ -157,9 +297,10 @@ int run_command(const char *command,
     // Close unnecessary handles
     CloseHandle(stdinRead);
     CloseHandle(stdoutWrite);
+    CloseHandle(stderrWrite);
 
     // Write to the child process's stdin
-    debug("run_command: writing to jaunch stdin");
+    debug("[JAUNCH-WIN32] WRITING TO SUBPROCESS STDIN");
     // Passing the input line count as the first line tells the child process what
     // to expect, so that it can stop reading from stdin once it has received
     // those lines, even though the pipe is not yet closed. This avoids deadlocks.
@@ -176,7 +317,10 @@ int run_command(const char *command,
 
     // Close the stdin write handle to signal end of input
     CloseHandle(stdinWrite);
-    debug("run_command: closed jaunch stdin pipe");
+    debug("[JAUNCH-WIN32] CLOSED SUBPROCESS STDIN STREAM");
+
+    // Read from the child process's stderr in its own thread
+    HANDLE hThread = CreateThread(NULL, 0, ReadStderrThread, stderrRead, 0, NULL);
 
     // Read from the child process's stdout
     char buffer[1024];
@@ -203,11 +347,22 @@ int run_command(const char *command,
         totalBytesRead += bytesRead;
     }
 
+    // Wait for stderr thread to terminate
+    if (hThread) {
+        debug("[JAUNCH-WIN32] WAITING FOR STDERR THREAD");
+        WaitForSingleObject(hThread, INFINITE);
+        CloseHandle(hThread);
+        debug("[JAUNCH-WIN32] STDERR THREAD COMPLETE");
+    }
+
     // Close handles
+    debug("[JAUNCH-WIN32] CLOSING OUTPUT STREAM HANDLES");
     CloseHandle(stdoutRead);
-    debug("run_command: closed jaunch stdout pipe");
+    CloseHandle(stderrRead);
+    debug("[JAUNCH-WIN32] CLOSING SUBPROCESS HANDLES");
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+    debug("[JAUNCH-WIN32] ALL HANDLES CLOSED");
 
     // Return the output buffer and the number of lines
     *output = NULL;
@@ -228,13 +383,9 @@ void show_alert(const char *title, const char *message) {
  * The Windows way of launching a runtime.
  *
  * It simply calls the given launch function directly. Easy peasy.
- * Except... we need to wrangle Windows consoles. Good times!
  */
 int launch(const LaunchFunc launch_runtime,
     const size_t argc, const char **argv)
 {
-    setupConsole();
-    int result = launch_runtime(argc, argv);
-    cleanupConsole();
-    return result;
+    return launch_runtime(argc, argv);
 }

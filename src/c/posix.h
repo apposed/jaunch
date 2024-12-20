@@ -16,6 +16,9 @@ int file_exists(const char *path) {
 //              common.h FUNCTION IMPLEMENTATIONS
 // ===========================================================
 
+void setup(const int argc, const char *argv[]) {}
+void teardown() {}
+
 void *lib_open(const char *path) {
   return dlopen(path, RTLD_NOW | RTLD_GLOBAL); /* TODO: or RTLD_LAZY? */
 }
