@@ -107,17 +107,17 @@ copyDependency() {
   g=$1
   a=$2
   v=$3
-  if [ ! -f .lib/$a-$v.jar ]
+  if [ ! -f .cache/lib/$a-$v.jar ]
   then
-    mkdir -p .lib
+    mkdir -p .cache/lib
     echo "Downloading $a..."
-    (set -x; curl -fsL https://search.maven.org/remotecontent\?filepath\=$g/$a/$v/$a-$v.jar > .lib/$a-$v.jar)
+    (set -x; curl -fsL https://search.maven.org/remotecontent\?filepath\=$g/$a/$v/$a-$v.jar > .cache/lib/$a-$v.jar)
   fi
   if [ ! -f app/lib/$a-$v.jar ]
   then
     mkdir -p app/lib
     echo "Copying $a..."
-    (set -x; cp .lib/$a-$v.jar app/lib/)
+    (set -x; cp .cache/lib/$a-$v.jar app/lib/)
   fi
 }
 copyDependency org/scijava parsington 3.1.0 # dependency of parsy

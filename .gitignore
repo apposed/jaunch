@@ -1,6 +1,5 @@
+/.cache/
 /.gradle/
-/.lib/
-/.upx/
 /app/
 /build/
 /jaunch.tar.gz
