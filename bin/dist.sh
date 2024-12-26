@@ -39,7 +39,8 @@ copyBinary build/bin/linuxX64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-l
 copyBinary build/bin/macosArm64/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos-arm64 true
 copyBinary build/bin/macosX64/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos-x64 true
 copyBinary build/bin/macosUniversal/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos true
-copyBinary build/bin/windows/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-x64.exe
+copyBinary build/bin/windowsArm64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-arm64.exe
+copyBinary build/bin/windowsX64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-x64.exe
 
 # Copy Props.class helper program and TOML configuration files.
 mkdir -p dist/jaunch

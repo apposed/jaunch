@@ -3,8 +3,6 @@ import platform.posix.*
 import platform.posix.getenv as pGetEnv
 import platform.windows.*
 
-actual val BUILD_TARGET = "mingwX64"
-
 @OptIn(ExperimentalForeignApi::class)
 actual fun execute(command: String): List<String>? {
     // Source: https://stackoverflow.com/a/69385366/1207769
