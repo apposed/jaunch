@@ -9,7 +9,7 @@ test -d dist || { echo "[ERROR] No dist folder; please run bin/dist.sh first." 1
 # Download upx as needed, if available for the current platform.
 if [ ! -d .cache/upx ]
 then
-  v=4.2.2
+  v=4.2.4
   case "$(uname -s)-$(uname -m)" in
     Linux-x86_64) (
       mkdir -p .cache/upx &&
@@ -34,7 +34,7 @@ then
   # There is a flag `--force-macos`, but when I tested it, it mangled the
   # Universal2 fat binary. Maybe we could pack each architecture, and only
   # afterward combine them with lipo? But doing that would be more involved.
-  (set -x; .cache/upx/*/upx --best $(find dist -maxdepth 2 -perm /+x -type f))
+  (set -x; .cache/upx/*/upx --best $(find dist -maxdepth 2 -perm /+x -type f)) || true
 fi
 
 # Display the result.
