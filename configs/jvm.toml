@@ -22,6 +22,7 @@ includes = ['common.toml']
 
 supported-options = [
     '--java-home=<path>|specify Java installation path explicitly',
+    '--print-class-path,--print-classpath|print runtime classpath elements',
     '--print-java-home|print path to the selected Java',
     '--print-java-info|print information about the selected Java',
     '--headless|run in text mode',
@@ -42,6 +43,7 @@ supported-options = [
 # JVM-specific directives:
 #
 # * JVM                - Launches the main program using the Java Virtual Machine.
+# * print-class-path   - Print out the runtime classpath, one element per line.
 # * print-java-home    - Print out the path to the chosen Java installation.
 # * print-java-info    - Print out all the details of the chosen Java installation,
 #                        including not only its path, but also the distro, version,
@@ -49,7 +51,7 @@ supported-options = [
 
 directives = [
     'LAUNCH:JVM|JVM',
-    '--print-classpath|print-classpath,ABORT',
+    '--print-class-path|print-class-path,ABORT',
     '--print-java-home|print-java-home,ABORT',
     '--print-java-info|print-java-info,ABORT',
 ]

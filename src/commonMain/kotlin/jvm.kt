@@ -180,7 +180,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
 
     // -- Directive handlers --
 
-    fun classpath(divider: String = "\n- "): String? {
+    fun classpath(divider: String = NL): String? {
         val prefix = "-Djava.class.path="
         val classpathArg = runtimeArgs.firstOrNull { it.startsWith(prefix) } ?: return null
         return classpathArg.substring(prefix.length).replace(COLON, divider)
