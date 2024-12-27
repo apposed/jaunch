@@ -18,6 +18,8 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     RuntimeConfig("jvm", "JVM", recognizedArgs)
 {
     private var java: JavaInstallation? = null
+    private var defaultClasspath: List<String> = emptyList()
+    private var defaultMaxHeap: String? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
         "dry-run" to { args -> printlnErr(dryRun(args)) },
@@ -94,36 +96,16 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         debug("* hints -> ", hints)
 
         // Calculate classpath.
-        val rawClasspath = vars.calculate(config.jvmClasspath, hints)
-        debugList("Classpath to calculate:", rawClasspath)
-        val classpath = rawClasspath.flatMap { glob(it) }.distinct()
-        debugList("Classpath calculated:", classpath)
+        defaultClasspath = vars.calculate(config.jvmClasspath, hints)
+        debugList("Default classpath:", defaultClasspath)
+
+        // Save the default max heap value.
+        defaultMaxHeap = config.jvmMaxHeap
+        debug("Default max heap: $defaultMaxHeap")
 
         // Calculate JVM arguments.
         runtimeArgs += vars.calculate(config.jvmRuntimeArgs, hints)
         debugList("JVM arguments calculated:", runtimeArgs)
-
-        // Append or amend argument declaring classpath elements.
-        if (classpath.isNotEmpty()) {
-            val classpathString = classpath.joinToString(COLON)
-            val cpIndex = runtimeArgs.indexOfFirst { it.startsWith("-Djava.class.path=") }
-            if (cpIndex >= 0) {
-                // Append to existing `-Djava.class.path` argument.
-                runtimeArgs[cpIndex] += "$COLON$classpathString"
-                debug("Extended classpath arg: ${runtimeArgs[cpIndex]}")
-            } else {
-                // No `-Djava.class.path` argument, so we add one.
-                runtimeArgs += "-Djava.class.path=$classpathString"
-                debug("Added classpath arg: ${runtimeArgs.last()}")
-            }
-        }
-
-        // If not manually declared, add a max heap flag from the config.
-        val mxIndex = runtimeArgs.indexOfFirst { it.startsWith("-Xmx") }
-        if (mxIndex < 0 && config.jvmMaxHeap != null) {
-            runtimeArgs += "-Xmx${config.jvmMaxHeap}"
-            debug("Added maxHeap arg: ${runtimeArgs.last()}")
-        }
 
         // Calculate main class.
         debug()
@@ -151,6 +133,41 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     override fun processArgs(args: MutableList<String>) {
+        // Append or amend argument declaring classpath elements.
+        val classpath = defaultClasspath.flatMap { glob(it) }.distinct()
+        debugList("Classpath finalized:", classpath)
+        if (classpath.isNotEmpty()) {
+            val classpathString = classpath.joinToString(COLON)
+            val cpIndex = args.indexOfFirst { it.startsWith("-Djava.class.path=") }
+            if (cpIndex >= 0) {
+                // Append to existing `-Djava.class.path` argument.
+                args[cpIndex] += "$COLON$classpathString"
+                debug("Extended classpath arg: ${args[cpIndex]}")
+            } else {
+                // No `-Djava.class.path` argument, so we add one.
+                args += "-Djava.class.path=$classpathString"
+                debug("Added classpath arg: ${args.last()}")
+            }
+        }
+
+        debug()
+        debug("Finalizing max heap settings...")
+
+        // Add a max heap argument if appropriate.
+        val mxIndex = args.indexOfFirst { it.startsWith("-Xmx") }
+        if (mxIndex < 0 && defaultMaxHeap != null) {
+            // No `-Xmx` argument, so we add one.
+            args += "-Xmx$defaultMaxHeap"
+            debug("Added maxHeap arg: ${args.last()}")
+        }
+
+        // Squash multiple memory arguments.
+        val argCountBefore = args.size
+        squashExtraArgs(args, "-Xms")
+        squashExtraArgs(args, "-Xmx")
+        val squashedCount = args.size - argCountBefore
+        if (squashedCount > 0) debug("Squashed $squashedCount args")
+
         // Expand % signs in memory-related arguments.
         for (prefix in listOf("-Xms", "-Xmx")) {
             for ((i, v) in args.withIndex()) {
@@ -162,13 +179,6 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
                 args[i] = expanded
             }
         }
-
-        // Squash multiple memory arguments.
-        val argCountBefore = args.size
-        squashExtraArgs(args, "-Xms")
-        squashExtraArgs(args, "-Xmx")
-        val squashedCount = args.size - argCountBefore
-        if (squashedCount > 0) debug("Squashed $squashedCount args")
     }
 
     override fun launch(args: ProgramArgs): List<String> {
