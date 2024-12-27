@@ -163,17 +163,15 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     override fun processArgs(args: MutableList<String>) {
-        val prefix = "-Xmx"
-        val memIndices = args.withIndex()
-            .filter{ (_, value) -> value.startsWith("-Xmx" ) }
-            .map{it.index}
-
-        for (memIdx in memIndices) {
-            if (args[memIdx].contains('%')) {
-                val memPercent = args[memIdx].substring(prefix.length)
-                val maxHeap = calculateMaxHeap(memPercent)
-                args[memIdx] = "$prefix$maxHeap";
-                debug("Expanded % in jvm runtime arg: ${args[memIdx]}")
+        // Expand % signs in memory-related arguments.
+        for (prefix in listOf("-Xms", "-Xmx")) {
+            for ((i, v) in args.withIndex()) {
+                if (!v.startsWith(prefix) || '%' !in v) continue
+                val memPercent = args[i].substring(prefix.length)
+                val mem = calculateMemory(memPercent)
+                val expanded = "$prefix$mem"
+                debug("Expanding % in JVM runtime arg: ${args[i]} -> $expanded")
+                args[i] = expanded
             }
         }
     }
@@ -491,21 +489,21 @@ private fun cleanupVersion(v: String): String {
     // TODO: Should also remove `1.` from strings like `1.11.0`...
 }
 
-private fun calculateMaxHeap(maxHeap: String?): String? {
-    if (maxHeap?.endsWith("%") != true) return maxHeap
+private fun calculateMemory(mem: String?): String? {
+    if (mem?.endsWith("%") != true) return mem
 
     // Compute percentage of total available memory.
-    val percent = maxHeap.substring(0, maxHeap.lastIndex).toDoubleOrNull() // Double or nothing! XD
+    val percent = mem.substring(0, mem.lastIndex).toDoubleOrNull() // Double or nothing! XD
     if (percent == null || percent <= 0) {
-        warn("Ignoring invalid max-heap value '", maxHeap, "'")
+        warn("Ignoring invalid memory value '", mem, "'")
         return null
     }
 
     debug()
-    debug("Calculating max heap (", maxHeap, ")...")
+    debug("Calculating memory (", mem, ")...")
     val memInfo = memInfo()
     if (memInfo.total == null) {
-        warn("Cannot determine total memory -- ignoring max-heap value '", maxHeap, "'")
+        warn("Cannot determine total memory -- ignoring memory value '", mem, "'")
         return null
     }
     else debug("System reported memTotal of ", memInfo.total.toString())
