@@ -109,6 +109,10 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         maybeAssign(vars, "version", python?.version)
     }
 
+    override fun processArgs(args: MutableList<String>) {
+        // No-op
+    }
+
     override fun launch(args: ProgramArgs): List<String> {
         val libPythonPath = python?.libPythonPath ?: fail("No matching Python installations found.")
         return buildList {
@@ -117,10 +121,6 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
             if (mainProgram != null) add(mainProgram!!)
             addAll(args.main)
         }
-    }
-
-    override fun processArgs(args: MutableList<String>) {
-        // No-op
     }
 
     // -- Directive handlers --

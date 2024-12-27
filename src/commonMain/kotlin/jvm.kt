@@ -150,18 +150,6 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         maybeAssign(vars, "cpuArch", java?.cpuArch)
     }
 
-    override fun launch(args: ProgramArgs): List<String> {
-        val libjvmPath = java?.libjvmPath ?: fail("No matching Java installations found.")
-        val mainClass = mainProgram ?: fail("No Java main program specified.")
-        return buildList {
-            add(libjvmPath)
-            add(args.runtime.size.toString())
-            addAll(args.runtime)
-            add(mainClass.replace(".", "/"))
-            addAll(args.main)
-        }
-    }
-
     override fun processArgs(args: MutableList<String>) {
         // Expand % signs in memory-related arguments.
         for (prefix in listOf("-Xms", "-Xmx")) {
@@ -181,6 +169,18 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         squashExtraArgs(args, "-Xmx")
         val squashedCount = args.size - argCountBefore
         if (squashedCount > 0) debug("Squashed $squashedCount args")
+    }
+
+    override fun launch(args: ProgramArgs): List<String> {
+        val libjvmPath = java?.libjvmPath ?: fail("No matching Java installations found.")
+        val mainClass = mainProgram ?: fail("No Java main program specified.")
+        return buildList {
+            add(libjvmPath)
+            add(args.runtime.size.toString())
+            addAll(args.runtime)
+            add(mainClass.replace(".", "/"))
+            addAll(args.main)
+        }
     }
 
     // -- Directive handlers --
