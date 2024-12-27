@@ -277,7 +277,6 @@ private fun classifyArguments(
             if (option.assignment == null) {
                 // standalone option
                 if (argVal != null) fail("Option $argKey does not accept a parameter")
-                hints += argKey
             } else {
                 // option with value assignment
                 val v = argVal ?: if (i < inputArgs.size) inputArgs[i++] else
@@ -286,18 +285,15 @@ private fun classifyArguments(
                 // Normalize the argument to the primary flag on the comma-separated list.
                 // Then strip leading dashes: --class-path becomes class-path, -v becomes v, etc.
                 var varName = option.flags.first()
-                // We also must record a hint to say which flags are enabled.
-                // This hint must match the var entry (with dividers as applicable)
-                val hintName = varName
                 while (varName.startsWith("-")) varName = varName.substring(1)
 
                 // Store assignment value as a variable named after the normalized argument.
                 // E.g. if the matching supported option is `--heap,--mem=<max>|Maximum heap size`,
                 // and `--mem 52g` is given, it will store `"52g"` for the variable `heap`.
                 vars[varName] = v
-
-                hints += hintName
             }
+            // Record hint matching the primary form of the option, not an alias.
+            hints += option.flags.first()
         } else {
             // The argument is not a Jaunch one. Save it for later.
             if (divider < 0) {
