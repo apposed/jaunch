@@ -174,6 +174,13 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
                 args[i] = expanded
             }
         }
+
+        // Squash multiple memory arguments.
+        val argCountBefore = args.size
+        squashExtraArgs(args, "-Xms")
+        squashExtraArgs(args, "-Xmx")
+        val squashedCount = args.size - argCountBefore
+        if (squashedCount > 0) debug("Squashed $squashedCount args")
     }
 
     // -- Directive handlers --
@@ -514,4 +521,10 @@ private fun calculateMemory(mem: String?): String? {
     if (mbValue <= 9999) return "${mbValue}m"
     val gbValue = mbValue / 1024
     return "${gbValue}g"
+}
+
+private fun squashExtraArgs(list: MutableList<String>, prefix: String) {
+    val last = list.indexOfLast { it.startsWith(prefix) }
+    var i = 0
+    list.removeAll { i++ != last && it.startsWith(prefix) }
 }
