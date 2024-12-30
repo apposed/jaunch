@@ -18,7 +18,7 @@ then
       tar xf upx-$v-amd64_linux.tar.xz
     ) ;;
     MINGW*-x86_64|MSYS*-x86_64) (
-      mkdir .cache/upx &&
+      mkdir -p .cache/upx &&
       cd .cache/upx &&
       curl -fsLO https://github.com/upx/upx/releases/download/v$v/upx-$v-win64.zip &&
       unzip upx-$v-win64.zip
