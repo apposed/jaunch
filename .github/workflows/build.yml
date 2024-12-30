@@ -55,12 +55,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Cache UPX
-      id: cache-upx
+    - name: Cache the .cache folder
+      id: cache-cache
       uses: actions/cache@v4
       with:
-        path: .upx
-        key: ${{ runner.os }}-dist-upx
+        path: .cache
+        key: ${{ runner.os }}-dist-cache
 
     - name: Download platform distributions
       uses: actions/download-artifact@v4
