@@ -49,7 +49,7 @@ kotlin {
           dependsOn(posixMain)
         }
         val windowsMain by creating {
-          dependsOn(posixMain)
+          dependsOn(commonMain.get())
         }
         val linuxArm64Main by getting {
             dependsOn(linuxMain)
