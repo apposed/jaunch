@@ -18,7 +18,10 @@ dist: compile-all
 pack: dist
 	@bin/pack.sh
 
-app: pack
+sign: dist
+	@bin/sign.sh
+
+app: dist
 	@bin/app.sh
 
 test: app
