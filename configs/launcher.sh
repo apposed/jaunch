@@ -13,9 +13,9 @@ die() { echo "$*" >&2; exit 1; }
 # Glean operating system.
 os=$(uname -s 2>/dev/null)
 case "$os" in
-  Linux) os=linux ;;
-  Darwin) os=macos ;;
-  MINGW*|MSYS*) os=windows ;;
+  Linux) os=linux; exedir=. ;;
+  Darwin) os=macos; exedir=Contents/MacOS ;;
+  MINGW*|MSYS*) os=windows; exedir=. ;;
   *) die "Unsupported operating system: $os" ;;
 esac
 
@@ -28,7 +28,7 @@ case "$arch" in
 esac
 
 # Launch with the appropriate executable.
-launcher="$dir/$name-$os-$arch"
+launcher="$dir/$exedir/$name-$os-$arch"
 test -e "$launcher" || die "Launcher not available: $launcher"
 test -x "$launcher" || die "Launcher not executable: $launcher"
 "$launcher" $@
