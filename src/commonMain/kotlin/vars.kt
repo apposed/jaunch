@@ -39,6 +39,10 @@ class Vars(
         }
     }
 
+    fun calculate(item: String, hints: Set<String>): String {
+        return calculate(arrayOf(item), hints)[0];
+    }
+
     fun calculate(items: Array<String>, hints: Set<String>): List<String> {
         return items.mapNotNull { it.evaluate(hints) }.filter { it.isNotEmpty() }
     }
