@@ -100,10 +100,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         debugList("Default classpath:", defaultClasspath)
 
         // Save the default max heap value.
-        defaultMaxHeap = null
-        if (config.jvmMaxHeap != null) {
-            defaultMaxHeap = vars.calculate(config.jvmMaxHeap, hints);
-        }
+        defaultMaxHeap = vars.calculate(config.jvmMaxHeap, hints)
         debug("Default max heap: $defaultMaxHeap")
 
         // Calculate JVM arguments.

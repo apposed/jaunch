@@ -39,8 +39,8 @@ class Vars(
         }
     }
 
-    fun calculate(item: String, hints: Set<String>): String {
-        return calculate(arrayOf(item), hints)[0];
+    fun calculate(item: String?, hints: Set<String>): String? {
+        return if (item == null) null else calculate(arrayOf(item), hints)[0]
     }
 
     fun calculate(items: Array<String>, hints: Set<String>): List<String> {
