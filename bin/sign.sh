@@ -4,8 +4,6 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[sign]\033[0m"
 
-appDir=app
-
 sign_linux() {
   echo '[INFO] Signing complete! Nothing was signed, because Linux binaries just work,'
   echo '[INFO] without invasively asking for permission from corporate overlords.'
@@ -17,7 +15,7 @@ sign_macos() {
     echo '[ERROR] DEV_ID environment variable unset; cannot sign executables.'
     exit 1
   fi
-  for exe in "$appDir/Contents/MacOS/"*-macos-*
+  for exe in 'dist/Contents/MacOS/'*-macos-*
   do
     codesign --force --options runtime \
       --entitlements sign/entitlements.plist \
@@ -59,12 +57,12 @@ sign_windows() {
   "$signtool" sign /sha1 "$THUMBPRINT" \
     /tr "$TIMESTAMP_SERVER" \
     /td SHA256 /fd SHA256 /v \
-    "$appDir\\"*.exe \
-    "$appDir\\jaunch\\jaunch-windows-"*.exe &&
+    'dist\'*.exe \
+    'dist\jaunch\jaunch-windows-'*.exe &&
 
   "$signtool" verify /pa /all \
-    "$appDir\\"*.exe \
-    "$appDir\\jaunch\\jaunch-windows-"*.exe
+    'dist\'*.exe \
+    'dist\jaunch\jaunch-windows-'*.exe
 
   echo '[INFO] Signing complete!'
 }
