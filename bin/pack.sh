@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[pack]\033[0m"
 
-test -d dist || { echo "[ERROR] No dist folder; please run bin/dist.sh first." 1>&2; exit 1; }
+test -d dist || { echo '[ERROR] No dist folder; please run bin/dist.sh first.' 1>&2; exit 1; }
 
 # Download upx as needed, if available for the current platform.
 if [ ! -d .cache/upx ]
@@ -36,7 +36,7 @@ then
   # afterward combine them with lipo? But doing that would be more involved.
   (set -x; .cache/upx/*/upx --best $(find dist -maxdepth 2 -perm /+x -type f)) || true
 else
-  echo "[WARNING] No upx for this platform; skipping executable packing." 1>&2;
+  echo '[WARNING] No upx for this platform; skipping executable packing.' 1>&2;
 fi
 
 # Display the result.

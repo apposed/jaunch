@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo "Available targets:
+echo 'Available targets:
 	clean                - remove build files and directories
 	compile-launcher     - compile the native launcher (C)
 	compile-configurator - compile the Jaunch configurator (Kotlin)
@@ -8,4 +8,4 @@ echo "Available targets:
 	pack                 - compress Jaunch executables
 	app                  - generate example applications
 	test                 - run automated test suite
-"
+'

@@ -7,14 +7,14 @@ echo -e "\033[1;33m[sign]\033[0m"
 appDir=app
 
 sign_linux() {
-  echo "[INFO] Signing complete! Nothing was signed, because Linux binaries just work,"
-  echo "[INFO] without invasively asking for permission from corporate overlords."
+  echo '[INFO] Signing complete! Nothing was signed, because Linux binaries just work,'
+  echo '[INFO] without invasively asking for permission from corporate overlords.'
 }
 
 sign_macos() {
   if [ ! "$DEV_ID" ]
   then
-    echo "[ERROR] DEV_ID environment variable unset; cannot sign executables."
+    echo '[ERROR] DEV_ID environment variable unset; cannot sign executables.'
     exit 1
   fi
   for exe in "$appDir/Contents/MacOS/"*-macos-*
@@ -25,12 +25,12 @@ sign_macos() {
     codesign -vv "$exe"
   done
 
-  echo "[INFO] Signing complete!"
+  echo '[INFO] Signing complete!'
 }
 
 sign_windows() {
   if [ ! "$THUMBPRINT" ]; then
-    echo "[ERROR] THUMBPRINT environment variable unset; cannot sign EXEs."
+    echo '[ERROR] THUMBPRINT environment variable unset; cannot sign EXEs.'
     exit 1
   fi
 
@@ -53,7 +53,7 @@ sign_windows() {
   fi
 
   if [ ! "$TIMESTAMP_SERVER" ]; then
-    TIMESTAMP_SERVER="http://time.certum.pl/"
+    TIMESTAMP_SERVER='http://time.certum.pl/'
   fi
 
   "$signtool" sign /sha1 "$THUMBPRINT" \
@@ -66,7 +66,7 @@ sign_windows() {
     "$appDir\\"*.exe \
     "$appDir\\jaunch\\jaunch-windows-"*.exe
 
-  echo "[INFO] Signing complete!"
+  echo '[INFO] Signing complete!'
 }
 
 case "$(uname -s)" in

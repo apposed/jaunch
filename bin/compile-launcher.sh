@@ -10,8 +10,8 @@ jdkdir=$JAVA_HOME
 test -d "$jdkdir" || jdkdir=$(test ! -x update-java-alternatives || update-java-alternatives -l | head -n1 | sed 's/.* //')
 test -d "$jdkdir" || jdkdir=$(test ! -x /usr/libexec/java_home || /usr/libexec/java_home)
 test -d "$jdkdir" || {
-  echo "[ERROR] The jni.h header is needed to compile Jaunch."
-  echo "[ERROR] Please set JAVA_HOME to point to an OpenJDK installation."
+  echo '[ERROR] The jni.h header is needed to compile Jaunch.'
+  echo '[ERROR] Please set JAVA_HOME to point to an OpenJDK installation.'
   exit 1
 }
 
@@ -77,7 +77,7 @@ case "$(uname -s)" in
       compile "$cdir/bin/x86_64-w64-mingw32-clang" \
         -o build/launcher-windows-x64.exe -mwindows
     else
-      echo "[WARNING] Failed to set up llvm-mingw; skipping Windows cross-compilation"
+      echo '[WARNING] Failed to set up llvm-mingw; skipping Windows cross-compilation'
     fi
     ;;
   Darwin)

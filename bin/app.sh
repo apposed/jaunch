@@ -21,7 +21,7 @@ if [ ! -d "$appDir/jaunch" ]; then (set -x; mkdir -p "$appDir"/jaunch); fi
 #
 # And we use this awkward find construction to capture launcher binaries in
 # both the base dist folder as well as nested under dist/Contents/MacOS.
-echo "Copying launcher binaries..."
+echo 'Copying launcher binaries...'
 find dist -name 'launcher-*' | while read f
 do
   srcDir=${f%/launcher*}
@@ -75,7 +75,7 @@ done
 (set -x; cp configs/HelloSwing.class "$appDir/")
 
 # Copy jaunch configurator binaries.
-echo "Copying jaunch configurator binaries..."
+echo 'Copying jaunch configurator binaries...'
 find dist -name 'jaunch-*' | while read f
 do
   srcDir=${f%/jaunch-*}
@@ -84,7 +84,7 @@ do
 done
 
 # Copy Props.class helper program and TOML configuration files.
-echo "Copying configuration files and helpers..."
+echo 'Copying configuration files and helpers...'
 for f in \
   Props.class \
   common.toml \
