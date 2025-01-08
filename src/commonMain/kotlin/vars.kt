@@ -14,9 +14,7 @@ class Vars(
         if (exeFile?.exists == true) vars["executable"] = exeFile.path
 
         // Parse any Vars that were previously defined in toml.
-        if (cfgVars is Map) {
-            vars.putAll(cfgVars)
-        }
+        vars.putAll(cfgVars)
 
         // Build the list of config files
         val cfgFiles = mutableListOf<File>()
