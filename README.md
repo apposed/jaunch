@@ -8,8 +8,8 @@ including the **Java Virtual Machine (JVM)**, the **Python interpreter**, or bot
 ## Quick start
 
 ```shell
-make app
-app/hello
+make demo
+demo/hello
 ```
 
 ## Documentation

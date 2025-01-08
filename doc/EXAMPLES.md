@@ -22,7 +22,7 @@ The Jaunch repository includes several demo applications powered by Jaunch:
   process as Python without blocking the REPL.
 
 * Hello -
-  A simple GUI application displaying a "Hello World" dialog box using Java Swing.
+  A simple GUI app displaying a "Hello World" dialog box using Java Swing.
 
 To try them out, [build from source](doc/BUILD.md), then run the
-`make app` target, which assembles an `app` folder containing everything you need.
+`make demo` target, which assembles a `demo` folder with everything needed.

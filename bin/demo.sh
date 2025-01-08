@@ -2,17 +2,17 @@
 set -e
 cd "$(dirname "$0")/.."
 echo
-echo -e "\033[1;33m[app]\033[0m"
+echo -e "\033[1;33m[demo]\033[0m"
 
-appDir=app
+demoDir=demo
 
 targetDir() {
-  if [ "$1" ]; then result="$appDir/$1"; else result="$appDir"; fi
+  if [ "$1" ]; then result="$demoDir/$1"; else result="$demoDir"; fi
   if [ ! -d "$result" ]; then (set -x; mkdir -p "$result"); fi
   echo "$result"
 }
 
-if [ ! -d "$appDir/jaunch" ]; then (set -x; mkdir -p "$appDir"/jaunch); fi
+if [ ! -d "$demoDir/jaunch" ]; then (set -x; mkdir -p "$demoDir"/jaunch); fi
 
 # Copy launcher binaries within the dist folder, duplicating to all demo apps.
 #
@@ -61,18 +61,18 @@ do
   case "$(uname -s)" in
     MINGW*|MSYS*) (
       set -x
-      cp configs/launcher.bat "$appDir/$app.bat"
+      cp configs/launcher.bat "$demoDir/$app.bat"
     );;
     *) (
       set -x
-      cp configs/launcher.sh "$appDir/$app"
-      chmod +x "$appDir/$app"
+      cp configs/launcher.sh "$demoDir/$app"
+      chmod +x "$demoDir/$app"
     );;
   esac
 done
 
 # Copy hello app Java program.
-(set -x; cp configs/HelloSwing.class "$appDir/")
+(set -x; cp configs/HelloSwing.class "$demoDir/")
 
 # Copy jaunch configurator binaries.
 echo 'Copying jaunch configurator binaries...'
@@ -96,9 +96,9 @@ for f in \
   python.toml \
   repl.toml
 do
-  if [ ! -f "app/jaunch/$f" ]
+  if [ ! -f "$demoDir/jaunch/$f" ]
   then
-    (set -x; cp "configs/$f" app/jaunch/)
+    (set -x; cp "configs/$f" "$demoDir/jaunch/")
   fi
 done
 
@@ -113,11 +113,11 @@ copyDependency() {
     echo "Downloading $a..."
     (set -x; curl -fsL https://search.maven.org/remotecontent\?filepath\=$g/$a/$v/$a-$v.jar > .cache/lib/$a-$v.jar)
   fi
-  if [ ! -f app/lib/$a-$v.jar ]
+  if [ ! -f "$demoDir/lib/$a-$v.jar" ]
   then
-    mkdir -p app/lib
+    mkdir -p "$demoDir/lib"
     echo "Copying $a..."
-    (set -x; cp .cache/lib/$a-$v.jar app/lib/)
+    (set -x; cp .cache/lib/$a-$v.jar "$demoDir/lib/")
   fi
 }
 copyDependency org/scijava parsington 3.1.0 # dependency of parsy

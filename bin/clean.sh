@@ -7,5 +7,5 @@ echo -e "\033[1;33m[clean]\033[0m"
 rm -rfv \
   build \
   dist \
-  app \
+  demo \
   jaunch.tar.gz

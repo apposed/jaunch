@@ -21,10 +21,10 @@ pack: dist
 sign: dist
 	@bin/sign.sh
 
-app: dist
-	@bin/app.sh
+demo: dist
+	@bin/demo.sh
 
-test: app
+test: demo
 	@bin/test.sh
 
 .PHONY: tests
