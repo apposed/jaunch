@@ -9,10 +9,12 @@ test "$(uname -s)-$(uname -p)" = Linux-x86_64 || {
   exit 1
 }
 
-if ! command -v cram >/dev/null 2>&1
+if ! command -v prysk >/dev/null 2>&1
 then
-  echo '== Installing cram =='
-  pip install --user cram==0.6
+  echo '[ERROR] Please install prysk. One easy way is via pipx:'
+  echo
+  echo '    pipx install prysk'
+  exit 2
 fi
 
-cram test
+prysk test
