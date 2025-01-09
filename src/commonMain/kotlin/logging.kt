@@ -9,6 +9,12 @@ var logFilePath = getenv("JAUNCH_LOGFILE")
 private val logLines = mutableListOf<String>()
 private var logFile: File? = null
 
+/**
+ * If true, directives should *not actually do anything* and instead print
+ * what they *would have done* under normal (non-dry-run) circumstances.
+ */
+var dryRunMode = false
+
 fun debug(vararg args: Any) { if (debugMode) report("DEBUG", *args) }
 
 fun debugList(message: String, items: Collection<String>) {
@@ -25,6 +31,8 @@ fun debugBanner(message: String) {
     debug("| $message |")
     debug("\\$dashes/")
 }
+
+fun dryRun(vararg args: Any) { if (dryRunMode) report("DRY-RUN", *args) }
 
 fun warn(vararg args: Any) { report("WARNING", *args) }
 

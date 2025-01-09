@@ -81,8 +81,9 @@ fun main(args: Array<String>) {
 
     // Declare the global (runtime-agnostic) directives.
     val globalDirectiveFunctions: DirectivesMap = mutableMapOf(
+        "apply-update" to { _ -> applyUpdate(appDir, appDir / "update") },
+        "dry-run" to { _ -> dryRunMode = true },
         "help" to { _ -> help(exeFile, programName, supportedOptions) },
-        "apply-update" to { _ -> applyUpdate(appDir, appDir / "update") }
     )
 
     // Execute the global directives (e.g. applying updates) before configuring
@@ -119,7 +120,7 @@ fun main(args: Array<String>) {
         }
     }
 
-    // Finally, execute all the directives! \^_^/
+    // Finally, execute all the remaining directives! \^_^/
     executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, argsInContext)
 
     debugBanner("JAUNCH CONFIGURATION COMPLETE")
@@ -584,16 +585,24 @@ private fun executeDirectives(
     // Emit launch-side directives.
     debug()
     debug("Emitting launch directives to stdout...")
-    // HACK: If ABORT appears in the launch directives, don't also launch other things.
-    // Further thought and config wrangling needed, but it gets the job done for now.
-    val finalDirectives =
-        if (launchDirectives.isEmpty() || "ABORT" in launchDirectives) listOf("ABORT") else launchDirectives
-    for (directive in finalDirectives) {
+
+    // Should we actually proceed with the launch?
+    val abort = dryRunMode || launchDirectives.isEmpty() || "ABORT" in launchDirectives
+    val go = !abort
+
+    for (directive in launchDirectives) {
+        debug("Processing directive: $directive")
         val runtime = runtimes.firstOrNull { it.directive == directive }
         val lines = runtime?.launch(argsInContext[runtime.prefix]!!) ?: emptyList()
-        println(directive)
-        println(lines.size)
-        lines.forEach { println(it) }
+        if (go) {
+            println(directive)
+            println(lines.size)
+            lines.forEach { println(it) }
+        }
+    }
+    if (abort) {
+      println("ABORT")
+      println("0")
     }
 }
 
@@ -619,26 +628,29 @@ private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOp
     optionsUnique.forEach { printlnErr(it.help()) }
 }
 
+/** Recursively move over all files in the update subdir. */
 private fun applyUpdate(appDir: File, updateSubDir: File) {
     if (!updateSubDir.exists) return
 
-    // Recursively copy over all files in the update subdir
+    fun emit(s: String) { dryRun(s); debug(s) }
+
     for (file in updateSubDir.ls()) {
         val dest = appDir / file.path.substring((appDir / "update").path.length)
         if (file.isDirectory) {
-            debug("+ mkdir '$dest'")
-            dest.mkdir() || fail("Couldn't create path $dest")
+            emit("+ mkdir '$dest'")
+            if (!dryRunMode) dest.mkdir() || fail("Couldn't create path $dest")
             applyUpdate(appDir, file)
         }
         else {
             if (file.length == 0L) {
-                debug("+ rm '$dest'")
-                dest.rm() || fail("Couldn't remove $dest")
-                debug("+ rm '$file'")
-                file.rm() || fail("Couldn't remove $file")
+                // Zero-length file is a special signal that the file should be deleted.
+                emit("+ rm '$dest'")
+                if (!dryRunMode) dest.rm() || fail("Couldn't remove $dest")
+                emit("+ rm '$file'")
+                if (!dryRunMode) file.rm() || fail("Couldn't remove $file")
             } else {
-                debug("+ mv '$file' '$dest'")
-                file.mv(dest) || fail("Couldn't replace $dest")
+                emit("+ mv '$file' '$dest'")
+                if (!dryRunMode) file.mv(dest) || fail("Couldn't replace $dest")
             }
         }
     }

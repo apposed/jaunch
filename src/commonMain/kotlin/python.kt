@@ -15,7 +15,6 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     var python: PythonInstallation? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
-        "dry-run" to { args -> printlnErr(dryRun(args)) },
         "print-python-home" to { printlnErr(pythonHome()) },
         "print-python-info" to { printlnErr(pythonInfo()) },
     )
@@ -115,6 +114,14 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
 
     override fun launch(args: ProgramArgs): List<String> {
         val libPythonPath = python?.libPythonPath ?: fail("No matching Python installations found.")
+
+        dryRun(buildString {
+            append(python?.binPython ?: "python")
+            args.runtime.forEach { append(" $it") }
+            append(" $mainProgram")
+            args.main.forEach { append(" $it") }
+        })
+
         return buildList {
             add(libPythonPath)
             addAll(args.runtime)
@@ -124,15 +131,6 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     }
 
     // -- Directive handlers --
-
-    fun dryRun(args: ProgramArgs): String {
-        return buildString {
-            append(python?.binPython ?: "python")
-            args.runtime.forEach { append(" $it") }
-            append(" $mainProgram")
-            args.main.forEach { append(" $it") }
-        }
-    }
 
     fun pythonHome(): String {
         return python?.rootPath ?: fail("No matching Python installations found.")

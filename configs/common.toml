@@ -158,9 +158,7 @@ modes = []
 # ==============================================================================
 # directives
 # ==============================================================================
-# Commands that control Jaunch's launching behavior.
-#
-# TODO: Rewrite this section to be nicer and more up to date.
+# Commands that define what actually happens during launch.
 #
 # Each one runs at a particular (hardcoded) time during configuration.
 # Directives unsupported by the configurator program are ignored.
@@ -192,11 +190,11 @@ modes = []
 # remove the `--help` and `-h` lines below to do so.
 
 directives = [
+  '--dry-run|dry-run,ABORT',  # <-- Order matters! Turn on dry-run mode right away.
   '--help|help,ABORT',
   '-h|help,ABORT',
   '--print-app-dir|print-app-dir',
   '--print-config-dir|print-config-dir',
-  '--dry-run|dry-run,ABORT',
 ]
 
 # ==============================================================================

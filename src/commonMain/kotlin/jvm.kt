@@ -22,7 +22,6 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     private var defaultMaxHeap: String? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
-        "dry-run" to { args -> printlnErr(dryRun(args)) },
         "print-class-path" to { printlnErr(classpath() ?: "<none>") },
         "print-java-home" to { printlnErr(javaHome()) },
         "print-java-info" to { printlnErr(javaInfo()) },
@@ -184,6 +183,14 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     override fun launch(args: ProgramArgs): List<String> {
         val libjvmPath = java?.libjvmPath ?: fail("No matching Java installations found.")
         val mainClass = mainProgram ?: fail("No Java main program specified.")
+
+        dryRun(buildString {
+            append(java?.binJava ?: "java")
+            args.runtime.forEach { append(" $it") }
+            append(" $mainProgram")
+            args.main.forEach { append(" $it") }
+        })
+
         return buildList {
             add(libjvmPath)
             add(args.runtime.size.toString())
@@ -199,15 +206,6 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         val prefix = "-Djava.class.path="
         val classpathArg = runtimeArgs.firstOrNull { it.startsWith(prefix) } ?: return null
         return classpathArg.substring(prefix.length).replace(COLON, divider)
-    }
-
-    fun dryRun(args: ProgramArgs): String {
-        return buildString {
-            append(java?.binJava ?: "java")
-            args.runtime.forEach { append(" $it") }
-            append(" $mainProgram")
-            args.main.forEach { append(" $it") }
-        }
     }
 
     fun javaHome(): String {
