@@ -118,7 +118,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         dryRun(buildString {
             append(python?.binPython ?: "python")
             args.runtime.forEach { append(" $it") }
-            append(" $mainProgram")
+            if (mainProgram != null) append(" $mainProgram")
             args.main.forEach { append(" $it") }
         })
 
