@@ -3,8 +3,6 @@
 /demo/
 /build/
 /jaunch.tar.gz
-/.lib/
-/.upx/
 
 ### IntelliJ IDEA ###
 /.idea/
