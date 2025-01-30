@@ -68,14 +68,14 @@ case "$(uname -s)" in
     then
       # windows-arm64 (console and GUI builds)
       compile "$cdir/bin/aarch64-w64-mingw32-clang" \
-        -o build/launcher-windows-arm64.exe -mconsole &&
+        -o build/launcher-windows-arm64-console.exe -mconsole &&
       compile "$cdir/bin/aarch64-w64-mingw32-clang" \
-        -o build/launcher-windows-arm64.exe -mwindows &&
+        -o build/launcher-windows-arm64-gui.exe -mwindows &&
       # windows-x64 (console and GUI builds)
       compile "$cdir/bin/x86_64-w64-mingw32-clang" \
-        -o build/launcher-windows-x64.exe -mconsole &&
+        -o build/launcher-windows-x64-console.exe -mconsole &&
       compile "$cdir/bin/x86_64-w64-mingw32-clang" \
-        -o build/launcher-windows-x64.exe -mwindows
+        -o build/launcher-windows-x64-gui.exe -mwindows
     else
       echo '[WARNING] Failed to set up llvm-mingw; skipping Windows cross-compilation'
     fi
