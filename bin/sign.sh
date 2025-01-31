@@ -88,6 +88,13 @@ sign_windows() {
   "$signtool" verify /pa /all "$@"
 
   step 'Signing complete!'
+  step 'Now consider zipping up the EXE files and submitting to the'
+  step 'Microsoft Windows Defender Security Intelligence portal at'
+  step 'https://www.microsoft.com/en-us/wdsi/filesubmission?persona=SoftwareDeveloper'
+  step '* security product = Microsoft Defender Smartscreen'
+  step '* "Incorrectly detected as malware/malicious"'
+  step '* Detection name = SmartScreen warning'
+  step '* Additional information = Signed binaries for Jaunch: https://github.com/apposed/jaunch'
 }
 
 case "$(uname)" in
