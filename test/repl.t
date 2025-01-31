@@ -1,19 +1,18 @@
 Tests for app defined in repl.toml
 
 Pre-requisites:
-1. run `make clean compile-all` in the root directory
+1. run `make clean demo` in the root directory
 2. Ensure a suitable JVM is installed on the system
 3. Ensure python 3.8+ is available (system or by running in conda env)
 
 Setup:
 
-  $ cd "$TESTDIR/../build"
-  $ sh ../test/make-app.sh repl
+  $ cd "$TESTDIR/../demo"
 
 Test help text
 
   $ ./repl --help
-  Usage: repl [<Runtime options>.. --] [<main arguments>..]
+  Usage: repl* [<Runtime options>.. --] [<main arguments>..] (glob)
   
   REPL launcher (Jaunch v* / * / *) (glob)
   Runtime options are passed to the runtime platform (JVM or Python),
@@ -68,6 +67,3 @@ will try to launch each repl appropriately
 
   $ ./repl --jshell --dry-run
   [DRY-RUN] /*/bin/java jdk.internal.jshell.tool.JShellToolProvider (glob)
-
-Cleanup:
-  $ sh ../test/clean-app.sh paunch

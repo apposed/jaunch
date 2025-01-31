@@ -1,16 +1,15 @@
 Tests for simple Java application
 Pre-requisites:
-1. run `make clean compile-all` in the root directory
+1. run `make clean demo` in the root directory
 2. Ensure a suitable JVM is installed on the system
 
 Setup:
 
-  $ cd "$TESTDIR/../build"
-  $ sh ../test/make-app.sh hi
+  $ cd "$TESTDIR/../demo"
 
 Test 1: help text
   $ ./hi --help
-  Usage: hi [<Runtime options>.. --] [<main arguments>..]
+  Usage: hi* [<Runtime options>.. --] [<main arguments>..] (glob)
   
   Hi launcher (Jaunch * / * / *) (glob)
   Runtime options are passed to the runtime platform (JVM or Python),
@@ -52,6 +51,3 @@ Test 1: help text
 Verify basic functionality
   $ ./hi
   Hello world
-
-Cleanup:
-  $ sh ../test/clean-app.sh hi

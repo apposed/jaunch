@@ -1,13 +1,13 @@
 NB: assumes running on linux x64 system.
-Pre-requisites: run `make clean compile-all` in the root directory
+Pre-requisites: run `make clean demo` in the root directory
 
 Setup:
 
-  $ cd "$TESTDIR/../build"
+  $ cd "$TESTDIR/../demo"
 
 Test 1: help text
 
-  $ ./bin/linuxX64/releaseExecutable/jaunch.kexe
+  $ ./jaunch/jaunch-linux-x64
   
   Hello! You have found the Jaunch configurator.
   Your curiosity is an asset. :-)
@@ -39,26 +39,25 @@ Test 1: help text
 
 Test 2: using jaunch to launch an absent application
 
-  $ ./bin/linuxX64/releaseExecutable/jaunch.kexe parsy a b c
+  $ ./jaunch/jaunch-linux-x64 missing a b c
   ERROR
   2
   20
-  Jaunch config directory not found. Please place config in one of: * (glob)
+  No config file found for missing
   [20]
 --End of Test 2 expected output--
 
 Test 3: use jaunch configurator manually
 
-  $ sh ../test/make-app.sh
-  $ ./bin/linuxX64/releaseExecutable/jaunch.kexe parsy a b c
+  $ ./jaunch/jaunch-linux-x64 parsy a b c
   JVM
-  7
+  8
   *libjvm.so (glob)
-  1
+  2
+  -Djava.class.path=* (glob)
   -Xmx64m
   org/scijava/parsington/Main
   a
   b
   c
-  $ sh ../test/clean-app.sh
 --End of Test 3 expected output--

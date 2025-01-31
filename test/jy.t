@@ -1,18 +1,14 @@
 Tests for jython
 Pre-requisites:
-1. run `make clean compile-all` in the root directory
+1. run `make clean demo` in the root directory
 2. Ensure a suitable JVM is installed on the system
 
 Setup:
-
-  $ cd "$TESTDIR/../build"
-  $ sh ../test/make-app.sh jy
-  $ sh ../test/gather-lib.sh org.python jython
+  $ cd "$TESTDIR/../demo"
 
 Test help text
-
   $ ./jy --help
-  Usage: jy [<Runtime options>.. --] [<main arguments>..]
+  Usage: jy* [<Runtime options>.. --] [<main arguments>..] (glob)
   
   Jy launcher (Jaunch v* / * / *) (glob)
   Runtime options are passed to the runtime platform (JVM or Python),
@@ -81,7 +77,3 @@ Test divider symbol handling.
 
   $ ./jy bad -- good 2>&1 | head -n1
   Unrecognized runtime argument: bad
-
-Cleanup:
-  $ sh ../test/clean-app.sh jy
-  $ rm -rf lib

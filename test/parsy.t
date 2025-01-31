@@ -1,8 +1,11 @@
+Tests for parsy
+Pre-requisites:
+1. run `make clean demo` in the root directory
+2. Ensure a suitable JVM is installed on the system
+
 Setup:
 
-  $ cd "$TESTDIR/../build"
-  $ sh ../test/make-app.sh parsy
-  $ sh ../test/gather-lib.sh org.scijava parsington
+  $ cd "$TESTDIR/../demo"
 
 Test that the correct Java program actually runs.
 
@@ -12,7 +15,7 @@ Test that the correct Java program actually runs.
 Test command line argument combinations.
 
   $ ./parsy --help
-  Usage: parsy [<Runtime options>.. --] [<main arguments>..]
+  Usage: parsy* [<Runtime options>.. --] [<main arguments>..] (glob)
   
   Parsy launcher (Jaunch v* / * / *) (glob)
   Runtime options are passed to the runtime platform (JVM or Python),
@@ -54,9 +57,16 @@ Test command line argument combinations.
   /* (glob)
 
   $ ./parsy --print-java-info 2>&1 | grep -v '^\* \(IMPLEMENTOR\|java\.\|jdk\.\|sun\.\|user\.\)' | LC_ALL=C sort
+  * JAVA_RUNTIME_VERSION=* (glob)
+  * JAVA_VERSION=* (glob)
+  * JAVA_VERSION_DATE=* (glob)
+  * LIBC=* (glob)
+  * MODULES=* (glob)
+  * OS_ARCH=* (glob)
+  * OS_NAME=* (glob)
+  * SOURCE=
   * awt.toolkit=sun.awt.X11.XToolkit
-  * file.encoding.pkg=sun.io
-  \* file.encoding=* (glob)
+  * file.encoding=* (glob)
   * file.separator=/
   * line.separator=
   * os.arch=amd64
@@ -74,7 +84,7 @@ Test command line argument combinations.
 
   $ ./parsy --dry-run --print-app-dir
   --- Application Directory ---
-  /*/build (glob)
+  /*/demo (glob)
   
   [DRY-RUN] /*/bin/java -Djava.class.path=/* -Xmx64m org.scijava.parsington.Main (glob)
 
@@ -133,7 +143,7 @@ Test command line argument combinations.
   [DRY-RUN] /*/bin/java -Djava.class.path=/* -Xmx64m org.scijava.parsington.Main (glob)
 
   $ ./parsy --dry-run --headless --heap 58m
-  [DRY-RUN] /*/bin/java -Djava.awt.headless=true -Dapple.awt.UIElement=true -Xmx58m -Djava.class.path=/home/hinerm/code/apposed/jaunch/build/lib/apiguardian-api-1.1.2.jar:/* org.scijava.parsington.Main (glob)
+  [DRY-RUN] /*/bin/java -Djava.awt.headless=true -Dapple.awt.UIElement=true -Xmx58m -Djava.class.path=/* org.scijava.parsington.Main (glob)
 
   $ ./parsy --dry-run --headless --class-path /tmp/lions.jar:/tmp/tigers.jar
   [DRY-RUN] /*/bin/java -Djava.awt.headless=true -Dapple.awt.UIElement=true -Djava.class.path=/* -Xmx64m org.scijava.parsington.Main (glob)
@@ -176,7 +186,3 @@ Test command line argument combinations.
 
   $ ./parsy --dry-run --debugger 8765,suspend
   [DRY-RUN] /*/bin/java -agentlib:jdwp=transport=dt_socket,server=y,address=localhost:8765,suspend -Djava.class.path=/* -Xmx64m org.scijava.parsington.Main (glob)
-
-Cleanup:
-  $ sh ../test/clean-app.sh parsy
-  $ rm -rf lib

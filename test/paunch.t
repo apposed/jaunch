@@ -1,18 +1,17 @@
 Tests for app defined in paunch.toml (essentially just python)
 
 Pre-requisites:
-1. run `make clean compile-all` in the root directory
+1. run `make clean demo` in the root directory
 2. Ensure python 3.8+ is available (system or by running in conda env)
 
 Setup:
 
-  $ cd "$TESTDIR/../build"
-  $ sh ../test/make-app.sh paunch
+  $ cd "$TESTDIR/../demo"
 
 Test help text
 
   $ ./paunch --help
-  Usage: paunch [<Runtime options>.. --] [<main arguments>..]
+  Usage: paunch* [<Runtime options>.. --] [<main arguments>..] (glob)
   
   Paunch launcher (Jaunch v* / * / *) (glob)
   Runtime options are passed to the runtime platform (JVM or Python),
@@ -47,6 +46,3 @@ Do some basic python stuff
 
   $ ./paunch -c "import math; print(math.factorial(15))"
   1307674368000
-
-Cleanup:
-  $ sh ../test/clean-app.sh paunch
