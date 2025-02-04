@@ -9,10 +9,11 @@ Setup:
 
 Tests:
   $ ./jaunch/jaunch-linux-x64 hi --print-java-home
-  /*java* (glob)
+  /* (glob)
   ABORT
   0
 
+This is highly variable with java version & build
   $ ./jaunch/jaunch-linux-x64 hi --print-java-info 2> /dev/null
   ABORT
   0

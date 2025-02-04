@@ -56,31 +56,9 @@ Test command line argument combinations.
   $ ./parsy --print-java-home
   /* (glob)
 
-  $ ./parsy --print-java-info 2>&1 | grep -v '^\* \(IMPLEMENTOR\|java\.\|jdk\.\|sun\.\|user\.\)' | LC_ALL=C sort
-  * JAVA_RUNTIME_VERSION=* (glob)
-  * JAVA_VERSION=* (glob)
-  * JAVA_VERSION_DATE=* (glob)
-  * LIBC=* (glob)
-  * MODULES=* (glob)
-  * OS_ARCH=* (glob)
-  * OS_NAME=* (glob)
-  * SOURCE=
-  * awt.toolkit=sun.awt.X11.XToolkit
-  * file.encoding=* (glob)
-  * file.separator=/
-  * line.separator=
-  * os.arch=amd64
-  * os.name=Linux
-  \* os.version=* (glob)
-  * path.separator=:
-  CPU arch: X64
-  OS name: LINUX
-  distro: * (glob)
-  libjvm: /*/libjvm.so (glob)
-  release file:* (glob)
-  root: /* (glob)
-  system properties:
-  version: * (glob)
+This is highly variable with java version & build
+  $ ./parsy --print-java-info 2>&1 | wc
+  * (glob)
 
   $ ./parsy --dry-run --print-app-dir
   --- Application Directory ---

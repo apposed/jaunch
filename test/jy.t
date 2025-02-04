@@ -67,10 +67,10 @@ Test divider symbol handling.
   [1]
 
   $ ./jy --dry-run --
-  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Djava.class.path=/*/jython-*.jar -Xmx*m org.python.util.jython (glob)
+  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Djava.class.path=/*/jython-*.jar -Xmx* org.python.util.jython (glob)
 
   $ ./jy --dry-run -Dfoo=before -- -Dfoo=after
-  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Dfoo=before -Djava.class.path=/*/jython-*.jar -Xmx*m org.python.util.jython -Dfoo=after (glob)
+  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Dfoo=before -Djava.class.path=/*/jython-*.jar -Xmx* org.python.util.jython -Dfoo=after (glob)
 
   $ ./jy -Dfoo=before -- -Dfoo=after -c 'from java.lang import System; print(System.getProperty("foo"))'
   after
