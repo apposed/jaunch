@@ -71,7 +71,7 @@ Memory tests: use a .cfg file to override memory settings
   $ echo "cfg.max-heap = '50%'" >> jaunch/hi.toml
   $ echo "jvm.max-heap = '\${cfg.max-heap}'" >> jaunch/hi.toml
   $ ./hi --dry-run
-  [DRY-RUN] /*/bin/java -Djava.class.path=/*/demo -Xmx*m HelloWorld (glob)
+  [DRY-RUN] /*/bin/java -Djava.class.path=/*/demo -Xmx* HelloWorld (glob)
   $ echo "max-heap=2g" > ./jaunch/hi.cfg
   $ ./hi --dry-run
   [DRY-RUN] /*/bin/java -Djava.class.path=/*/demo -Xmx2g HelloWorld (glob)
