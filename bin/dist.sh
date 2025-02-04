@@ -4,6 +4,8 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[dist]\033[0m"
 
+test -d build || { echo '[ERROR] No build folder; please `make compile-all` first.' 1>&2; exit 1; }
+
 appName=$1
 test "$appName" || appName=launcher
 

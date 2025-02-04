@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[pack]\033[0m"
 
-test -d dist || { echo '[ERROR] No dist folder; please run bin/dist.sh first.' 1>&2; exit 1; }
+test -d dist || { echo '[ERROR] No dist folder; please `make dist` first.' 1>&2; exit 1; }
 
 # Download upx as needed, if available for the current platform.
 if [ ! -d .cache/upx ]

@@ -4,6 +4,8 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[demo]\033[0m"
 
+test -d dist || { echo '[ERROR] No dist folder; please `make dist` first.' 1>&2; exit 1; }
+
 demoDir=demo
 
 targetDir() {

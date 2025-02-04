@@ -4,6 +4,8 @@ cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[sign]\033[0m"
 
+test -d dist || { echo '[ERROR] No dist folder; please `make dist` first.' 1>&2; exit 1; }
+
 sign_linux() {
   echo '[INFO] Signing complete! Nothing was signed, because Linux binaries just work,'
   echo '[INFO] without invasively asking for permission from corporate overlords.'
