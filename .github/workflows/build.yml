@@ -48,6 +48,39 @@ jobs:
         name: jaunch-${{ matrix.os }}
         path: jaunch.tar.gz
 
+  test:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '21'
+        cache: 'gradle'
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Cache the .cache folder
+      id: cache-cache
+      uses: actions/cache@v4
+      with:
+        path: .cache
+        key: ${{ runner.os }}-dist-cache
+
+    - name: Build demo apps
+      run: make demo
+
+    - name: Install prysk
+      run: pip install prysk
+
+    - name: Run the tests
+      run: |
+        cd test
+        prysk *.t
+
   dist:
     needs: [build]
     runs-on: ubuntu-latest
