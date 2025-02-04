@@ -31,4 +31,4 @@ esac
 launcher="$dir/$exedir/$name-$os-$arch"
 test -e "$launcher" || die "Launcher not available: $launcher"
 test -x "$launcher" || die "Launcher not executable: $launcher"
-"$launcher" $@
+"$launcher" "$@"
