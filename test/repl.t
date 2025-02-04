@@ -1,20 +1,28 @@
-Tests for jython
+Tests for app defined in repl.toml
+
 Pre-requisites:
 1. run `make clean demo` in the root directory
 2. Ensure a suitable JVM is installed on the system
+3. Ensure python 3.8+ is available (system or by running in conda env)
 
 Setup:
+
   $ cd "$TESTDIR/../demo"
 
 Test help text
-  $ ./jy --help
-  Usage: jy* [<Runtime options>.. --] [<main arguments>..] (glob)
+
+  $ ./repl --help
+  Usage: repl* [<Runtime options>.. --] [<main arguments>..] (glob)
   
-  Jy launcher (Jaunch v* / * / *) (glob)
+  REPL launcher (Jaunch v* / * / *) (glob)
   Runtime options are passed to the runtime platform (JVM or Python),
-  main arguments to the launched program (Jy).
+  main arguments to the launched program (REPL).
   
   In addition, the following options are supported:
+  --python
+                      Launch the Python REPL
+  --jshell
+                      Launch the jshell REPL
   --java-home <path>
                       specify Java installation path explicitly
   --print-class-path, --print-classpath
@@ -33,6 +41,12 @@ Test help text
                       set Java's extension directory to <path>
   --debugger <port>[,suspend]
                       start Java in a mode so an IDE/debugger can attach to it
+  --python-home <path>
+                      specify PYTHON_HOME explicitly
+  --print-python-home
+                      print path to the selected Python
+  --print-python-info
+                      print information about the selected Python
   --help, -h
                       show this help
   --dry-run
@@ -46,34 +60,10 @@ Test help text
   --system
                       do not try to run bundled runtime
 
---End of Test 1 expected output--
+Hard to test REPLs in an automated way so we just make sure that the launcher
+will try to launch each repl appropriately
+  $ ./repl --python --dry-run
+  [DRY-RUN] python -i
 
-Test that the correct Java program actually runs.
-
-  $ ./jy -c 'print(1+2)'
-  3
-
-Test system property assignment.
-
-  $ ./jy -Dcake=chocolate -c 'from java.lang import System; print(System.getProperty("cake"))'
-  chocolate
-
-Test divider symbol handling.
-
-  $ ./jy -- --dry-run 2>&1
-  Unknown option: -- or '--dry-run'
-  usage: jython [option] ... [-c cmd | -m mod | file | -] [arg] ...
-  Try 'jython -h' for more information.
-  [1]
-
-  $ ./jy --dry-run --
-  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Djava.class.path=/*/jython-*.jar -Xmx*m org.python.util.jython (glob)
-
-  $ ./jy --dry-run -Dfoo=before -- -Dfoo=after
-  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Dfoo=before -Djava.class.path=/*/jython-*.jar -Xmx*m org.python.util.jython -Dfoo=after (glob)
-
-  $ ./jy -Dfoo=before -- -Dfoo=after -c 'from java.lang import System; print(System.getProperty("foo"))'
-  after
-
-  $ ./jy bad -- good 2>&1 | head -n1
-  Unrecognized runtime argument: bad
+  $ ./repl --jshell --dry-run
+  [DRY-RUN] /*/bin/java jdk.internal.jshell.tool.JShellToolProvider (glob)

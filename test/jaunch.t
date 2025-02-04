@@ -1,10 +1,14 @@
+NB: assumes running on linux x64 system.
+Pre-requisites: run `make clean demo` in the root directory
+
 Setup:
 
-  $ cd "$TESTDIR/../app"
+  $ cd "$TESTDIR/../demo"
 
-Now test stuff.
+Test 1: help text
 
   $ ./jaunch/jaunch-linux-x64
+  
   Hello! You have found the Jaunch configurator.
   Your curiosity is an asset. :-)
   
@@ -20,22 +24,40 @@ Now test stuff.
       jaunch fizzbuzz --heap 2g --debugger 8000
   
   and watch how Jaunch transforms the arguments.
+  If the behavior is not what you expect, try using the --debug flag:
   
-  You can learn similar information using Jaunch's --dry-run option:
+      jaunch fizzbuzz --heap 2g --debugger 8000 --debug
+  
+  You can also see similar information using Jaunch's --dry-run option:
   
       fizzbuzz --heap 2g --debugger 8000 --dry-run
   
   For more details, check out the nearby TOML files. Happy Jaunching!
+  
   [1]
+--End Test 1 epected output--
 
-  $ jaunch/jaunch-linux-x64 parsy a b c
+Test 2: using jaunch to launch an absent application
+
+  $ ./jaunch/jaunch-linux-x64 missing a b c
+  ERROR
+  2
+  20
+  No config file found for missing
+  [20]
+--End of Test 2 expected output--
+
+Test 3: use jaunch configurator manually
+
+  $ ./jaunch/jaunch-linux-x64 parsy a b c
   JVM
   8
-  /*/libjvm.so (glob)
+  *libjvm.so (glob)
   2
-  -Djava.class.path=/*/lib/parsington-3.1.0.jar* (glob)
-  -Xmx128m
+  -Djava.class.path=* (glob)
+  -Xmx64m
   org/scijava/parsington/Main
   a
   b
   c
+--End of Test 3 expected output--

@@ -1,18 +1,19 @@
-Tests for jython
+Tests for simple Java application
 Pre-requisites:
 1. run `make clean demo` in the root directory
 2. Ensure a suitable JVM is installed on the system
 
 Setup:
+
   $ cd "$TESTDIR/../demo"
 
-Test help text
-  $ ./jy --help
-  Usage: jy* [<Runtime options>.. --] [<main arguments>..] (glob)
+Test 1: help text
+  $ ./hi --help
+  Usage: hi* [<Runtime options>.. --] [<main arguments>..] (glob)
   
-  Jy launcher (Jaunch v* / * / *) (glob)
+  Hi launcher (Jaunch * / * / *) (glob)
   Runtime options are passed to the runtime platform (JVM or Python),
-  main arguments to the launched program (Jy).
+  main arguments to the launched program (Hi).
   
   In addition, the following options are supported:
   --java-home <path>
@@ -45,35 +46,8 @@ Test help text
                       print directory where the configuration files are located
   --system
                       do not try to run bundled runtime
+--End of help text expected output--
 
---End of Test 1 expected output--
-
-Test that the correct Java program actually runs.
-
-  $ ./jy -c 'print(1+2)'
-  3
-
-Test system property assignment.
-
-  $ ./jy -Dcake=chocolate -c 'from java.lang import System; print(System.getProperty("cake"))'
-  chocolate
-
-Test divider symbol handling.
-
-  $ ./jy -- --dry-run 2>&1
-  Unknown option: -- or '--dry-run'
-  usage: jython [option] ... [-c cmd | -m mod | file | -] [arg] ...
-  Try 'jython -h' for more information.
-  [1]
-
-  $ ./jy --dry-run --
-  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Djava.class.path=/*/jython-*.jar -Xmx*m org.python.util.jython (glob)
-
-  $ ./jy --dry-run -Dfoo=before -- -Dfoo=after
-  [DRY-RUN] /*/bin/java -Dpython.import.site=false -Dpython.cachedir.skip=true -Dpython.console.encoding=UTF-8 -Dfoo=before -Djava.class.path=/*/jython-*.jar -Xmx*m org.python.util.jython -Dfoo=after (glob)
-
-  $ ./jy -Dfoo=before -- -Dfoo=after -c 'from java.lang import System; print(System.getProperty("foo"))'
-  after
-
-  $ ./jy bad -- good 2>&1 | head -n1
-  Unrecognized runtime argument: bad
+Verify basic functionality
+  $ ./hi
+  Hello world
