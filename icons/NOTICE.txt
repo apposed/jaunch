@@ -1,0 +1,11 @@
+SVG icons here are from the OpenMoji project:
+
+    https://openmoji.org/
+
+Licensed under CC BY-SA 4.0:
+
+    https://creativecommons.org/licenses/by-sa/4.0/
+
+As such, all files in this icons folder are licensed accordingly,
+and Jaunch binaries incorporating these icons are also distributed
+under the same license.
