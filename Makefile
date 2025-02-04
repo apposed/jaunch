@@ -18,9 +18,6 @@ dist: compile-all
 pack: dist
 	@bin/pack.sh
 
-sign: dist
-	@bin/sign.sh
-
 demo: dist
 	@bin/demo.sh
 
