@@ -16,7 +16,7 @@ demo/hello
 
 * [Example apps](doc/EXAMPLES.md)
 * [Building from source](doc/BUILD.md)
-* [Launching our app with Jaunch](doc/SETUP.md)
+* [How to launch your app with Jaunch](doc/SETUP.md)
 * OS-specific concerns:
   [Linux](doc/LINUX.md),
   [macOS](doc/MACOS.md),
@@ -24,9 +24,16 @@ demo/hello
 
 ## License
 
-To maximize the flexibility of downstream projects to use and adapt this code,
-Jaunch is [Unlicensed](https://unlicense.org/).
+To maximize the flexibility of downstream projects to use and
+adapt this code, Jaunch is [Unlicensed](https://unlicense.org/).
 See the [UNLICENSE](UNLICENSE) file for details.
+
+The only exception is the icons in the `icons` folder, which are
+from the [OpenMoji] project, licensed under the [CC BY-SA 4.0].
+These icons are used by Jaunch's demo apps, and therefore the demo apps
+as a whole are licensed under CC BY-SA 4.0 as well. But of course you can
+change out the icons, and then the CC BY-SA 4.0 license will longer apply.
+See [icons/NOTICE.txt](icons/NOTICE.txt) for further details.
 
 ## Why Jaunch
 
@@ -86,7 +93,7 @@ necessarily *bundling* Python.
 
 * As few dependencies as possible&mdash;right now Jaunch has none at all
   besides standard platform libraries.
-* Where feasible, compress native binaries using [upx](https://upx.github.io/).
+* Where feasible, compress native binaries using [upx].
 
 ## Architecture
 
@@ -94,7 +101,7 @@ Jaunch consists of two parts:
 
 1. A native launcher, [written in C](src/c), kept reasonably minimal.
 
-2. A "configurator" executable written in Kotlin Native, which does the heavy lifting.
+2. A "configurator" executable written in [Kotlin Native], which does the heavy lifting.
 
 The native launcher (1) will be named after your particular application, it is placed in
 the base directory of your application. For example, for an application called Fizzbuzz,
@@ -175,7 +182,7 @@ As so often in technology, there are so many. And yet nothing that does what thi
   * Standalone executable launcher does not support passing JVM arguments (e.g. `-Xmx5g` to override max heap size).
   * Always bundles a Java runtime, rather than discovering existing Java installations.
 * Example:
-  * The [QuPath](https://qupath.readthedocs.io/) project uses jpackage for its launcher.
+  * The [QuPath] project uses jpackage for its launcher.
     * QuPath provides a configuration dialog to modify the Java maximum heap size, which it handles by editing the jpackage .cfg file on the user's behalf.
 
 You can use [jpackage] to generate one for every platform you want to support: typically
@@ -219,6 +226,19 @@ But jpackage is inflexible:
 * On Windows, a jpackage launcher must be either a console application, or a non-console
   application. It cannot be both, contingent on how the user invokes it. Whereas Jaunch
   connects to the existing console when there is one, but does not create a new one.
+
+* On macOS, native applications must now be code-signed and notarized in order to
+  successfully pass [Gatekeeper]&mdash;and also ideally code-signed and
+  malware-scanned on Windows to pass [SmartScreen]. Since jpackaged applications
+  contain all JAR files inside the target .app bundle, any time you change your
+  application's Java codebase, you must rebuild your .app bundle and then re-sign it.
+  Whereas with Jaunch, your .app is skinny, with JAR files and TOML configuration
+  living outside the .app bundle, meaning you can sign your Jaunch-based launcher once,
+  and only need to rebuild and re-sign it when the core Jaunch code changes.
+  Depending on your temperament, you may find Jaunch's flexibility in this
+  regard to be either a
+  [bug](https://en.wikipedia.org/wiki/Gatekeeper_%28macOS%29#Implications) or a
+  [feature](https://news.ycombinator.com/item?id=26946297)...
 
 All of that said, jpackage is a very nice tool, and if it works for you, use it! But if you
 want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then try Jaunch.
@@ -281,6 +301,7 @@ E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk
 [ImageJ Launcher](https://github.com/imagej/imagej-launcher)
 * Written in C.
 * Built binary is 91K.
+* More lines of C code than Jaunch's C and Kotlin pieces combined.
 * Supports custom runtime arguments to both ImageJ/Fiji and the JVM.
 * Sometimes needs to re-exec with `execvp`, either itself with changes to environment variables, or the system Java.
 
@@ -318,10 +339,17 @@ From [the constructor website](https://conda.github.io/constructor/):
 ------------------------------------------------------------------------------
 
 [1]: https://docs.oracle.com/en/java/javase/21/jpackage/support-application-features.html#GUID-34C3BE72-CDE5-469B-BC4D-3D9A6DD2AEEA
+[CC BY-SA 4.0]: https://creativecommons.org/licenses/by-sa/4.0/
 [Fiji]: https://fiji.sc/
+[Gatekeeper]: https://en.wikipedia.org/wiki/Gatekeeper_(macOS)
 [JNI]: https://en.wikipedia.org/wiki/Java_Native_Interface
 [JPype]: https://jpype.readthedocs.io/
+[Kotlin Native]: https://kotlinlang.org/docs/native-overview.html
+[OpenMoji]: https://openmoji.org/
+[QuPath]: https://qupath.readthedocs.io/
+[SmartScreen]: https://en.wikipedia.org/wiki/Microsoft_SmartScreen#Windows_malware_protection
 [Stable ABI]: https://docs.python.org/3/c-api/stable.html#stable-abi
 [`JNI_CreateJavaVM`]: https://docs.oracle.com/en/java/javase/21/docs/specs/jni/invocation.html#creating-the-vm
 [`Py_BytesMain`]: https://docs.python.org/3/c-api/veryhigh.html#c.Py_BytesMain
 [jpackage]: https://docs.oracle.com/en/java/javase/21/docs/specs/jni/invocation.html#creating-the-vm
+[upx]: https://upx.github.io/
