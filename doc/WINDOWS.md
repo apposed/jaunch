@@ -44,7 +44,7 @@ What we'd really like is for our Windows EXE to behave the same way as Unix-like
     Start-Process -Wait .\myProgram.exe
     ```
 
-* With either shell, you can run a batch file that wraps the GUI executable invocation, effectively converting it into a console program. Jaunch's [app examples](EXAMPLES.md) offer such a batch file for each example app. (Thanks to [this blog post](https://lastpixel.tv/win32-application-as-both-gui-and-console/) for the tip!)
+* With either shell, you can run a batch file that wraps the GUI executable invocation, effectively converting it into a console program. Jaunch's [demo examples](EXAMPLES.md) offer such a batch file for each example app. (Thanks to [this blog post](https://lastpixel.tv/win32-application-as-both-gui-and-console/) for the tip!)
 
 * You can ship two launchers with your application: one for each mode. This is what Python does with `python.exe` (console) and `pythonw.exe` (GUI), and what OpenJDK does with `java.exe` (console) and `javaw.exe` (GUI). For this reason, the Jaunch native launcher is compiled in both GUI and console modes, and you can choose which of the two modes (or both) you want to ship with your application. (In case you were wondering: the configurator portion of Jaunch is always built in console mode only; when the Jaunch native launcher invokes it as a separate process, it does so with the `CREATE_NO_WINDOW` flag so that the configurator's console does not spawn a visible window.)
 
