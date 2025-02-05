@@ -24,5 +24,8 @@ The Jaunch repository includes several demo applications powered by Jaunch:
 * Hello -
   A simple GUI app displaying a "Hello World" dialog box using Java Swing.
 
+* Hi -
+  An even simpler Java app, which simply prints "Hello world" to the console.
+
 To try them out, [build from source](doc/BUILD.md), then run the
 `make demo` target, which assembles a `demo` folder with everything needed.
