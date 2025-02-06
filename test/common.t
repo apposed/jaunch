@@ -45,7 +45,6 @@ Test: Help text with --help
   --system
                       do not try to run bundled runtime
   ABORT
-  0
 --End of expected output--
 
 Test: Help text with -h
@@ -88,7 +87,6 @@ Test: Help text with -h
   --system
                       do not try to run bundled runtime
   ABORT
-  0
 --End of expected output--
 
 Test: Debug output
@@ -102,7 +100,6 @@ Test: dry-run
   $ ./jaunch/jaunch-linux-x64 hello --dry-run
   [DRY-RUN] /*/bin/java -Djava.class.path=/*/demo HelloSwing (glob)
   ABORT
-  0
 
 Test: print-app-dir
   $ ./jaunch/jaunch-linux-x64 hello --print-app-dir

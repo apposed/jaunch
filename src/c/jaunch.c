@@ -156,7 +156,7 @@ int main(const int argc, const char *argv[]) {
     free(command);
     if (run_result != SUCCESS) return run_result;
 
-    CHECK_ARGS("JAUNCH", "out", out_argc, 2, 99999, out_argv);
+    CHECK_ARGS("JAUNCH", "out", out_argc, 1, 99999, out_argv);
     // Maximum # of lines to treat as valid. ^^^^^
     // We could of course leave this unbounded, but pragmatically, the value
     // will probably never exceed this size -- it is more likely that a
@@ -170,6 +170,13 @@ int main(const int argc, const char *argv[]) {
     while (index < out_argc) {
         // Prepare the (argc, argv) for the next directive.
         const char *directive = (const char *)(out_argv[index]);
+
+        // Honor the special ABORT directive immediately (no further parsing).
+        if (strcmp(directive, "ABORT") == 0) {
+            const size_t extra = out_argc - index - 1;
+            if (extra > 0) error("Ignoring %zu trailing output lines.", extra);
+            break;
+        }
         if (index == out_argc - 1) {
             error("Invalid trailing directive: %s", directive);
             break;
@@ -180,13 +187,7 @@ int main(const int argc, const char *argv[]) {
         index += 2 + dir_argc; // Advance index past this directive block.
 
         // Call the directive's associated function.
-        if (strcmp(directive, "ABORT") == 0) {
-            if (dir_argc > 0) error("Ignoring %zu extra ABORT lines.", dir_argc);
-            const size_t extra = out_argc - index;
-            if (extra > 0) error("Ignoring %zu trailing output lines.", extra);
-            break;
-        }
-        else if (strcmp(directive, "JVM") == 0) {
+        if (strcmp(directive, "JVM") == 0) {
             exit_code = launch(launch_jvm, dir_argc, dir_argv);
             if (exit_code != SUCCESS) break;
         }

@@ -11,18 +11,15 @@ Tests:
   $ ./jaunch/jaunch-linux-x64 hi --print-java-home
   /* (glob)
   ABORT
-  0
 
 This is highly variable with java version & build
   $ ./jaunch/jaunch-linux-x64 hi --print-java-info 2> /dev/null
   ABORT
-  0
 
 Memory tests: Verify that all the aliases pass the heap size
   $ ./jaunch/jaunch-linux-x64 hi --print-class-path
   <none>
   ABORT
-  0
 
   $ ./jaunch/jaunch-linux-x64 hi --heap 2g
   JVM
@@ -106,19 +103,16 @@ Move the .class file back
   $ ./jaunch/jaunch-linux-x64 hi --ext . --dry-run
   [DRY-RUN] /*/bin/java -Djava.ext.dirs=. -Djava.class.path=/*/demo HelloWorld (glob)
   ABORT
-  0
 
 Verify --headless would pass the correct flags
   $ ./jaunch/jaunch-linux-x64 hi --headless --dry-run
   [DRY-RUN] /*java -Djava.awt.headless=true -Dapple.awt.UIElement=true -Djava.class.path=/*/demo HelloWorld (glob)
   ABORT
-  0
 
 Verify --debugger would pass the correct flags
   $ ./jaunch/jaunch-linux-x64 hi --debugger 8000 --dry-run
   [DRY-RUN] /*/bin/java -agentlib:jdwp=transport=dt_socket,server=y,address=localhost:8000 -Djava.class.path=/*/demo HelloWorld (glob)
   ABORT
-  0
 
 For testing --java-home, we use an invalid path and just verify it's in the search space
   $ ./jaunch/jaunch-linux-x64 hi --java-home . --debug 2>&1 | grep -A1 "Root paths to search for Java"

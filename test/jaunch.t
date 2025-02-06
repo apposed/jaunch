@@ -35,7 +35,7 @@ Test 1: help text
   For more details, check out the nearby TOML files. Happy Jaunching!
   
   [1]
---End Test 1 epected output--
+--End Test 1 expected output--
 
 Test 2: using jaunch to launch an absent application
 
