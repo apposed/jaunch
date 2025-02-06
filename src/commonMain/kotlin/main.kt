@@ -602,10 +602,7 @@ private fun executeDirectives(
             lines.forEach { println(it) }
         }
     }
-    if (abort) {
-      println("ABORT")
-      println("0")
-    }
+    if (abort) println("ABORT")
 }
 
 // -- Helper functions --
