@@ -125,6 +125,13 @@ For testing --java-home, we use an invalid path and just verify it's in the sear
   [DEBUG] Root paths to search for Java:
   [DEBUG] * .
 
+Should also work with jvm-dir in hi.cfg
+  $ echo "jvm-dir=." > ./jaunch/hi.cfg
+  $ ./jaunch/jaunch-linux-x64 hi --debug 2>&1 | grep -A1 "Root paths to search for Java"
+  [DEBUG] Root paths to search for Java:
+  [DEBUG] * .
+  $ rm ./jaunch/hi.cfg
+
 System flag testing: make a fake "bundled" java directory and ensure it's
 on the search path
   $  mkdir -p ./java/linux-x64/hello
