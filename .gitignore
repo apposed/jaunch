@@ -1,7 +1,8 @@
 /.cache/
 /.gradle/
-/demo/
 /build/
+/demo/
+/dist/
 /jaunch.tar.gz
 
 ### Vim ###
@@ -18,7 +19,6 @@
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 
