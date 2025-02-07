@@ -9,19 +9,20 @@ test -d build || { echo '[ERROR] No build folder; please `make compile-all` firs
 appName=$1
 test "$appName" || appName=launcher
 
-copyBinary() {
+copyFile() {
   srcPath=$1
   destDir=$2
   destName=$3
   makeExec=$4
   if [ ! -f "$srcPath" ]; then return; fi
-  mkdir -p "$destDir"
-  (set -x; cp "$srcPath" "$destDir/$destName")
-  if [ "$makeExec" ]; then (set -x; chmod +x "$destDir/$destName"); fi
+  test "$destName" || destName="${srcPath##*/}"
+  mkdir -pv "$destDir"
+  cp -v "$srcPath" "$destDir/$destName"
+  if [ "$makeExec" ]; then chmod -v +x "$destDir/$destName"; fi
 }
 
 # Clear out previous dist directory.
-rm -rf dist
+rm -rfv dist
 
 # Copy native launcher executables.
 for launcherBinary in build/launcher*
@@ -29,38 +30,30 @@ do
   targetFilename="$appName${launcherBinary#build/launcher}"
   binaryType=$(file -b "$launcherBinary" 2>/dev/null)
   case "$binaryType" in
-    ELF*) copyBinary "$launcherBinary" dist "$targetFilename" true ;;
-    Mach-O*) copyBinary "$launcherBinary" dist/Contents/MacOS "$targetFilename" true ;;
-    *) copyBinary "$launcherBinary" dist "$targetFilename" ;;
+    ELF*|Mach-O*) copyFile "$launcherBinary" dist "$targetFilename" true ;;
+    *) copyFile "$launcherBinary" dist "$targetFilename" ;;
   esac
 done
 
 # Copy jaunch configurator executables.
-copyBinary build/bin/linuxArm64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-linux-arm64 true
-copyBinary build/bin/linuxX64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-linux-x64 true
-copyBinary build/bin/macosArm64/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos-arm64 true
-copyBinary build/bin/macosX64/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos-x64 true
-copyBinary build/bin/macosUniversal/releaseExecutable/jaunch.kexe dist/Contents/MacOS jaunch-macos true
-copyBinary build/bin/windowsArm64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-arm64.exe
-copyBinary build/bin/windowsX64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-x64.exe
+copyFile build/bin/linuxArm64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-linux-arm64 true
+copyFile build/bin/linuxX64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-linux-x64 true
+copyFile build/bin/macosArm64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-macos-arm64 true
+copyFile build/bin/macosX64/releaseExecutable/jaunch.kexe dist/jaunch jaunch-macos-x64 true
+copyFile build/bin/macosUniversal/releaseExecutable/jaunch.kexe dist/jaunch jaunch-macos true
+copyFile build/bin/windowsArm64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-arm64.exe
+copyFile build/bin/windowsX64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-x64.exe
 
 # Copy Props.class helper program and TOML configuration files.
-mkdir -p dist/jaunch
-for f in \
-  Props.class \
-  common.toml \
-  jvm.toml \
-  python.toml
-do
-  if [ ! -f "dist/jaunch/$f" ]
-  then
-    (set -x; cp "configs/$f" dist/jaunch/)
-  fi
-done
-if [ ! -f dist/jaunch/launcher.toml ]
-then
-  (set -x; cp configs/repl.toml dist/jaunch/launcher.toml)
-fi
+copyFile configs/Props.class dist/jaunch
+copyFile configs/common.toml dist/jaunch
+copyFile configs/jvm.toml dist/jaunch
+copyFile configs/python.toml dist/jaunch
+copyFile configs/repl.toml dist/jaunch "$appName.toml"
+
+# Copy platform-agnostic launch scripts.
+copyFile configs/launcher.sh dist "$appName.sh" true
+copyFile configs/launcher.bat dist "$appName.bat"
 
 # Wrap it up into a tarball.
 tar czf jaunch.tar.gz dist
