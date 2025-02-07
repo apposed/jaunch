@@ -1,0 +1,189 @@
+TRY REPRODUCING THIS WITH DIFFERENT OPENJDK VERSIONS:
+
+Full thread dump OpenJDK 64-Bit Server VM (11.0.2+9 mixed mode):
+
+Threads class SMR info:
+_java_thread_list=0x0000019f28befe70, length=17, elements={
+0x0000019f066c5000, 0x0000019f2640c000, 0x0000019f26431000, 0x0000019f26449800,
+0x0000019f2644a800, 0x0000019f26d61000, 0x0000019f26d65800, 0x0000019f26d6b000,
+0x0000019f26f16000, 0x0000019f26f3b000, 0x0000019f276bd800, 0x0000019f2731d800,
+0x0000019f27328800, 0x0000019f27295000, 0x0000019f2789d000, 0x0000019f28f75800,
+0x0000019f27560800
+}
+
+"main" #1 prio=5 os_prio=0 cpu=562.50ms elapsed=7.34s tid=0x0000019f066c5000 nid=0x820 in Object.wait()  [0x000000416affe000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(java.base@11.0.2/Native Method)
+        - waiting on <no object reference available>
+        at java.lang.Object.wait(java.base@11.0.2/Object.java:328)
+        at jdk.internal.jshell.tool.StopDetectingInputStream.read(jdk.jshell@11.0.2/StopDetectingInputStream.java:98)
+        - waiting to re-lock in wait() <0x000000076104d798> (a jdk.internal.jshell.tool.StopDetectingInputStream)
+        at jdk.internal.jline.internal.NonBlockingInputStream.read(jdk.internal.le@11.0.2/NonBlockingInputStream.java:166)
+        - locked <0x00000007618229e8> (a jdk.internal.jline.internal.NonBlockingInputStream)
+        at jdk.internal.jline.internal.NonBlockingInputStream.read(jdk.internal.le@11.0.2/NonBlockingInputStream.java:135)
+        at jdk.internal.jline.internal.NonBlockingInputStream.read(jdk.internal.le@11.0.2/NonBlockingInputStream.java:243)
+        at jdk.internal.jline.internal.InputStreamReader.read(jdk.internal.le@11.0.2/InputStreamReader.java:257)
+        - locked <0x00000007618229e8> (a jdk.internal.jline.internal.NonBlockingInputStream)
+        at jdk.internal.jline.internal.InputStreamReader.read(jdk.internal.le@11.0.2/InputStreamReader.java:194)
+        - locked <0x00000007618229e8> (a jdk.internal.jline.internal.NonBlockingInputStream)
+        at jdk.internal.jline.console.ConsoleReader.readCharacter(jdk.internal.le@11.0.2/ConsoleReader.java:2156)
+        at jdk.internal.jline.console.ConsoleReader.readCharacter(jdk.internal.le@11.0.2/ConsoleReader.java:2146)
+        at jdk.internal.jline.console.ConsoleReader.readBinding(jdk.internal.le@11.0.2/ConsoleReader.java:2231)
+        at jdk.internal.jline.console.ConsoleReader.readLine(jdk.internal.le@11.0.2/ConsoleReader.java:2498)
+        at jdk.internal.jline.console.ConsoleReader.readLine(jdk.internal.le@11.0.2/ConsoleReader.java:2383)
+        at jdk.internal.jline.console.ConsoleReader.readLine(jdk.internal.le@11.0.2/ConsoleReader.java:2371)
+        at jdk.internal.jshell.tool.ConsoleIOContext.readLine(jdk.jshell@11.0.2/ConsoleIOContext.java:142)
+        at jdk.internal.jshell.tool.JShellTool.getInput(jdk.jshell@11.0.2/JShellTool.java:1261)
+        at jdk.internal.jshell.tool.JShellTool.run(jdk.jshell@11.0.2/JShellTool.java:1174)
+        at jdk.internal.jshell.tool.JShellTool.start(jdk.jshell@11.0.2/JShellTool.java:975)
+        at jdk.internal.jshell.tool.JShellToolBuilder.start(jdk.jshell@11.0.2/JShellToolBuilder.java:254)
+        at jdk.internal.jshell.tool.JShellToolProvider.main(jdk.jshell@11.0.2/JShellToolProvider.java:120)
+
+"Reference Handler" #2 daemon prio=10 os_prio=2 cpu=0.00ms elapsed=7.32s tid=0x0000019f2640c000 nid=0xaa4 waiting on condition  [0x000000416c3fe000]
+   java.lang.Thread.State: RUNNABLE
+        at java.lang.ref.Reference.waitForReferencePendingList(java.base@11.0.2/Native Method)
+        at java.lang.ref.Reference.processPendingReferences(java.base@11.0.2/Reference.java:241)
+        at java.lang.ref.Reference$ReferenceHandler.run(java.base@11.0.2/Reference.java:213)
+
+"Finalizer" #3 daemon prio=8 os_prio=1 cpu=0.00ms elapsed=7.32s tid=0x0000019f26431000 nid=0x11dc in Object.wait()  [0x000000416c5fe000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(java.base@11.0.2/Native Method)
+        - waiting on <0x000000076050fcb8> (a java.lang.ref.ReferenceQueue$Lock)
+        at java.lang.ref.ReferenceQueue.remove(java.base@11.0.2/ReferenceQueue.java:155)
+        - waiting to re-lock in wait() <0x000000076050fcb8> (a java.lang.ref.ReferenceQueue$Lock)
+        at java.lang.ref.ReferenceQueue.remove(java.base@11.0.2/ReferenceQueue.java:176)
+        at java.lang.ref.Finalizer$FinalizerThread.run(java.base@11.0.2/Finalizer.java:170)
+
+"Signal Dispatcher" #4 daemon prio=9 os_prio=2 cpu=0.00ms elapsed=7.30s tid=0x0000019f26449800 nid=0x62c waiting on condition  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Attach Listener" #5 daemon prio=5 os_prio=2 cpu=0.00ms elapsed=7.30s tid=0x0000019f2644a800 nid=0xac8 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread0" #6 daemon prio=9 os_prio=2 cpu=671.88ms elapsed=7.30s tid=0x0000019f26d61000 nid=0x1dcc waiting on condition  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   No compile task
+
+"C1 CompilerThread0" #8 daemon prio=9 os_prio=2 cpu=312.50ms elapsed=7.30s tid=0x0000019f26d65800 nid=0x126c waiting on condition  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   No compile task
+
+"Sweeper thread" #9 daemon prio=9 os_prio=2 cpu=15.63ms elapsed=7.30s tid=0x0000019f26d6b000 nid=0x11b4 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Service Thread" #10 daemon prio=9 os_prio=0 cpu=0.00ms elapsed=7.28s tid=0x0000019f26f16000 nid=0x1984 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Common-Cleaner" #11 daemon prio=8 os_prio=1 cpu=0.00ms elapsed=7.25s tid=0x0000019f26f3b000 nid=0x16f8 in Object.wait()  [0x000000416d5fe000]
+   java.lang.Thread.State: TIMED_WAITING (on object monitor)
+        at java.lang.Object.wait(java.base@11.0.2/Native Method)
+        - waiting on <no object reference available>
+        at java.lang.ref.ReferenceQueue.remove(java.base@11.0.2/ReferenceQueue.java:155)
+        - waiting to re-lock in wait() <0x0000000760510d78> (a java.lang.ref.ReferenceQueue$Lock)
+        at jdk.internal.ref.CleanerImpl.run(java.base@11.0.2/CleanerImpl.java:148)
+        at java.lang.Thread.run(java.base@11.0.2/Thread.java:834)
+        at jdk.internal.misc.InnocuousThread.run(java.base@11.0.2/InnocuousThread.java:134)
+
+"JDI Internal Event Handler" #15 daemon prio=5 os_prio=0 cpu=0.00ms elapsed=6.97s tid=0x0000019f276bd800 nid=0x6c8 in Object.wait()  [0x000000416dbff000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(java.base@11.0.2/Native Method)
+        - waiting on <no object reference available>
+        at java.lang.Object.wait(java.base@11.0.2/Object.java:328)
+        at com.sun.tools.jdi.EventQueueImpl.removeUnfiltered(jdk.jdi@11.0.2/EventQueueImpl.java:190)
+        - waiting to re-lock in wait() <0x00000007605110e8> (a com.sun.tools.jdi.EventQueueImpl)
+        at com.sun.tools.jdi.EventQueueImpl.removeInternal(jdk.jdi@11.0.2/EventQueueImpl.java:125)
+        at com.sun.tools.jdi.InternalEventHandler.run(jdk.jdi@11.0.2/InternalEventHandler.java:61)
+        at java.lang.Thread.run(java.base@11.0.2/Thread.java:834)
+
+"JDI Target VM Interface" #14 daemon prio=5 os_prio=0 cpu=62.50ms elapsed=6.97s tid=0x0000019f2731d800 nid=0x1f74 runnable  [0x000000416ddfe000]
+   java.lang.Thread.State: RUNNABLE
+        at java.net.SocketInputStream.socketRead0(java.base@11.0.2/Native Method)
+        at java.net.SocketInputStream.socketRead(java.base@11.0.2/SocketInputStream.java:115)
+        at java.net.SocketInputStream.read(java.base@11.0.2/SocketInputStream.java:168)
+        at java.net.SocketInputStream.read(java.base@11.0.2/SocketInputStream.java:140)
+        at java.net.SocketInputStream.read(java.base@11.0.2/SocketInputStream.java:200)
+        at com.sun.tools.jdi.SocketConnection.readPacket(jdk.jdi@11.0.2/SocketConnection.java:82)
+        - locked <0x0000000760511468> (a java.lang.Object)
+        at com.sun.tools.jdi.TargetVM.run(jdk.jdi@11.0.2/TargetVM.java:124)
+        at java.lang.Thread.run(java.base@11.0.2/Thread.java:834)
+
+"event-handler" #16 daemon prio=5 os_prio=0 cpu=0.00ms elapsed=6.96s tid=0x0000019f27328800 nid=0x16f4 in Object.wait()  [0x000000416d7fe000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(java.base@11.0.2/Native Method)
+        - waiting on <no object reference available>
+        at java.lang.Object.wait(java.base@11.0.2/Object.java:328)
+        at com.sun.tools.jdi.EventQueueImpl.removeUnfiltered(jdk.jdi@11.0.2/EventQueueImpl.java:190)
+        - waiting to re-lock in wait() <0x0000000760511828> (a com.sun.tools.jdi.EventQueueImpl)
+        at com.sun.tools.jdi.EventQueueImpl.remove(jdk.jdi@11.0.2/EventQueueImpl.java:97)
+        at com.sun.tools.jdi.EventQueueImpl.remove(jdk.jdi@11.0.2/EventQueueImpl.java:83)
+        at jdk.jshell.execution.JdiEventHandler.run(jdk.jshell@11.0.2/JdiEventHandler.java:79)
+        at java.lang.Thread.run(java.base@11.0.2/Thread.java:834)
+
+"output reader" #17 daemon prio=5 os_prio=0 cpu=0.00ms elapsed=6.91s tid=0x0000019f27295000 nid=0x1524 runnable  [0x000000416d9ff000]
+   java.lang.Thread.State: RUNNABLE
+        at java.net.SocketInputStream.socketRead0(java.base@11.0.2/Native Method)
+        at java.net.SocketInputStream.socketRead(java.base@11.0.2/SocketInputStream.java:115)
+        at java.net.SocketInputStream.read(java.base@11.0.2/SocketInputStream.java:168)
+        at java.net.SocketInputStream.read(java.base@11.0.2/SocketInputStream.java:140)
+        at java.net.SocketInputStream.read(java.base@11.0.2/SocketInputStream.java:200)
+        at java.io.FilterInputStream.read(java.base@11.0.2/FilterInputStream.java:83)
+        at jdk.jshell.execution.DemultiplexInput.run(jdk.jshell@11.0.2/DemultiplexInput.java:58)
+
+"Thread-0" #19 daemon prio=5 os_prio=0 cpu=140.63ms elapsed=6.87s tid=0x0000019f2789d000 nid=0x1418 waiting on condition  [0x000000416dffe000]
+   java.lang.Thread.State: WAITING (parking)
+        at jdk.internal.misc.Unsafe.park(java.base@11.0.2/Native Method)
+        - parking to wait for  <0x000000076054d8a0> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+        at java.util.concurrent.locks.LockSupport.park(java.base@11.0.2/LockSupport.java:194)
+        at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@11.0.2/AbstractQueuedSynchronizer.java:2081)
+        at java.util.concurrent.LinkedBlockingQueue.take(java.base@11.0.2/LinkedBlockingQueue.java:433)
+        at java.util.concurrent.ThreadPoolExecutor.getTask(java.base@11.0.2/ThreadPoolExecutor.java:1054)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@11.0.2/ThreadPoolExecutor.java:1114)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@11.0.2/ThreadPoolExecutor.java:628)
+        at java.lang.Thread.run(java.base@11.0.2/Thread.java:834)
+
+"Thread-2" #22 daemon prio=5 os_prio=0 cpu=6328.13ms elapsed=6.47s tid=0x0000019f28f75800 nid=0x1ff8 runnable  [0x000000416e9ff000]
+   java.lang.Thread.State: RUNNABLE
+        at jdk.internal.jline.WindowsTerminal.readKeyEvent(jdk.internal.le@11.0.2/Native Method)
+        at jdk.internal.jline.WindowsTerminal.readConsoleInput(jdk.internal.le@11.0.2/WindowsTerminal.java:350)
+        at jdk.internal.jline.WindowsTerminal$1.read(jdk.internal.le@11.0.2/WindowsTerminal.java:169)
+        at jdk.internal.jshell.tool.StopDetectingInputStream.lambda$setInputStream$0(jdk.jshell@11.0.2/StopDetectingInputStream.java:66)
+        at jdk.internal.jshell.tool.StopDetectingInputStream$$Lambda$325/0x0000000800296840.run(jdk.jshell@11.0.2/Unknown Source)
+        at java.lang.Thread.run(java.base@11.0.2/Thread.java:834)
+
+"NonBlockingInputStreamThread" #23 daemon prio=5 os_prio=0 cpu=0.00ms elapsed=6.47s tid=0x0000019f27560800 nid=0x898 in Object.wait()  [0x000000416ebff000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(java.base@11.0.2/Native Method)
+        - waiting on <no object reference available>
+        at jdk.internal.jline.internal.NonBlockingInputStream.run(jdk.internal.le@11.0.2/NonBlockingInputStream.java:275)
+        - waiting to re-lock in wait() <0x00000007618229e8> (a jdk.internal.jline.internal.NonBlockingInputStream)
+        at java.lang.Thread.run(java.base@11.0.2/Thread.java:834)
+
+"VM Thread" os_prio=2 cpu=0.00ms elapsed=7.32s tid=0x0000019f26409000 nid=0xec0 runnable
+
+"GC Thread#0" os_prio=2 cpu=46.88ms elapsed=7.34s tid=0x0000019f066db000 nid=0x1618 runnable
+
+"GC Thread#1" os_prio=2 cpu=62.50ms elapsed=6.84s tid=0x0000019f27349800 nid=0x1294 runnable
+
+"GC Thread#2" os_prio=2 cpu=46.88ms elapsed=6.84s tid=0x0000019f27517800 nid=0x12d8 runnable
+
+"GC Thread#3" os_prio=2 cpu=0.00ms elapsed=6.45s tid=0x0000019f28636000 nid=0xd0c runnable
+
+"G1 Main Marker" os_prio=2 cpu=0.00ms elapsed=7.34s tid=0x0000019f06715800 nid=0x1444 runnable
+
+"G1 Conc#0" os_prio=2 cpu=15.63ms elapsed=7.34s tid=0x0000019f06716800 nid=0x84c runnable
+
+"G1 Refine#0" os_prio=2 cpu=0.00ms elapsed=7.33s tid=0x0000019f067a6800 nid=0x24c runnable
+
+"G1 Refine#1" os_prio=2 cpu=0.00ms elapsed=6.60s tid=0x0000019f28695000 nid=0x7fc runnable
+
+"G1 Young RemSet Sampling" os_prio=2 cpu=0.00ms elapsed=7.33s tid=0x0000019f26270800 nid=0x1334 runnable
+"VM Periodic Task Thread" os_prio=2 cpu=15.63ms elapsed=7.28s tid=0x0000019f26f3c800 nid=0x19a8 waiting on condition
+
+JNI global refs: 17, weak refs: 0
+
+Heap
+ garbage-first heap   total 198656K, used 42676K [0x0000000760400000, 0x0000000800000000)
+  region size 1024K, 18 young (18432K), 6 survivors (6144K)
+ Metaspace       used 20757K, capacity 21538K, committed 21680K, reserved 1069056K
+  class space    used 2418K, capacity 2753K, committed 2816K, reserved 1048576K
+
