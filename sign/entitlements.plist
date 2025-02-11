@@ -7,15 +7,19 @@
       Python distributions. Without them, many features of the runtimes,
       or even linking to the runtimes at all, will not function on macOS.
     -->
-    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <key>com.apple.security.automation.apple-events</key> <!-- python -->
     <true/>
-    <key>com.apple.security.cs.allow-jit</key>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key> <!-- python & java -->
     <true/>
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <key>com.apple.security.cs.allow-jit</key> <!-- java -->
     <true/>
-    <key>com.apple.security.cs.debugger</key>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key> <!-- java -->
     <true/>
-    <key>com.apple.security.cs.disable-library-validation</key>
+    <key>com.apple.security.cs.debugger</key> <!-- java -->
+    <true/>
+    <key>com.apple.security.cs.disable-executable-page-protection</key> <!-- python -->
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key> <!-- python & java -->
     <true/>
 </dict>
 </plist>
