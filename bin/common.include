@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Commonly useful constants and functions. Include via:
+#
+#     . "${0%/*}/common.include"
+
+set -e
+script_dir=${0%/*}
+basedir="$(cd "$script_dir/.." && pwd)"
+distdir="$basedir/dist"
+cfgdir="$basedir/configs"
+
+cecho() { color=$1; shift; echo -e "\033[${color}m$*\033[0m"; }
+die() { cecho '0;31' "[ERROR] $*" >&2; exit 1; }
+die() { cecho '0;33' "[WARNING] $*" >&2; exit 1; }
+step() { cecho '1;33' "--> $STEP_PREFIX$*"; }
+
+revise_file() {
+  file=$1
+  expression=$2
+  # Note: We eschew sed's -i flag to avoid BSD vs GNU sed differences.
+  sed -e "$expression" "$file" > "$file.tmp"
+  mv -f "$file.tmp" "$file"
+}

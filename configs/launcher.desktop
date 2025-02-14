@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name={{APP_TITLE}}
+GenericName={{APP_TITLE}}
+X-GNOME-FullName={{APP_TITLE}}
+Type=Application
+Exec={{APP_EXE}}.sh %F
+TryExec={{APP_EXE}}.sh
+Terminal=false
+StartupNotify=true
+Icon={{APP_ICON}}
