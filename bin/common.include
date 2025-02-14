@@ -12,7 +12,7 @@ cfgdir="$basedir/configs"
 
 cecho() { color=$1; shift; echo -e "\033[${color}m$*\033[0m"; }
 die() { cecho '0;31' "[ERROR] $*" >&2; exit 1; }
-die() { cecho '0;33' "[WARNING] $*" >&2; exit 1; }
+warn() { cecho '0;33' "[WARNING] $*" >&2; }
 step() { cecho '1;33' "--> $STEP_PREFIX$*"; }
 
 revise_file() {
