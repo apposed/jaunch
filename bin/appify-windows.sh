@@ -21,8 +21,8 @@ test -d "$out_dir" || die "Not a directory: $out_dir"
 test -z "$app_icon" -o -f "$app_icon" || die "Not a file: $app_icon"
 
 if [ "$app_icon" ]; then
+  step 'Winifying the icon'
   if command -v convert >/dev/null; then
-    step 'Winifying the icon'
     icon_outpath="$out_dir/$app_exe.ico"
 
     # Convert icon to Windows ICO format using ImageMagick.
