@@ -1,0 +1,61 @@
+Thread on JogAmp native libraries on macOS Silicon:
+  https://forum.jogamp.org/JOGL-for-Mac-ARM-Silicon-tc4040887.html
+The SweetHome3D guy got them signed for his application, but each app
+needs to do this themselves.
+
+From https://github.com/dart-lang/sdk/issues/38314#issuecomment-1134229862:
+"any executable...can only open signed or ad hoc signed dylibs. Paths don't matter. Opening unsigned dylibs (or running unsigned code) is completely disallowed on MacOS."
+
+Custom updaters (like Fiji's) will need to be careful overwriting files in place:
+https://developer.apple.com/documentation/security/updating-mac-software
+They should instead write to a new file, then overwrite the old one,
+to avoid a stale kernel cache causing code-signing-related crashes.
+
+---------------
+
+## Obtain a certificate
+
+* Go to Certificates, Identifiers & Profiles in your Apple Developer account
+* Create a new certificate, selecting "Developer ID Application"
+* Follow the prompts to generate and download the certificate
+* Double-click to install it in your Keychain
+
+## Jaunch
+
+Sign all the individual macOS executables (`launcher-macos-*` and `jaunch-macos-*`):
+
+```bash
+for binary in launcher-macos-arm64 launcher-macos-x64 launcher-macos-universal jaunch-macos-arm64 jaunch-macos-x64 jaunch-macos-universal
+do
+  codesign --force --options runtime --sign "Developer ID Application: Your Name (Team ID)" "$binary"
+done
+```
+
+## Fiji
+
+Sign the `Fiji.app` bundle as a whole:
+
+```bash
+codesign --force --options runtime --sign "Developer ID Application: Your Name (Team ID)" --deep Fiji/Fiji.app
+
+# Verify the signatures.
+codesign -vv --deep Fiji/Fiji.app
+
+# Create a zip of your app
+ditto -c -k --keepParent Fiji/Fiji.app Fiji.zip
+
+# Submit for notarization
+xcrun notarytool submit Fiji.zip --wait --keychain-profile "AC_PASSWORD"
+
+# After successful notarization, staple the ticket
+xcrun stapler staple Fiji/Fiji.app
+```
+
+This process will overwrite the default Jaunch signatures, due to the `--deep` flag.
+
+## Remarks
+
+* The `--options runtime` flag enables hardened runtime, which is required for notarization
+* `--deep` ensures all nested components are signed
+* Replace "Your Name (Team ID)" with your actual Developer ID certificate name (you can see this in Keychain Access)
+* For the notarization step, you'll need to set up an App Store Connect API Key or store your credentials using `notarytool store-credentials`
