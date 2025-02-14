@@ -17,7 +17,7 @@ sign_macos() {
     echo '[ERROR] DEV_ID environment variable unset; cannot sign executables.'
     exit 1
   fi
-  for exe in 'dist/Contents/MacOS/'*-macos-*
+  for exe in dist/*-macos-* dist/jaunch/*-macos-*
   do
     codesign --force --options runtime \
       --entitlements sign/entitlements.plist \
