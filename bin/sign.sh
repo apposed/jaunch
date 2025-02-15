@@ -1,38 +1,65 @@
 #!/usr/bin/env bash
-set -e
-cd "$(dirname "$0")/.."
-echo
-echo -e "\033[1;33m[sign]\033[0m"
 
-test -d dist || { echo '[ERROR] No dist folder; please `make dist` first.' 1>&2; exit 1; }
+. "${0%/*}/common.include"
+
+test -d "$distdir" || die 'No dist folder; please `make dist` first.'
+
+# Check arguments.
+test $# -ge 1 || {
+  echo 'Usage: sign.sh executable-or-app [executable-or-app ...]'
+  echo 'Perform code signing on executables and/or apps using platform-specific tools.'
+  exit 1
+}
 
 sign_linux() {
-  echo '[INFO] Signing complete! Nothing was signed, because Linux binaries just work,'
-  echo '[INFO] without invasively asking for permission from corporate overlords.'
+  step 'Signing complete! Nothing was signed, because Linux binaries just work,'
+  step 'without invasively asking for permission from corporate overlords.'
 }
 
 sign_macos() {
-  if [ ! "$DEV_ID" ]
-  then
-    echo '[ERROR] DEV_ID environment variable unset; cannot sign executables.'
-    exit 1
-  fi
-  for exe in dist/*-macos-* dist/jaunch/*-macos-*
-  do
-    codesign --force --options runtime \
-      --entitlements sign/entitlements.plist \
-      --sign "$DEV_ID" "$exe"
-    codesign -vv "$exe"
-  done
+  test "$DEV_ID" ||
+    die 'Please set DEV_ID environment variable; see doc/MACOS.md#code-signing'
 
-  echo '[INFO] Signing complete!'
+  for f in "$@"; do
+    case "$f" in
+      *.app)
+        # Sign and verify the app bundle recursively.
+        step "Signing app: $f"
+        codesign --force --options runtime \
+          --entitlements "$basedir/configs/entitlements.plist" \
+          --sign "$DEV_ID" --deep "$f"
+        step 'Verifying signature'
+        codesign -vv --deep "$f"
+
+        # Submit the app for notarization.
+        (
+          fn=$(basename "$f")
+          step "Submitting $fn for notarization (this may take several minutes)"
+          cd "$(dirname "$f")"
+          zipFile="${fn%.app}.zip"
+          ditto -c -k --keepParent "$fn" "$zipFile"
+          xcrun notarytool submit "$zipFile" --wait --keychain-profile "AC_PASSWORD"
+          step "Notarization successful; stapling ticket to $fn"
+          xcrun stapler staple "$fn"
+        )
+        ;;
+      *)
+        # Assume standalone binary; just sign and verify.
+        step "Signing executable: $f"
+        codesign --force --options runtime \
+          --entitlements "$basedir/configs/entitlements.plist" \
+          --sign "$DEV_ID" "$f"
+        step 'Verifying signature'
+        codesign -vv "$f"
+        ;;
+    esac
+  done
+  step 'Signing complete!'
 }
 
 sign_windows() {
-  if [ ! "$THUMBPRINT" ]; then
-    echo '[ERROR] THUMBPRINT environment variable unset; cannot sign EXEs.'
-    exit 1
-  fi
+  test "$THUMBPRINT" ||
+    die 'Please set THUMBPRINT environment variable; see doc/WINDOWS.md#code-signing'
 
   # Find the correct signtool.exe.
   arch=$(uname -m)
@@ -44,36 +71,28 @@ sign_windows() {
       grep "/$arch/" | head -n1
   )
 
-  if [ -f "$signtool" ]
-  then
-    echo "Found signtool.exe at: $signtool"
-  else
-    echo "[ERROR] signtool.exe not found at: $signtool"
-    exit 1
-  fi
+  test "$signtool" || die "signtool.exe not found"
+  test -f "$signtool" || die "signtool.exe is not a file: $signtool"
+  step "Found signtool.exe at: $signtool"
 
-  if [ ! "$TIMESTAMP_SERVER" ]; then
-    TIMESTAMP_SERVER='http://time.certum.pl/'
-  fi
+  test "$TIMESTAMP_SERVER" || TIMESTAMP_SERVER='http://time.certum.pl/'
+
+  step 'Signing binaries'
 
   "$signtool" sign /sha1 "$THUMBPRINT" \
     /tr "$TIMESTAMP_SERVER" \
-    /td SHA256 /fd SHA256 /v \
-    'dist\'*.exe \
-    'dist\jaunch\jaunch-windows-'*.exe &&
+    /td SHA256 /fd SHA256 /v "$@"
 
-  "$signtool" verify /pa /all \
-    'dist\'*.exe \
-    'dist\jaunch\jaunch-windows-'*.exe
+  step 'Verifying signatures'
 
-  echo '[INFO] Signing complete!'
+  "$signtool" verify /pa /all "$@"
+
+  step 'Signing complete!'
 }
 
-case "$(uname -s)" in
+case "$(uname)" in
   Linux) sign_linux ;;
   Darwin) sign_macos ;;
   MINGW*|MSYS*) sign_windows ;;
-  *)
-    echo "[WARNING] Don't know how to sign binaries for platform: $(uname -s)"
-  ;;
+  *) warn "Don't know how to sign binaries for platform: $(uname)" ;;
 esac
