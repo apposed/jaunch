@@ -102,9 +102,8 @@ jobs:
       run: |
         for tar in jaunch-*/jaunch.tar*; do tar xf "$tar"; done
 
-    - name: Pack binaries and assemble distribution
+    - name: Assemble distribution
       run: |
-        bash bin/pack.sh
         bash -c "tar czf jaunch.tar.gz dist"
 
     - name: Upload merged distribution

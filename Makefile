@@ -15,9 +15,6 @@ compile-all: compile-launcher compile-configurator
 dist: compile-all
 	@bin/dist.sh
 
-pack: dist
-	@bin/pack.sh
-
 demo: dist
 	@bin/demo.sh
 
