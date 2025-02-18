@@ -156,12 +156,13 @@ private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
 }
 
 private fun discernAppDirectory(exeFile: File?): File {
-    // Check for native launcher in Contents/MacOS directory.
-    // If so, treat the app directory as two directories higher up.
+    // Check for native launcher in <AppName>.app/Contents/MacOS directory.
+    // If so, treat the app directory as three directories higher up.
     // We do it this way, rather than OS_NAME == "MACOSX", so that the native
-    // launcher also works on macOS when placed directly in the app directory.
+    // launcher also works on macOS when located (or symlinked) outside the
+    // .app bundle directory structure -- like how it is for Linux and Windows.
     val exeDir = exeFile?.dir ?: File(".")
-    val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir else exeDir
+    val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir.dir else exeDir
     debug("appDir -> ", appDir)
     return appDir
 }
