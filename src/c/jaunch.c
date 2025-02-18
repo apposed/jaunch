@@ -208,8 +208,20 @@ int main(const int argc, const char *argv[]) {
             exit_code = atoi(dir_argv[0]);
             if (exit_code < 20) exit_code = 20;
             if (exit_code > 255) exit_code = 255;
+
+            // Log all error lines first.
             for (size_t i = 1; i < dir_argc; i++) error(dir_argv[i]);
-            // TODO: show_alert(title, message);
+
+            // Now join the error lines and display in an alert box.
+            char *message = join_strings(dir_argv + 1, dir_argc - 1, "\n");
+            if (message != NULL) {
+                show_alert("Error", message);
+                free(message);
+            }
+            else {
+                error("An unknown error occurred.");
+                show_alert("Error", "An unknown error occurred.");
+            }
         }
         else {
             // Mysterious directive! Fail fast.

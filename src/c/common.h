@@ -102,4 +102,29 @@ int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     return SUCCESS;
 }
 
+/* Joins strings with the given delimiter. Returns newly allocated string. */
+char *join_strings(const char **strings, size_t count, const char *delim) {
+    if (count == 0) return NULL;
+
+    // Calculate total length needed.
+    size_t total_len = 0;
+    size_t delim_len = strlen(delim);
+    for (size_t i = 0; i < count; i++) {
+        total_len += strlen(strings[i]);
+        if (i < count - 1) total_len += delim_len;
+    }
+
+    // Allocate and build the joined string.
+    char *result = (char *)malloc(total_len + 1); // +1 for null terminator
+    if (result == NULL) return NULL;
+
+    result[0] = '\0'; // Start with empty string.
+    for (size_t i = 0; i < count; i++) {
+        strcat(result, strings[i]);
+        if (i < count - 1) strcat(result, delim);
+    }
+
+    return result;
+}
+
 #endif
