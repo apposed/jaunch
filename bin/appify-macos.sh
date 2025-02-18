@@ -55,15 +55,38 @@ construct_app_bundle() {
   # Copy icon into app bundle.
   if [ "$app_icon" ]; then
     step 'Macifying the icon'
-    # Convert .svg to .icns.
+    # Convert .svg to intermediate .png.
     # TODO: Add the macOS-aesthetic rounded rectangle frame.
-    if command -v png2icns >/dev/null; then
-      convert -background none -density 384 "$app_icon" \
+    magick=
+    if command -v magick >/dev/null; then
+      magick=magick
+    elif command -v convert >/dev/null; then
+      magick=convert
+    fi
+    if [ "$magick" ]; then
+      "$magick" -background none -density 384 "$app_icon" \
         -define png:format=png32 -resize 1024x1024 "$out_dir/temp.png"
-      png2icns "$out_dir/$app_resources/$app_title.icns" "$out_dir/temp.png"
-      rm "$out_dir/temp.png"
     else
-      warn 'Cannot convert icon to macOS ICNS format; please install png2icns.'
+      warn 'Cannot convert icon to PNG temp file; please install ImageMagick.'
+    fi
+    # Now convert .png to .icns.
+    if [ -f "$out_dir/temp.png" ]; then
+      case "$(uname)" in
+        Darwin)
+          mkdir "$out_dir/icon.iconset"
+          mv "$out_dir/temp.png" "$out_dir/icon.iconset/icon_512x512@2x.png"
+          iconutil -c icns -o "$out_dir/$app_resources/$app_title.icns" "$out_dir/icon.iconset"
+          rm -rf "$out_dir/icon.iconset"
+          ;;
+        *)
+          if command -v png2icns >/dev/null; then
+            png2icns "$out_dir/$app_resources/$app_title.icns" "$out_dir/temp.png"
+          else
+            warn 'Cannot convert icon to macOS ICNS format; please install png2icns.'
+          fi
+          rm "$out_dir/temp.png"
+          ;;
+      esac
     fi
   fi
 
