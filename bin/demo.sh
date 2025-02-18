@@ -27,10 +27,11 @@ copyDependency() {
 selectWindowsEXE() {
   exe=$1
   kind=$2
-  for f in "$demoDir/$exe-windows-"*; do
-    case "$f" in
-      *-$kind.exe) mv -v "$f" "${f%-$kind.exe}.exe" ;;
-      *) rm -v "$f" ;;
+  find "$demoDir" -maxdepth 1 -name "$exe"-windows-* |
+  while read exe; do
+    case "$exe" in
+      *-$kind.exe) mv -v "$exe" "${exe%-$kind.exe}.exe" ;;
+      *) rm -v "$exe" ;;
     esac
   done
 }
