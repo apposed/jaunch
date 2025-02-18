@@ -7,8 +7,8 @@ echo -e "\033[1;33m[compile-launcher]\033[0m"
 # Locate Java installation. We need this for the jni.h include,
 # even though Java will be loaded via dlopen at runtime.
 jdkdir=$JAVA_HOME
-test -d "$jdkdir" || jdkdir=$(test ! -x update-java-alternatives || update-java-alternatives -l | head -n1 | sed 's/.* //')
-test -d "$jdkdir" || jdkdir=$(test ! -x /usr/libexec/java_home || /usr/libexec/java_home)
+test -d "$jdkdir" || jdkdir=$(test ! -x update-java-alternatives || update-java-alternatives -l | head -n1 | sed 's/.* //') || true
+test -d "$jdkdir" || jdkdir=$(test ! -x /usr/libexec/java_home || /usr/libexec/java_home) || true
 test -d "$jdkdir" || {
   echo '[ERROR] The jni.h header is needed to compile Jaunch.'
   echo '[ERROR] Please set JAVA_HOME to point to an OpenJDK installation.'
