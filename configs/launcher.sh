@@ -10,15 +10,6 @@ name=${name%.sh}
 
 die() { echo "$*" >&2; exit 1; }
 
-# Glean operating system.
-os=$(uname -s 2>/dev/null)
-case "$os" in
-  Linux) os=linux; exedir=. ;;
-  Darwin) os=macos; exedir=Contents/MacOS ;;
-  MINGW*|MSYS*) os=windows; exedir=. ;;
-  *) die "Unsupported operating system: $os" ;;
-esac
-
 # Glean CPU architecture.
 arch=$(uname -m 2>/dev/null)
 case "$arch" in
@@ -27,8 +18,31 @@ case "$arch" in
   *) die "Unsupported CPU architecture: $arch" ;;
 esac
 
+# Glean operating system.
+os=$(uname -s 2>/dev/null)
+case "$os" in
+  Linux) launcher="$dir/$name-linux-$arch" ;;
+  Darwin) launcher="$dir/$name-macos-$arch" ;;
+  MINGW*|MSYS*) launcher="$dir/$name-windows-$arch" ;;
+  *) die "Unsupported operating system: $os" ;;
+esac
+
 # Launch with the appropriate executable.
-launcher="$dir/$exedir/$name-$os-$arch"
-test -e "$launcher" || die "Launcher not available: $launcher"
-test -x "$launcher" || die "Launcher not executable: $launcher"
+test -e "$launcher" || {
+  # On macOS, try harder to locate the appropriate executable.
+  case "$os" in
+    Darwin)
+      # Toplevel launcher or symlink not present; look in .app bundles.
+      find "$dir" -name '*.app' -maxdepth 1 |
+      while read macAppDir; do
+        candidate="$macAppDir"/Contents/MacOS/"$name-macos-$arch"
+        if [ -e "$candidate" ]; then
+          launcher="$candidate"
+          break
+        fi
+      done
+      ;;
+  esac
+  test -e "$launcher" || die "Launcher not available: $launcher"
+}
 "$launcher" "$@"
