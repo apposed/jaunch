@@ -34,26 +34,32 @@ void init_threads() {
 }
 
 void show_alert(const char *title, const char *message) {
-    if (is_command_available("zenity")) {
+    if (is_command_available("/usr/bin/zenity")) {
         char *titleArg = malloc(strlen(title) + 9);  // --title={message}
-        strcpy("--title=", titleArg);
-        strcat((char *)title, titleArg);
+        strcpy(titleArg, "--title=");
+        strcat(titleArg, title);
         char *textArg = malloc(strlen(message) + 8);  // --text={message}
-        strcpy("--text=", textArg);
-        strcat((char *)message, textArg);
-        execlp("zenity", "--error", titleArg, textArg, (char *)NULL);
+        strcpy(textArg, "--text=");
+        strcat(textArg, message);
+        error("/usr/bin/zenity '%s' '%s' '%s'\n", "--error", titleArg, textArg);
+        execlp("/usr/bin/zenity", "zenity",
+            "--error", titleArg, textArg, (char *)NULL);
+        // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
         free(textArg);
     }
-    else if (is_command_available("kdialog")) {
+    else if (is_command_available("/usr/bin/kdialog")) {
         char *titleArg = malloc(strlen(title) + 9);  // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
-        execlp("kdialog", "--sorry", titleArg, message, (char *)NULL);
+        execlp("/usr/bin/kdialog", "kdialog",
+            "--sorry", titleArg, message, (char *)NULL);
+        // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
     }
-    else if (is_command_available("notify-send")) {
-        execlp("notify-send", "-a", title, "-c", "im.error",
+    else if (is_command_available("/usr/bin/notify-send")) {
+        execlp("/usr/bin/notify-send", "notify-send",
+            "-a", title, "-c", "im.error",
             /*"-i", iconPath,*/ message, (char *)NULL);
     }
     else {
