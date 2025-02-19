@@ -49,7 +49,7 @@ selectWindowsEXE hi console
 # Hello
 bin/appify.sh --out-dir "$demoDir" --app-title Hello --app-exe hello \
   --app-id org.apposed.jaunch.hello --jaunch-toml configs/hello.toml \
-  --app-icon icons/E1C0-wireframes.svg
+  --app-icon icons/1F604-smiling-eyes.svg
 cp -v configs/HelloSwing.* "$demoDir"
 selectWindowsEXE hello gui
 
