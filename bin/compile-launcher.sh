@@ -48,13 +48,19 @@ compile() {
     return
   }
   shift
-  (set -x; "$compiler" \
-    -I"$jdkdir/include" \
-    -I"$jdkdir/include/linux" \
-    -I"$jdkdir/include/darwin" \
-    -I"$jdkdir/include/win32" \
-    -fPIC -fno-stack-protector \
-    src/c/jaunch.c $@)
+  (
+    set -x
+    "$compiler" \
+      -I"$jdkdir/include" \
+      -I"$jdkdir/include/linux" \
+      -I"$jdkdir/include/darwin" \
+      -I"$jdkdir/include/win32" \
+      -fPIC -fno-stack-protector \
+      src/c/jaunch.c $@
+  ) || {
+    echo '[ERROR] Compilation failed.'
+    exit 1
+  }
 }
 
 case "$(uname -s)" in
