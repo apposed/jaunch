@@ -57,12 +57,7 @@ construct_app_bundle() {
     step 'Macifying the icon'
     # Convert .svg to intermediate .png.
     # TODO: Add the macOS-aesthetic rounded rectangle frame.
-    magick=
-    if command -v magick >/dev/null; then
-      magick=magick
-    elif command -v convert >/dev/null; then
-      magick=convert
-    fi
+    magick=$(magick_command)
     if [ "$magick" ]; then
       "$magick" -background none -density 384 "$app_icon" \
         -define png:format=png32 -resize 1024x1024 "$out_dir/temp.png"

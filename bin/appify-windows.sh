@@ -22,11 +22,12 @@ test -z "$app_icon" -o -f "$app_icon" || die "Not a file: $app_icon"
 
 if [ "$app_icon" ]; then
   step 'Winifying the icon'
-  if command -v convert >/dev/null; then
+  magick=$(magick_command)
+  if [ "$magick" ]; then
     icon_outpath="$out_dir/$app_exe.ico"
 
     # Convert icon to Windows ICO format using ImageMagick.
-    convert -background none -density 384 "$app_icon" \
+    "$magick" -background none -density 384 "$app_icon" \
       -define icon:auto-resize=256,48,32,16 "$icon_outpath"
 
     step 'Embedding icon into launcher EXEs'

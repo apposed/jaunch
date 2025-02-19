@@ -22,3 +22,16 @@ revise_file() {
   sed -e "$expression" "$file" > "$file.tmp"
   mv -f "$file.tmp" "$file"
 }
+
+magick_command() {
+  if command -v magick >/dev/null; then
+    # Highly likely to be ImageMagick, especially on macOS.
+    echo "magick"
+  elif command -v convert >/dev/null; then
+    # Disambiguate between ImageMagick's convert
+    # and Windows's NTFSification utility.
+    if convert 2>&1 --version | grep -q ImageMagick; then
+      echo "convert"
+    fi
+  fi
+}
