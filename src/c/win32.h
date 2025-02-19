@@ -375,6 +375,11 @@ int run_command(const char *command,
 
 void init_threads() {}
 
+/*
+ * The Windows way of displaying a graphical error message.
+ *
+ * Thank you, Microsoft, for making this task so simple! :-)
+ */
 void show_alert(const char *title, const char *message) {
     MessageBox(NULL, message, title, MB_ICONERROR);
 }

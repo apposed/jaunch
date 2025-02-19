@@ -55,6 +55,14 @@ void init_threads() {
     }
 }
 
+/*
+ * The Linux way of displaying a graphical error message.
+ *
+ * It looks for a utility program in decreasing order of idealness:
+ * zenity, then kdialog, then xmessage, and finally notify-send.
+ * If it finds one, it invokes it via execlp to display the message;
+ * if not, it falls back to plain old printf.
+ */
 void show_alert(const char *title, const char *message) {
     char exe[PATH_MAX];
 
