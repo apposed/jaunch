@@ -35,3 +35,11 @@ magick_command() {
     fi
   fi
 }
+
+magick_install_help() {
+  case "$(uname)" in
+    Linux) warn 'Check your package manager; e.g. apt install imagemagick' ;;
+    macOS) warn 'We recommend using Homebrew: brew install imagemagick' ;;
+    MINGW*|MSYS*) warn 'We recommend using Scoop: scoop install imagemagick-lean' ;;
+  esac
+}

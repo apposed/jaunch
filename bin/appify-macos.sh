@@ -63,6 +63,7 @@ construct_app_bundle() {
         -define png:format=png32 -resize 1024x1024 "$out_dir/temp.png"
     else
       warn 'Cannot convert icon to PNG temp file; please install ImageMagick.'
+      magick_install_help
     fi
     # Now convert .png to .icns.
     if [ -f "$out_dir/temp.png" ]; then

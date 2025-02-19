@@ -64,5 +64,6 @@ if [ "$app_icon" ]; then
     done
   else
     warn 'Cannot convert icon to Windows ICO format; please install ImageMagick.'
+    magick_install_help
   fi
 fi
