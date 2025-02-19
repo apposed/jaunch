@@ -93,7 +93,3 @@ cp -pv "$distdir"/jaunch/Props.class "$cfg_outdir/"
 "$script_dir/appify-windows.sh" "$out_dir" "$app_exe" "$app_icon"
 
 step 'Complete!'
-
-# Display the result.
-echo ================================================================
-find "$out_dir" -type f
