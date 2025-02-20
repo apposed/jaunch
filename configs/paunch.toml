@@ -8,7 +8,7 @@
 # successfully operate without hanging.
 #
 # The contents below define Paunch's particular launcher behavior and features,
-# on top of Paunch's "sensible default" functionality.
+# on top of Jaunch's "sensible default" functionality.
 #
 # See the common.toml file for more details about Jaunch configuration.
 
