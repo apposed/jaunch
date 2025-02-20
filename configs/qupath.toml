@@ -1,6 +1,8 @@
 # *** Welcome to the QuPath launcher's configuration file! ***
 #
-# The QuPath launcher is built on Jaunch (https://github.com/scijava/jaunch).
+# Read about QuPath at <https://qupath.github.io/>.
+#
+# This QuPath launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define QuPath's particular launcher behavior and features,
 # on top of Jaunch's "sensible default" functionality.

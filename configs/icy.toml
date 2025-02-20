@@ -1,6 +1,8 @@
 # *** Welcome to the Icy launcher's configuration file! ***
 #
-# The Icy launcher is built on Jaunch (https://github.com/scijava/jaunch).
+# Read about Icy at <https://icy.bioimageanalysis.org>.
+#
+# This Icy launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define Icy's particular launcher behavior and features,
 # on top of Jaunch's "sensible default" functionality.

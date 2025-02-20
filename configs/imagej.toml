@@ -1,6 +1,8 @@
 # *** Welcome to the ImageJ launcher's configuration file! ***
 #
-# The ImageJ launcher is built on Jaunch (https://github.com/scijava/jaunch).
+# Read about ImageJ at <https://imagej.net/ij/>.
+#
+# This ImageJ launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define ImageJ's particular launcher behavior and features,
 # on top of Jaunch's "sensible default" functionality.

@@ -1,5 +1,8 @@
 # *** Welcome to the example Hello application's configuration file! ***
 #
+# The Hello application uses Java's Swing widget toolkit
+# to display a graphical dialog with a greeting message.
+#
 # This launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define Hello's particular launcher behavior and features,

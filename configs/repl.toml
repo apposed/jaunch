@@ -1,5 +1,8 @@
 # *** Welcome to the example application configuration file! ***
 #
+# This application launches a REPL for either Python or Java,
+# depending on which argument you pass.
+#
 # This launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define this particular launcher's behavior and features,

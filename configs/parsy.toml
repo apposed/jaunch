@@ -1,5 +1,8 @@
 # *** Welcome to the example Parsy application's configuration file! ***
 #
+# The Parsy application launches the Parsington evaluator.
+# Read about Parsington at <https://github.com/scijava/parsington>.
+#
 # This launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define Parsy's particular launcher behavior and features,

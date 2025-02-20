@@ -1,5 +1,8 @@
 # *** Welcome to the example Hiss application's configuration file! ***
 #
+# The Hiss application uses Python to print a simple greeting to the
+# console, interpreting program arguments as the name to be greeted.
+#
 # This launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define Hiss's particular launcher behavior and features,

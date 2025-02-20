@@ -1,5 +1,8 @@
 # *** Welcome to the example Jy application's configuration file! ***
 #
+# The Jy application launches the Jython interpreter.
+# Read about Jython at <https://www.jython.org/>.
+#
 # This launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #
 # The contents below define Jy's particular launcher behavior and features,
