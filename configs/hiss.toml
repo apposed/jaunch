@@ -1,0 +1,20 @@
+# *** Welcome to the example Hiss application's configuration file! ***
+#
+# This launcher is built on Jaunch (https://github.com/scijava/jaunch).
+#
+# The contents below define Hiss's particular launcher behavior and features,
+# on top of Jaunch's "sensible default" functionality.
+#
+# See the common.toml file for more details about Jaunch configuration.
+
+jaunch-version = 1
+
+program-name = 'Hiss'
+
+includes = ['python.toml']
+
+modes = ['LAUNCH:PYTHON']
+
+python.version-min = '3.8'
+
+python.script-path = ['hi.py']

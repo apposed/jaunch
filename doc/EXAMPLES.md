@@ -27,5 +27,8 @@ The Jaunch repository includes several demo applications powered by Jaunch:
 * Hi -
   An even simpler Java app, which simply prints "Hello world" to the console.
 
+* Hiss -
+  A simple Python app, which prints a custom greeting based on its arguments.
+
 To try them out, [build from source](doc/BUILD.md), then run the
 `make demo` target, which assembles a `demo` folder with everything needed.

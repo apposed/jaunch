@@ -46,6 +46,13 @@ bin/appify.sh --out-dir "$demoDir" --app-title Hi --app-exe hi \
 cp -v configs/HelloWorld.* "$demoDir"
 selectWindowsEXE hi console
 
+# Hiss
+bin/appify.sh --out-dir "$demoDir" --app-title Hiss --app-exe hiss \
+  --app-id org.apposed.jaunch.hiss --jaunch-toml configs/hiss.toml \
+  --app-icon icons/1F602-tears-of-joy.svg
+cp -v configs/hi.py "$demoDir"
+selectWindowsEXE hiss console
+
 # Hello
 bin/appify.sh --out-dir "$demoDir" --app-title Hello --app-exe hello \
   --app-id org.apposed.jaunch.hello --jaunch-toml configs/hello.toml \
