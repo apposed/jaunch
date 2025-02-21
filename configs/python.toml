@@ -25,9 +25,9 @@ supported-options = [
 #
 # * PYTHON             - Launches the main program using the Python interpreter.
 # * print-python-home  - Print out the path to the chosen Python installation.
-# * print-python-info  - Print out all the details of the chosen Python installation,
-#                        including not only its path, but also the distro, version,
-#                        operating system, CPU architecture, and other metadata fields.
+# * print-python-info  - Print out all the details of the chosen Python
+#                        installation, including not only its path, but also
+#                        the libPython path, version, and installed packages.
 
 directives = [
     'LAUNCH:PYTHON|PYTHON',
