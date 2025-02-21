@@ -81,8 +81,14 @@ Or maybe you don't, in which case you can ask for help on the
 
 Next steps:
 
-* Optionally, compress the launcher executables using
-  `~/jaunch-1.0.0/bin/pack.sh`, which uses UPX to reduce their file sizes.
+1. Optionally, compress the launcher executables using
+   `~/jaunch-1.0.0/bin/pack.sh`, which uses [UPX](https://upx.github.io/) to
+   reduce their file sizes. Be warned that while it is nice to reduce Jaunch
+   to the smallest possible size, we have already received reports of Windows
+   anti-malware tools misidentifying the Jaunch configurator as infected by
+   TROJ.Win32.TRX.XXPE50FLM011. So caveat emptor on the binary shrinking!
 
-* Code-sign your macOS and/or Windows binaries using
-  `~/jaunch-1.0.0/bin/sign.sh`.
+2. Code-sign your macOS and/or Windows binaries using
+   `~/jaunch-1.0.0/bin/sign.sh`. See these guides for detailed instructions:
+   - [Code-signing on macOS](MACOS.md#code-signing)
+   - [Code-signing on Windows](WINDOWS.md#code-signing)
