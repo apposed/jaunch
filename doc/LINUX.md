@@ -1,5 +1,7 @@
 ## Linux notes
 
+Like [macOS](MACOS.md) and [Windows](WINDOWS.md), Linux has some specific concerns and idiosynchrasies that Jaunch must accommodate.
+
 ### XInitThreads
 
 On systems running the [X Window System](https://www.x.org/), it might be necessary to [invoke the `XInitThreads()` function](https://tronche.com/gui/x/xlib/display/threads.html) before interacting with the display across multiple threads, for example when using OpenGL or Xlib for window management.
