@@ -52,7 +52,27 @@ What we'd really like is for our Windows EXE to behave the same way as Unix-like
 
 Windows programs compiled in GUI mode do not attach to the calling process's console by default *even in wait mode*; it must be done explicitly using the [`AttachConsole`](https://learn.microsoft.com/en-us/windows/console/attachconsole) function. Fortunately, the Jaunch native launcher does this, so that the above tricks (wait mode and batch file wrappers) work as desired.
 
-Unfortunately, even with `AttachConsole`&mdash;and even if we go further and use `freopen` to reopen the stdin/stdout/stderr, the invoked launcher is still in a bad state when run directly from the shell (without wait mode and without wrapping in a batch file). Firstly, on Windows, consoles can have multiple processes attached to them and "there is no guarantee that input is received by the process for which it was intended" ([source](https://learn.microsoft.com/en-us/windows/console/creation-of-a-console)); when control returns immediately to the shell before the launched program terminates, and then keystrokes are typed, each character gets sent to either the launched process or the shell process in a haphazard way, effectively splitting the input between the processes, resulting in a big mess.
+Unfortunately, even with `AttachConsole`&mdash;and even if we go further and use `freopen` to reopen the stdin/stdout/stderr, the invoked launcher is still in a bad state when run directly from the shell (without wait mode and without wrapping in a batch file). On Windows, consoles can have multiple processes attached to them and "there is no guarantee that input is received by the process for which it was intended" ([source](https://learn.microsoft.com/en-us/windows/console/creation-of-a-console)); when control returns immediately to the shell before the launched program terminates, and then keystrokes are typed, each character gets sent to either the launched process or the shell process in a haphazard way, effectively splitting the input between the processes, resulting in a big mess.
+
+#### PowerShell, Command Prompt, and Git Bash
+
+Unlike on macOS and Linux, where POSIX-friendly shells like bash and zsh are the norm, Windows comes equipped with two different terminal programs, PowerShell and Command Prompt, which have very different syntax from POSIX shells and from each other. Fortunately, the [MSYS2](https://www.msys2.org/) and [Cygwin](https://cygwin.com/) projects both provide a bash shell for Windows; one easy way to install bash on Windows is via the awesome [Git for Windows](https://gitforwindows.org/) project, which comes equipped with a [Git BASH](https://gitforwindows.org/#bash) tool built on MSYS2.
+
+This embarrassment of technological riches leaves Jaunch in the awkward position of attempting to work properly across all of these various shells, and documenting the quirks of each.
+
+As of this writing, Jaunch detects whether it was launched from Command Prompt (`cmd.exe`), PowerShell (`powershell.exe` or `pwsh.exe`), Bash (`bash.exe`), Windows Explorer (`explorer.exe`), or something else.
+
+Jaunch always attempts to attach to its parent process's existing console, if any. But there are some differences depending on the shell it was launched from:
+
+* **PowerShell**: When Jaunch is running in GUI mode, it warns that `Start-Process -Wait` should be used to avoid console contamination as described above. Unfortunately, as of this writing, Jaunch is not smart enough to recognize whether its launch was in fact wrapped in this way; if you know how to detect it, pull requests are very welcome!
+
+* **Command Prompt**: When Jaunch is running in GUI mode, it warns that `start /wait` should be used to avoid console contamination as described above. Unfortunately, as of this writing, Jaunch is not smart enough to recognize whether its launch was in fact wrapped in this way; if you know how to detect it, pull requests are very welcome!
+
+* **Bash**: With most parent types, after successfully attaching to the parent's existing console, the `freopen` function must be used to reconnect to that console's standard I/O streams to make Jaunch's input and output work. But when run from Bash, the opposite is true: using `freopen` makes Jaunch's I/O streams *stop* working! So Jaunch makes a best effort to invoke `freopen` or not depending on the parent shell. This approach still fails when running `bash.exe` from inside a PowerShell or Command Prompt, though&mdash;if you know how to make that scenario work, pull requests are very welcome!
+
+* **Unknown parent type**: When Jaunch is running in GUI mode, it warns that it could not detect what kind of parent it has, and that console output may be contaminated as described above.
+
+As of this writing, Jaunch has not been tested in Cygwin's bash, or any other Windows shell not mentioned above (with the exception of WSL, which doesn't count because it's actually Linux).
 
 #### Recommendations
 
