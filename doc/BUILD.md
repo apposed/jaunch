@@ -1,27 +1,36 @@
 ## Building Jaunch from source
 
+### Prerequisites
+
 * **Linux:**
-  ```shell
-  make dist
-  ```
+  - Ensure you have `gcc`, `make`, and `git`. E.g. for Debian/Ubuntu:
+    ```shell
+    sudo apt install build-essential git
+    ```
 
 * **macOS:**
-  [Install XCode](https://kotlinlang.org/docs/native-overview.html#target-platforms)
-  first. Then in a Terminal:
-  ```shell
-  make dist
-  ```
+  - [Install XCode](https://kotlinlang.org/docs/native-overview.html#target-platforms).
 
-* **Windows:** Install [Scoop](https://scoop.sh/) first. Then in a PowerShell:
-  ```powershell
-  scoop install mingw
-  make dist
-  ```
-  And if that fails, try it from the bash shell&mdash;e.g.:
-  ```powershell
-  sh -c "make dist"
-  ```
-  Which way works might depend on whether you installed Git using Scoop.
+* **Windows:**
+  - Install [Scoop](https://scoop.sh/).
+  - Then in a PowerShell, install Git and MinGW:
+    ```powershell
+    scoop install git mingw
+    ```
+
+### Building
+
+In a terminal window (on Windows, use PowerShell or Git Bash, not Command Prompt),
+navigate to the Jaunch codebase, downloading it from the remote repository if needed:
+```
+git clone https://github.com/apposed/jaunch
+cd jaunch
+```
+
+Then build it:
+```
+make dist
+```
 
 The build process will:
 
@@ -36,6 +45,18 @@ The build process will:
    * The default TOML configuration files.
    * The `Props.class` helper program.
 
-Then run the `launcher` binary in the `dist` folder and watch the fireworks.
-If it doesn't work, try appending the `--debug` flag, which will show what's
-happening under the hood.
+### Running
+
+Run the appropriate `launcher` binary or script in the `dist` folder.
+
+If it doesn't work, run again with the `--debug` flag,
+which will show what's happening under the hood.
+
+### Next steps
+
+* To play with Jaunch's demo applications, see [EXAMPLES.md](EXAMPLES.md).
+
+* To use Jaunch as a launcher for *your* application, see [SETUP.md](SETUP.md).
+
+* To learn about the various operating-system-specific considerations, see
+  [LINUX.md](LINUX.md), [MACOS.md](MACOS.md), and [WINDOWS.md](WINDOWS.md).

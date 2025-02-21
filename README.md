@@ -7,10 +7,9 @@ including the **Java Virtual Machine (JVM)**, the **Python interpreter**, or bot
 
 ## Quick start
 
-```shell
-make demo
-demo/hello
-```
+To use Jaunch for launching for your application, see [SETUP.md](doc/SETUP.md).
+
+To build Jaunch's demo apps from source, see [EXAMPLES.md](doc/EXAMPLES.md).
 
 ## Documentation
 
