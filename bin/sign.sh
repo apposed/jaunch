@@ -27,7 +27,7 @@ sign_macos() {
         step "Signing app: $f"
         codesign --force --options runtime \
           --entitlements "$basedir/configs/entitlements.plist" \
-          --sign "$DEV_ID" --deep "$f"
+          --sign "Developer ID Application: $DEV_ID" --deep "$f"
         step 'Verifying signature'
         codesign -vv --deep "$f"
 
@@ -38,7 +38,7 @@ sign_macos() {
           cd "$(dirname "$f")"
           zipFile="${fn%.app}.zip"
           ditto -c -k --keepParent "$fn" "$zipFile"
-          xcrun notarytool submit "$zipFile" --wait --keychain-profile "AC_PASSWORD"
+          xcrun notarytool submit "$zipFile" --wait --keychain-profile notarytool-password
           step "Notarization successful; stapling ticket to $fn"
           xcrun stapler staple "$fn"
         )
