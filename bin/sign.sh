@@ -79,13 +79,17 @@ sign_windows() {
 
   step 'Signing binaries'
 
-  "$signtool" sign /sha1 "$THUMBPRINT" \
+  # Note: The MSYS2_ARG_CONV_EXCL variable setting tells Git Bash not
+  # to attempt any conversion on arguments containing the / character,
+  # so that the signtool parameters are preserved correctly.
+
+  MSYS2_ARG_CONV_EXCL=/ "$signtool" sign /sha1 "$THUMBPRINT" \
     /tr "$TIMESTAMP_SERVER" \
     /td SHA256 /fd SHA256 /v "$@"
 
   step 'Verifying signatures'
 
-  "$signtool" verify /pa /all "$@"
+  MSYS2_ARG_CONV_EXCL=/ "$signtool" verify /pa /all "$@"
 
   step 'Signing complete!'
   step 'Now consider zipping up the EXE files and submitting to the'
@@ -94,7 +98,8 @@ sign_windows() {
   step '* security product = Microsoft Defender Smartscreen'
   step '* "Incorrectly detected as malware/malicious"'
   step '* Detection name = SmartScreen warning'
-  step '* Additional information = Signed binaries for Jaunch: https://github.com/apposed/jaunch'
+  step '* Additional information = Signed binaries for MyApp: https://mycompany.com/myapp'
+  step 'Replacing "MyApp" and URL with the title and URL of your app.'
 }
 
 case "$(uname)" in
