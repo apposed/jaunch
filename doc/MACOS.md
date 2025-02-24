@@ -17,18 +17,26 @@ Fortunately, because Jaunch on macOS explicitly starts the main thread's event l
 #### How macOS protects users from malware
 
 * The [Gatekeeper](https://en.wikipedia.org/wiki/Gatekeeper_%28macOS%29) security layer checks every program you launch to discern whether it is safe to run.
-* If the program is not crypticographically signed by its developer, the program launch is rejected.
-* If the program *is* code-signed but the developer has not submitted it to Apple for so-called *notarization*, the program launch is rejected.
+* If the program is not crypticographically signed by its developer, the program launch is rejected<sup>1</sup>.
+* If the program *is* code-signed but the developer has not submitted it to Apple for so-called *notarization*, the program launch is rejected<sup>1</sup>.
 * If the program *has* been notarized, but the program or developer is no longer in good standing with Apple, the program launch is rejected.
-* After launching, if the program attempts to perform certain actions without having requested corresponding so-called *entitlements* that signal its need to do so, the program will crash.<sup>1</sup>
+* After launching, if the program attempts to perform certain actions without having requested corresponding so-called *entitlements* that signal its need to do so, the program will crash.<sup>2</sup>
 
 For this system to work:
 * **For users:** macOS must contact Apple servers whenever you launch a code-signed application in order to verify its standing as a safe application. [Every program you run gets reported to Apple](https://sneak.berlin/20201112/your-computer-isnt-yours/).
-* **For developers:** you must [code-sign and notarize your application](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution) for it to launch successfully on macOS<sup>2</sup>. To code-sign your application, you must secure a signing certificate from Apple, which requires joining the [Apple Developer Program](https://developer.apple.com/programs/), which costs $99 USD per year.
+* **For developers:** you must [code-sign and notarize your application](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution) for it to launch successfully on macOS<sup>1</sup>. To code-sign your application, you must secure a signing certificate from Apple, which requires joining the [Apple Developer Program](https://developer.apple.com/programs/), which costs $99 USD per year.
 
-<sup>1</sup> For example, if your application tries to load a shared library signed with a different signature than yours, and your app has not declared the `com.apple.security.cs.disable-library-validation` entitlement during the code signing process, the program will crash. And then, if your app did not declare the `com.apple.security.cs.debugger` entitlement, all attempts to debug why it crashed will fail, because no debugger will be able to be attached, and Apple's Console tool will not report the real reason for the crash. Even with the aforementioned entitlements set, loading of unsigned libraries is right out: there is no entitlement to make that possible.
+<details><summary><sup>1</sup> Garbage programs</summary>
 
-<sup>2</sup> If you distribute your application unsigned or unnotarized, macOS will literally tell your users that the program is garbage, saying the app "is damaged and can't be opened. You should move it to the Trash." Users can [disable Gatekeeper with a Terminal command](https://www.makeuseof.com/how-to-disable-gatekeeper-mac/), at least as of [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), but instructing users of your applications to do so is unlikely to be reassuring for them.
+If you distribute your application unsigned or unnotarized, macOS will literally tell your users that the program is garbage, saying the app "is damaged and can't be opened. You should move it to the Trash/Bin." Users can [disable Gatekeeper with a Terminal command](https://www.makeuseof.com/how-to-disable-gatekeeper-mac/), at least as of [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), but instructing users of your applications to do so is unlikely to be reassuring for them.
+
+</details>
+
+<details><sup>2</sup> Entitlements <strike>rant</strike>challenges</summary>
+
+For example, if your application tries to load a shared library signed with a different signature than yours, and your app has not declared the `com.apple.security.cs.disable-library-validation` entitlement during the code signing process, the program will crash. And then, if your app did not declare the `com.apple.security.cs.debugger` entitlement, all attempts to debug why it crashed will fail, because no debugger will be able to be attached, and Apple's Console tool will not report the real reason for the crash. Even with the aforementioned entitlements set, loading of unsigned libraries is right out: there is no entitlement to make that possible.
+
+</details>
 
 #### How Jaunch deals with Gatekeeper
 
@@ -87,7 +95,7 @@ The next section offers step-by-step instructions for the second path: signing a
    under the credential `notarytool-password`, as shown in step 5. If you
    deviate from this name, you must modify the `sign.sh` script accordingly.*
 
-If all goes well, the script will code-sign, verify, and notarize your application.
+   If all goes well, the script will code-sign, verify, and notarize your application.
 
 P.S. Here are links to Apple documentation about this process:
 * [Code signing tasks](https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Procedures/Procedures.html)
