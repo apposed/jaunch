@@ -32,7 +32,7 @@ If you distribute your application unsigned or unnotarized, macOS will literally
 
 </details>
 
-<details><sup>2</sup> Entitlements <strike>rant</strike>challenges</summary>
+<details><summary><sup>2</sup> Entitlements <strike>rant</strike>challenges</summary>
 
 For example, if your application tries to load a shared library signed with a different signature than yours, and your app has not declared the `com.apple.security.cs.disable-library-validation` entitlement during the code signing process, the program will crash. And then, if your app did not declare the `com.apple.security.cs.debugger` entitlement, all attempts to debug why it crashed will fail, because no debugger will be able to be attached, and Apple's Console tool will not report the real reason for the crash. Even with the aforementioned entitlements set, loading of unsigned libraries is right out: there is no entitlement to make that possible.
 
