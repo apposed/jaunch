@@ -66,7 +66,8 @@ if [ "$app_icon" ]; then
     while read exe; do
       if [ "$wine" ]; then
         if command -v wine >/dev/null; then
-          (set -x; wine "$rcedit" "$exe" --set-icon "$icon_outpath")
+          (set -x; wine "$rcedit" "$exe" --set-icon "$icon_outpath") 2>&1 |
+            grep -v ':fixme:'
         else
           warn "Cannot embed icon into '$exe'; please install wine."
         fi
