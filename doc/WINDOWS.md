@@ -194,10 +194,10 @@ The next section offers step-by-step instructions for the second path: re-signin
 8. Run Jaunch's code-signing script:
    ```shell
    export THUMBPRINT="effaced0abcdef12345678900987654321fedcba"
-   ~/jaunch-1.0.0/bin/sign.sh /path/to/myapp-windows-*.exe
+   ~/jaunch-1.0.0/bin/sign.sh /path/to/myapp/*.exe /path/to/myapp/jaunch/*.exe
    ```
-   Where your actual `THUMBPRINT` value is your thumbprint value from step 6, and
-   `myapp-windows-*.exe` is a path expression for the EXE(s) you constructed in step 1.
+   Where your actual `THUMBPRINT` value is the one from step 6, and the
+   `/path/to/...` expressions reference the EXE files constructed in step 1.
 
    If all goes well, the script will code-sign your EXEs.
 
