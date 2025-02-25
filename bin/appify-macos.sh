@@ -54,35 +54,52 @@ construct_app_bundle() {
 
   # Copy icon into app bundle.
   if [ "$app_icon" ]; then
-    step 'Macifying the icon'
-    # Convert .svg to intermediate .png.
-    # TODO: Add the macOS-aesthetic rounded rectangle frame.
-    magick=$(magick_command)
-    if [ "$magick" ]; then
-      "$magick" -background none -density 384 "$app_icon" \
-        -define png:format=png32 -resize 1024x1024 "$out_dir/temp.png"
-    else
-      warn 'Cannot convert icon to PNG temp file; please install ImageMagick.'
-      magick_install_help
+    step 'Embedding the icon'
+    app_icon_png=
+    png_is_temp_file=
+    app_icon_icns=
+    case "$app_icon" in
+      *.png) app_icon_png="$app_icon" ;;
+      *.icns) app_icon_icns="$app_icon" ;;
+    esac
+    if [ -z "$app_icon_icns" -a -z "$app_icon_png" ]; then
+      # Convert non-ICNS-non-PNG image to a temporary PNG.
+      magick=$(magick_command)
+      if [ "$magick" ]; then
+        app_icon_png="$out_dir/temp.png"
+        png_is_temp_file=1
+        (
+          set -x
+          "$magick" -background none -density 384 "$app_icon" \
+            -define png:format=png32 -resize 1024x1024 "$app_icon_png"
+        )
+      else
+        warn 'Cannot convert icon to PNG temp file; please install ImageMagick.'
+        magick_install_help
+      fi
     fi
-    # Now convert .png to .icns.
-    if [ -f "$out_dir/temp.png" ]; then
+    if [ -z "$app_icon_icns" -a -f "$app_icon_png" ]; then
+      # Convert PNG image to ICNS.
       case "$(uname)" in
         Darwin)
-          mkdir "$out_dir/icon.iconset"
-          mv "$out_dir/temp.png" "$out_dir/icon.iconset/icon_512x512@2x.png"
-          iconutil -c icns -o "$out_dir/$app_resources/$app_title.icns" "$out_dir/icon.iconset"
-          rm -rf "$out_dir/icon.iconset"
+          mkdir -v "$out_dir/icon.iconset"
+          cp -v "$app_icon_png" "$out_dir/icon.iconset/icon_512x512@2x.png"
+          (set -x; iconutil -c icns -o "$out_dir/$app_resources/$app_title.icns" "$out_dir/icon.iconset")
+          rm -rfv "$out_dir/icon.iconset"
           ;;
         *)
           if command -v png2icns >/dev/null; then
-            png2icns "$out_dir/$app_resources/$app_title.icns" "$out_dir/temp.png"
+            (set -x; png2icns "$out_dir/$app_resources/$app_title.icns" "$app_icon_png")
           else
             warn 'Cannot convert icon to macOS ICNS format; please install png2icns.'
           fi
-          rm "$out_dir/temp.png"
           ;;
       esac
+      if [ "$png_is_temp_file" ]; then rm -v "$app_icon_png"; fi
+    fi
+    if [ "$app_icon_icns" ]; then
+      # Copy ICNS image into place.
+      cp -v "$app_icon_icns" "$out_dir/$app_resources/$app_title.icns"
     fi
   fi
 

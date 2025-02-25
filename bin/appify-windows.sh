@@ -21,17 +21,29 @@ test -d "$out_dir" || die "Not a directory: $out_dir"
 test -z "$app_icon" -o -f "$app_icon" || die "Not a file: $app_icon"
 
 if [ "$app_icon" ]; then
-  step 'Winifying the icon'
-  magick=$(magick_command)
-  if [ "$magick" ]; then
-    icon_outpath="$out_dir/$app_exe.ico"
+  step 'Embedding the icon'
+  app_icon_ico=
+  case "$app_icon" in
+    *.ico) app_icon_ico="$app_icon" ;;
+  esac
+  icon_outpath="$out_dir/$app_exe.ico"
+  if [ "$app_icon_ico" ]; then
+    # Copy ICO image into place.
+    cp -v "$app_icon_ico" "$icon_outpath"
+  else
+    # Convert non-ICO image to ICO format.
+    magick=$(magick_command)
+    if [ "$magick" ]; then
+      # Convert icon to Windows ICO format using ImageMagick.
+      "$magick" -background none -density 384 "$app_icon" \
+        -define icon:auto-resize=256,48,32,16 "$icon_outpath"
+    else
+      warn 'Cannot convert icon to Windows ICO format; please install ImageMagick.'
+      magick_install_help
+    fi
+  fi
 
-    # Convert icon to Windows ICO format using ImageMagick.
-    "$magick" -background none -density 384 "$app_icon" \
-      -define icon:auto-resize=256,48,32,16 "$icon_outpath"
-
-    step 'Embedding icon into launcher EXEs'
-
+  if [ -f "$icon_outpath" ]; then
     # Download rcedit.exe as needed.
     cachedir="$basedir/.cache"
     rcedit_filename=rcedit-x64.exe
@@ -62,8 +74,5 @@ if [ "$app_icon" ]; then
         (set -x; "$rcedit" "$exe" --set-icon "$icon_outpath")
       fi
     done
-  else
-    warn 'Cannot convert icon to Windows ICO format; please install ImageMagick.'
-    magick_install_help
   fi
 fi

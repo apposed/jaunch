@@ -10,6 +10,9 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --app-exe) app_exe="$2"; shift 2;;
     --app-icon) app_icon="$2"; shift 2;;
+    --app-icon-windows) app_icon_windows="$2"; shift 2;;
+    --app-icon-macos) app_icon_macos="$2"; shift 2;;
+    --app-icon-linux) app_icon_linux="$2"; shift 2;;
     --app-id) app_id="$2"; shift 2;;
     --app-title) app_title="$2"; shift 2;;
     --info-plist) info_plist="$2"; shift 2;;
@@ -24,13 +27,16 @@ if [ "$usage" ]; then
   echo 'Usage: appify.sh [OPTION]...'
   echo 'Assembles resources into a platform-specific application bundle.'
   echo
-  echo '  --app-exe EXE       application executable name (required; typically low case)'
-  echo '  --app-icon ICON     path to an icon to embed into the app (.svg is best)'
-  echo '  --app-id ID         application identifier (macOS only; e.g. org.example.myapp)'
-  echo '  --app-title TITLE   title of the application (required; typically title case)'
-  echo '  --info-plist PLIST  path to Info.plist manifest (macOS only)'
-  echo '  --jaunch-toml TOML  path to Jaunch TOML configuration file (required)'
-  echo '  --out-dir DIR       directory where the app bundle will be written (required)'
+  echo '  --app-exe EXE           application executable name (required; typically low case)'
+  echo '  --app-icon ICON         path to an icon to embed into the app (.svg is best)'
+  echo '  --app-icon-windows ICO  path to an icon (.ico) to embed into the Windows EXEs'
+  echo '  --app-icon-macos ICNS   path to an icon (.icns) to embed into the macOS app'
+  echo '  --app-icon-linux SVG    path to an icon (.svg or .png) to use with the Linux app'
+  echo '  --app-id ID             application identifier (macOS only; e.g. org.example.myapp)'
+  echo '  --app-title TITLE       title of the application (required; typically title case)'
+  echo '  --info-plist PLIST      path to Info.plist manifest (macOS only)'
+  echo '  --jaunch-toml TOML      path to Jaunch TOML configuration file (required)'
+  echo '  --out-dir DIR           directory where the app bundle will be written (required)'
   exit 0
 fi
 
@@ -43,7 +49,15 @@ test "$jaunch_toml" || die '--jaunch-toml is required'
 test -d "$out_dir" || die "Not a directory: $out_dir"
 test -f "$jaunch_toml" || die "Not a file: $jaunch_toml"
 test -z "$app_icon" -o -f "$app_icon" || die "Not a file: $app_icon"
+test -z "$app_icon_windows" -o -f "$app_icon_windows" || die "Not a file: $app_icon_windows"
+test -z "$app_icon_macos" -o -f "$app_icon_macos" || die "Not a file: $app_icon_macos"
+test -z "$app_icon_linux" -o -f "$app_icon_linux" || die "Not a file: $app_icon_linux"
 test -f "$info_plist" || info_plist="$basedir/configs/Info.plist"
+
+# Allow OS-specific icons to fall back to the OS-agnostic icon.
+test "$app_icon_windows" || app_icon_windows="$app_icon"
+test "$app_icon_macos" || app_icon_macos="$app_icon"
+test "$app_icon_linux" || app_icon_linux="$app_icon"
 
 # Copy files.
 
@@ -88,8 +102,8 @@ copy_toml "$jaunch_toml" "$cfg_outdir"
 cp -pv "$distdir"/jaunch/Props.class "$cfg_outdir/"
 
 # Perform platform-specific actions.
-"$script_dir/appify-linux.sh" "$out_dir" "$app_title" "$app_exe" "$app_icon"
-"$script_dir/appify-macos.sh" "$out_dir" "$info_plist" "$app_title" "$app_exe" "$app_id" "$app_icon"
-"$script_dir/appify-windows.sh" "$out_dir" "$app_exe" "$app_icon"
+"$script_dir/appify-linux.sh" "$out_dir" "$app_title" "$app_exe" "$app_icon_linux"
+"$script_dir/appify-macos.sh" "$out_dir" "$info_plist" "$app_title" "$app_exe" "$app_id" "$app_icon_macos"
+"$script_dir/appify-windows.sh" "$out_dir" "$app_exe" "$app_icon_windows"
 
 step 'Complete!'
