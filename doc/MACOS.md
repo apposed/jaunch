@@ -82,6 +82,7 @@ The next section offers step-by-step instructions for the second path: signing a
    replacing `penelope@realperson.name` with your actual Apple ID, and
    replacing `XY1Q234ABC` with your actual team ID from step 3, and
    replacing `abcd-efgh-ijkl-mnop` with your actual app-specific password from step 4.
+   Be aware that app-specific passwords eventually expire, at which point you will need to repeat steps 4 and 5.
 
 6. Run Jaunch's code-signing script:
    ```shell

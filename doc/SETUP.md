@@ -54,7 +54,8 @@
      --jaunch-toml fizzbuzz.toml \
      --out-dir Fizzbuzz
    ```
-   replacing `com.mycompany` with an appropriate prefix for your organization.
+   replacing `com.mycompany` with an appropriate reverse-domain-name
+   prefix for your organization.
 
 8. Note any `[WARNING]`s that appear in the appify output.
 
