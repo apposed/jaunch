@@ -115,25 +115,35 @@ the same `jaunch` folder, without any name clashes.
 
 The native launcher invokes the configurator as a subprocess, passing its entire `argv`
 list to the appropriate `jaunch` program via a pipe to stdin. The jaunch configurator is
-then responsible for outputting the following things via its stdout:
+then responsible for outputting the resultant configuration via its stdout.
+Each directive block is a sequence of lines, structured as follows:
 
-1. Number of lines of output.
-2. Directive for the native launcher to perform, or else an error message to display.
+1. The directive for the native launcher to perform:
    - `JVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
    - `PYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
-   - `ABORT` to launch nothing.
-3. A sequence of lines corresponding to the directive:
-   - For the JVM:
-     1. A path to jvm native library.
-     2. 
-TODO: Update this explanation. It's different per directive now.
-4. Number of arguments to the runtime (Python or JVM).
-5. List of arguments to the runtime, one per line.
-6. Main program to run.
-   - For Python programs: path to Python script on the file system.
-   - For JVM programs: Fully qualified main class name in slash-separated (not dot-separated) format.
-7. Number of arguments to the main program.
-8. List of main arguments, one per line.
+   - `ERROR` to display an error message.
+   - `ABORT` to immediately terminate without parsing any further directives.
+
+2. The number of subsequent lines for this directive block.
+
+3. The following lines then conform to a structure specific to the directive:
+
+   - For `JVM`:
+     1. Path to the jvm native library;
+     2. Number of subsequent lines with arguments to the JVM;
+     3. Arguments to the JVM, one per line;
+     4. The main class to execute;
+     5. Arguments to the main program, one per line. The number of main program arguments is calculated from the total number of directive block lines minus the number of already-parsed lines.
+
+   - For `PYTHON`:
+     1. Path to the python native library;
+     2. Arguments to Python, one per line, including Python runtime arguments if any, main script if any, and main script arguments if any. The number of arguments is calculated from the total number of directive block lines minus the number of already-parsed lines (which is always only 1: the python native library path).
+
+   - For `ERROR`:
+     1. The exit code to use when the launcher terminates.
+     2. Error message lines. The number of error message lines is calculated from the total number of directive block lines minus the number of already-parsed lines (which is always only 1: the exit code).
+
+   - For `ABORT`: no further lines; parsing stops here.
 
 To deliver this output, the configurator must do the following things:
 
