@@ -2,8 +2,6 @@
 
 . "${0%/*}/common.include"
 
-test -d "$distdir" || die 'No dist folder; please `make dist` first.'
-
 # Check arguments.
 test $# -ge 1 || {
   echo 'Usage: sign.sh executable-or-app [executable-or-app ...]'
