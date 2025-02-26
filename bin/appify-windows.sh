@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/sh
 
 STEP_PREFIX='[WINDOWS] '
 . "${0%/*}/common.include"
