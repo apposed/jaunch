@@ -34,7 +34,7 @@ construct_app_bundle() {
   app_contents="$app_dir/Contents"
   app_bindir="$app_contents/MacOS"
   app_resources="$app_contents/Resources"
-  mkdir -pv "$out_dir/$app_bindir" "$out_dir/$app_resources"
+  mkdir -pv "$out_dir/$app_bindir"
 
   # Migrate launcher and configurator binaries into app bundle.
   find "$out_dir" -maxdepth 1 -name "$app_exe-macos*" -type f |
@@ -82,8 +82,9 @@ construct_app_bundle() {
       # Convert PNG image to ICNS.
       case "$(uname)" in
         Darwin)
-          mkdir -v "$out_dir/icon.iconset"
+          mkdir -pv "$out_dir/icon.iconset"
           cp -v "$app_icon_png" "$out_dir/icon.iconset/icon_512x512@2x.png"
+          mkdir -pv "$out_dir/$app_resources"
           (set -x; iconutil -c icns -o "$out_dir/$app_resources/$app_title.icns" "$out_dir/icon.iconset")
           rm -rfv "$out_dir/icon.iconset"
           ;;
@@ -99,6 +100,7 @@ construct_app_bundle() {
     fi
     if [ "$app_icon_icns" ]; then
       # Copy ICNS image into place.
+      mkdir -pv "$out_dir/$app_resources"
       cp -v "$app_icon_icns" "$out_dir/$app_resources/$app_title.icns"
     fi
   fi
