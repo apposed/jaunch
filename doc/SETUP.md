@@ -7,14 +7,12 @@
 
 2. Alternately, you can [build Jaunch from source](BUILD.md). But if you
    want launchers for all supported platforms (Linux, macOS, and Windows),
-   you will need to build Jaunch on at least two systems: a Linux system
-   for Linux and Windows binaries, and a macOS system for macOS binaries.
-   The release downloads include prebuilt binaries for all three platforms.
+   you will need to build Jaunch on all of them and combine the results.
+   The release downloads include prebuilt binaries for all platforms.
 
 3. Fire up a POSIX-friendly shell like zsh or bash.
    * On Linux and macOS, the built-in Terminal app will do the trick.
-   * On Windows, use
-     [Git Bash](https://gitforwindows.org/), which we
+   * On Windows, use [Git Bash](https://gitforwindows.org/), which we
      recommend installing via [Scoop](https://scoop.sh/).
 
 4. Create a directory to serve as your application's base directory.
@@ -43,6 +41,12 @@
    - If you don't want to bother with an icon, you can leave off
      the `--app-icon fizzbuzz.svg` arguments in the following step.
 
+   - If you want to use different icons for Linux, macOS, and/or
+     Windows, you can use the `--app-icon-linux`, `--app-icon-macos`,
+     and `--app-icon-windows` arguments, respectively. The
+     `--app-icon-macos` override in particular is useful if you wish
+     to abide by macOS's style of icons with rounded rectangle frames.
+
 7. Use Jaunch's app-generation script to copy Jaunch's various bits
    into the correct places within your application base directory:
    ```shell
@@ -68,7 +72,8 @@
    - After installing any needed utilities, repeat the previous step.
 
 9. Copy your application code (Python scripts, Java JAR files, etc.)
-   into the `Fizzbuzz` directory structure.
+   into the `Fizzbuzz` directory structure into locations of your
+   choice. For example, Java JAR files might live in `lib` or `jars`.
 
 10. Test your application by executing the appropriate launcher in debug mode:
     - Linux: `Fizzbuzz/fizzbuzz --debug`
@@ -85,7 +90,7 @@ Next steps:
 1. Optionally, compress the launcher executables using
    `~/jaunch-1.0.0/bin/pack.sh`, which uses [UPX](https://upx.github.io/) to
    reduce their file sizes. Be warned that while it is nice to reduce Jaunch
-   to the smallest possible size, we have already received reports of Windows
+   to the smallest possible size, we have received reports of Windows
    anti-malware tools misidentifying the Jaunch configurator as infected by
    TROJ.Win32.TRX.XXPE50FLM011. So caveat emptor on the binary shrinking!
 
