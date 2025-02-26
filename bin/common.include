@@ -5,7 +5,12 @@
 #     . "${0%/*}/common.include"
 
 set -e
-script_dir=${0%/*}
+
+# Note: on Windows, when running a shell script via make, the `$0` contains
+# an absolute Windows-style path, with drive letter prefix and backslashes,
+# rather than a POSIX-style path as required for the logic below to work.
+# The `script_dir=` line below takes care to normalize the path to POSIX style.
+script_dir="$(cd "$(dirname "$0")" && pwd)"
 basedir="$(cd "$script_dir/.." && pwd)"
 distdir="$basedir/dist"
 cfgdir="$basedir/configs"

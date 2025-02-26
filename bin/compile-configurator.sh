@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-# Note the use here of `$(dirname "$0")` instead of `${0%/*}`.
-# On Windows, when running a shell script via make, the
-# `$0` contains backslashes rather than forward slashes.
-. "$(dirname "$0")/common.include"
+# Note: on Windows, when running a shell script via make, the `$0` contains
+# an absolute Windows-style path, with drive letter prefix and backslashes,
+# rather than a POSIX-style path as required for the logic below to work.
+# The `dir=` line below takes care to normalize the path to POSIX style.
+dir=$(cd "$(dirname "$0")" && pwd)
+echo "dir=$dir"
+. "$dir/common.include"
 
 set -e
 cd "$(dirname "$0")/.."
