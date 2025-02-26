@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
+
+# Note the use here of `$(dirname "$0")` instead of `${0%/*}`.
+# On Windows, when running a shell script via make, the
+# `$0` contains backslashes rather than forward slashes.
+. "$(dirname "$0")/common.include"
+
 set -e
 cd "$(dirname "$0")/.."
 echo
 echo -e "\033[1;33m[compile-configurator]\033[0m"
 
-# Discern version values.
-. "${0%/*}/common.include"
+# Report version values (discerned in common.include above).
 echo "version -> $version"
 echo "gitHash -> $gitHash"
 
