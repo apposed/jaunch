@@ -69,9 +69,10 @@ sign_windows() {
       grep "/$arch/" | head -n1
   )
 
+  step 'Locating signtool.exe'
   test "$signtool" || die "signtool.exe not found"
   test -f "$signtool" || die "signtool.exe is not a file: $signtool"
-  step "Found signtool.exe at: $signtool"
+  echo "$signtool"
 
   test "$TIMESTAMP_SERVER" || TIMESTAMP_SERVER='http://time.certum.pl/'
 
