@@ -91,14 +91,14 @@ sign_windows() {
   MSYS2_ARG_CONV_EXCL=/ "$signtool" verify /pa /all "$@"
 
   step 'Signing complete!'
-  step 'Now consider zipping up the EXE files and submitting to the'
-  step 'Microsoft Windows Defender Security Intelligence portal at'
-  step 'https://www.microsoft.com/en-us/wdsi/filesubmission?persona=SoftwareDeveloper'
-  step '* security product = Microsoft Defender Smartscreen'
-  step '* "Incorrectly detected as malware/malicious"'
-  step '* Detection name = SmartScreen warning'
-  step '* Additional information = Signed binaries for MyApp: https://mycompany.com/myapp'
-  step 'Replacing "MyApp" and URL with the title and URL of your app.'
+  echo 'Now consider zipping up the EXE files and submitting to the'
+  echo 'Microsoft Windows Defender Security Intelligence portal at'
+  echo 'https://www.microsoft.com/en-us/wdsi/filesubmission?persona=SoftwareDeveloper'
+  echo '* security product = Microsoft Defender Smartscreen'
+  echo '* "Incorrectly detected as malware/malicious"'
+  echo '* Detection name = SmartScreen warning'
+  echo '* Additional information = Signed binaries for MyApp: https://mycompany.com/myapp'
+  echo 'Replacing "MyApp" and URL with the title and URL of your app.'
 }
 
 case "$(uname)" in
