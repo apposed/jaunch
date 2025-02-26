@@ -118,6 +118,20 @@ construct_app_bundle() {
   fi
   revise_file "$plist_outfile" "s/{{APP_IDENTIFIER}}/$app_id/"
   revise_file "$plist_outfile" "s/{{APP_TITLE}}/$app_title/"
+
+  # Use the Jaunch version and build hash for app version values.
+  #
+  # Note: If you want to override this, you are welcome to file a PR adding
+  # support for --app-version and/or --app-build to the appify scripts.
+  # Or you can just tweak it manually after the appify process completes.
+  revise_file "$plist_outfile" "s/{{APP_VERSION}}/$version/"
+  if [ "$gitHash" ]; then
+    jaunch_build="$version-$gitHash"
+  else
+    jaunch_build="$version"
+  fi
+  revise_file "$plist_outfile" "s/{{APP_BUILD}}/$jaunch_build/"
+
   revise_file "$plist_outfile" "s/{{YEAR}}/$(date +%Y)/"
 }
 

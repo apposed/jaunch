@@ -21,8 +21,10 @@
   <!-- See https://developer.apple.com/app-store/categories/ for list of AppStore categories -->
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.utilities</string>
+  <key>CFBundleShortVersionString</key>
+  <string>{{APP_VERSION}}</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>{{APP_BUILD}}</string>
   <key>NSHumanReadableCopyright</key>
   <string>Copyright (C) {{YEAR}}</string>
   <key>NSHighResolutionCapable</key>

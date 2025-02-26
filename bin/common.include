@@ -15,6 +15,19 @@ die() { cecho '0;31' "[ERROR] $*" >&2; exit 1; }
 warn() { cecho '0;33' "[WARNING] $*" >&2; }
 step() { cecho '1;33' "--> $STEP_PREFIX$*"; }
 
+version=
+if [ -f "$basedir/RELEASE" ]; then
+  version=$(grep '^version = ' "$basedir/RELEASE" | sed 's/.*"\([^"]*\)".*/\1/')
+elif [ -f "$basedir/build.gradle.kts" ]; then
+  version=$(grep '^version = ' "$basedir/build.gradle.kts" | sed 's/.*"\([^"]*\)".*/\1/')
+fi
+test "$version" || die 'Cannot discern Jaunch version!'
+
+gitHash=
+if [ -d "$basedir/.git" ]; then
+  gitHash="$(git --git-dir "$basedir/.git" rev-parse --short HEAD)"
+fi
+
 revise_file() {
   file=$1
   expression=$2

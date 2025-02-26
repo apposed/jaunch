@@ -5,8 +5,7 @@ echo
 echo -e "\033[1;33m[compile-configurator]\033[0m"
 
 # Discern version values.
-version=$(grep '^version = ' build.gradle.kts | sed 's/.*"\([^"]*\)".*/\1/')
-gitHash=$(git rev-parse --short HEAD)
+. "${0%/*}/common.include"
 echo "version -> $version"
 echo "gitHash -> $gitHash"
 
