@@ -12,7 +12,8 @@ release=$(grep '^version = ' build.gradle.kts |
   sed 's/version = "\([^"]*\)-SNAPSHOT".*/\1/')
 
 echo "This script will release Jaunch at version $release."
-read -p 'Are you sure? Press ENTER to continue, or ^C to cancel.'
+echo 'Are you sure? Press ENTER to continue, or ^C to cancel.'
+read answer
 
 make clean &&
 git diff-index --quiet HEAD -- ||
@@ -36,7 +37,8 @@ step 'Waiting for the CI build to finish' &&
 echo 'Please visit https://github.com/apposed/jaunch/actions' &&
 echo 'When the release build completes successfully, click into the' &&
 echo 'build and download the "jaunch" artifact to this working copy.' &&
-read -p 'Once jaunch.zip exists in the right place, press ENTER to continue.' ||
+echo 'Once jaunch.zip exists in the right place, press ENTER to continue.' &&
+read answer ||
   die 'Went awry while waiting for CI completion.'
 
 # Unpack the jaunch artifact.
@@ -109,7 +111,8 @@ echo 'Sign the EXEs inside jaunch-bin-windows.zip on a Windows machine.' &&
 echo 'Then transfer the files back to their original spots within' &&
 echo "     $distdir" &&
 echo 'For instructions, see doc/MACOS.md and doc/WINDOWS.md.' &&
-read -p 'Once you have done so, press ENTER to continue.' ||
+echo 'Once you have done so, press ENTER to continue.' &&
+read answer ||
   die 'Went awry while waiting for code-signing to happen.'
 
 # Zip up the result.
