@@ -126,11 +126,11 @@ construct_app_bundle() {
   # Or you can just tweak it manually after the appify process completes.
   revise_file "$plist_outfile" "s/{{APP_VERSION}}/$version/"
   if [ "$gitHash" ]; then
-    jaunch_build="$version-$gitHash"
+    long_version="$version-$gitHash"
   else
-    jaunch_build="$version"
+    long_version="$version"
   fi
-  revise_file "$plist_outfile" "s/{{APP_BUILD}}/$jaunch_build/"
+  revise_file "$plist_outfile" "s/{{APP_BUILD}}/$long_version/"
 
   revise_file "$plist_outfile" "s/{{YEAR}}/$(date +%Y)/"
 }
