@@ -110,15 +110,15 @@ construct_app_bundle() {
   plist_outfile="$out_dir/$app_contents/Info.plist"
   cp -v "$info_plist" "$plist_outfile"
   step 'Populating Info.plist'
-  revise_file "$plist_outfile" "s;{{APP_EXE}};$app_exe-macos;"
+  revise_file "$plist_outfile" "s/{{APP_EXE}}/$app_exe-macos/"
   if [ "$app_icon" ]; then
-    revise_file "$plist_outfile" "s;{{APP_ICON}};$app_title.icns;"
+    revise_file "$plist_outfile" "s/{{APP_ICON}}/$app_title.icns/"
   else
-    revise_file "$plist_outfile" 'd;{{APP_ICON}};'
+    revise_file "$plist_outfile" '/CFBundleIconFile\|{{APP_ICON}}/d'
   fi
-  revise_file "$plist_outfile" "s;{{APP_IDENTIFIER}};$app_id;"
-  revise_file "$plist_outfile" "s;{{APP_TITLE}};$app_title;"
-  revise_file "$plist_outfile" "s;{{YEAR}};$(date +%Y);"
+  revise_file "$plist_outfile" "s/{{APP_IDENTIFIER}}/$app_id/"
+  revise_file "$plist_outfile" "s/{{APP_TITLE}}/$app_title/"
+  revise_file "$plist_outfile" "s/{{YEAR}}/$(date +%Y)/"
 }
 
 if find "$out_dir" -maxdepth 1 -name "$app_exe-macos*" -quit; then

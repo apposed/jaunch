@@ -34,13 +34,13 @@ step 'Creating desktop shortcut'
 desktop_outfile="$out_dir/$app_exe.desktop"
 cp -v "$cfgdir/launcher.desktop" "$desktop_outfile"
 desktop_tmpfile="$desktop_outfile.tmp"
-revise_file "$desktop_outfile" "s;{{APP_EXE}};$app_exe;"
+revise_file "$desktop_outfile" "s/{{APP_EXE}}/$app_exe/"
 if [ "$app_icon" ]; then
-  revise_file "$desktop_outfile" "s;{{APP_ICON}};$icon_outname;"
+  revise_file "$desktop_outfile" "s/{{APP_ICON}}/$icon_outname/"
 else
-  revise_file "$desktop_outfile" 'd;{{APP_ICON}};'
+  revise_file "$desktop_outfile" '/{{APP_ICON}}/d'
 fi
-revise_file "$desktop_outfile" "s;{{APP_IDENTIFIER}};$app_id;"
-revise_file "$desktop_outfile" "s;{{APP_TITLE}};$app_title;"
-revise_file "$desktop_outfile" "s;{{YEAR}};$(date +%Y);"
+revise_file "$desktop_outfile" "s/{{APP_IDENTIFIER}}/$app_id/"
+revise_file "$desktop_outfile" "s/{{APP_TITLE}}/$app_title/"
+revise_file "$desktop_outfile" "s/{{YEAR}}/$(date +%Y)/"
 echo "$desktop_outfile"
