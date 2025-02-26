@@ -28,6 +28,10 @@ if [ -d "$basedir/.git" ]; then
   gitHash="$(git --git-dir "$basedir/.git" rev-parse --short HEAD)"
 fi
 
+abspath() { echo "$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"; }
+same_file() { test "$(abspath "$1")" = "$(abspath "$2")" || return 1; }
+copy_distinct() { same_file "$1" "$2" || cp -pv "$1" "$2"; }
+
 revise_file() {
   file=$1
   expression=$2

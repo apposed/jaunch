@@ -65,13 +65,14 @@ step 'Copying launcher binaries and scripts'
 for exe in "$distdir"/launcher*; do
   exe_name=${exe##*/}
   exe_outfile="$out_dir/$app_exe${exe_name#launcher}"
-  cp -pv "$exe" "$exe_outfile"
+  copy_distinct "$exe" "$exe_outfile"
 done
 
 step 'Copying configurator binaries'
 cfg_outdir="$out_dir/jaunch"
 mkdir -pv "$cfg_outdir"
-cp -pv "$distdir"/jaunch/jaunch* "$cfg_outdir/"
+same_file "$distdir"/jaunch "$cfg_outdir" ||
+  cp -pv "$distdir"/jaunch/jaunch* "$cfg_outdir/"
 
 step 'Copying configuration files'
 copy_toml() {
@@ -99,7 +100,8 @@ copy_toml() {
   done
 }
 copy_toml "$jaunch_toml" "$cfg_outdir"
-cp -pv "$distdir"/jaunch/Props.class "$cfg_outdir/"
+same_file "$distdir"/jaunch "$cfg_outdir" ||
+  cp -pv "$distdir"/jaunch/Props.class "$cfg_outdir/"
 
 # Perform platform-specific actions.
 "$script_dir/appify-linux.sh" "$out_dir" "$app_title" "$app_exe" "$app_icon_linux"
