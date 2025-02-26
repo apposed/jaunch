@@ -5,7 +5,6 @@
 # rather than a POSIX-style path as required for the logic below to work.
 # The `dir=` line below takes care to normalize the path to POSIX style.
 dir=$(cd "$(dirname "$0")" && pwd)
-echo "dir=$dir"
 . "$dir/common.include"
 
 set -e
