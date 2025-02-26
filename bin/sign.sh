@@ -102,8 +102,8 @@ sign_windows() {
 }
 
 case "$(uname)" in
-  Linux) sign_linux ;;
-  Darwin) sign_macos ;;
-  MINGW*|MSYS*) sign_windows ;;
+  Linux) sign_linux "$@" ;;
+  Darwin) sign_macos "$@" ;;
+  MINGW*|MSYS*) sign_windows "$@" ;;
   *) warn "Don't know how to sign binaries for platform: $(uname)" ;;
 esac
