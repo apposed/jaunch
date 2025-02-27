@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/env bash
 
 STEP_PREFIX='[MACOS] '
 . "${0%/*}/common.include"
