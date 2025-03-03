@@ -76,12 +76,6 @@ EOL
 test $? -eq 0 ||
   die 'Failed to write RELEASE file.'
 
-# Slim down the packable executables.
-step 'Compressing executables' &&
-bin/pack.sh $(find "$distdir" -name '*-linux-*') \
-  $(find "$distdir" -name '*-windows-x64*.exe') ||
-  die 'Failed to pack the executables.'
-
 # Bundle up files needing macOS code signing.
 step 'Zipping up Jaunch.app for macOS code signing'
 rm -rfv jaunch-bin-macos &&
