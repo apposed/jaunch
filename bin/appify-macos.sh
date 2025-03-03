@@ -90,6 +90,7 @@ construct_app_bundle() {
           ;;
         *)
           if command -v png2icns >/dev/null; then
+            mkdir -pv "$out_dir/$app_resources"
             (set -x; png2icns "$out_dir/$app_resources/$app_title.icns" "$app_icon_png")
           else
             warn 'Cannot convert icon to macOS ICNS format; please install png2icns.'
