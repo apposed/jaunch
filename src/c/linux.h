@@ -37,6 +37,9 @@ int find_executable(const char *name, char *path_buf, size_t buf_size) {
 //              common.h FUNCTION IMPLEMENTATIONS
 // ===========================================================
 
+void setup(const int argc, const char *argv[]) {}
+void teardown() {}
+
 void init_threads() {
     void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
     if (libX11Handle != NULL) {

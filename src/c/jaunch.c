@@ -114,7 +114,9 @@ int main(const int argc, const char *argv[]) {
     for (size_t i = 0; i < argc; i++)
         if (strcmp(argv[i], "--debug") == 0) debug_mode = 1;
 
-    // Perform initial platform-specific setup (looking at you, Windows!).
+    // Perform initial platform-specific setup.
+    // * On Windows, initialize the console.
+    // * On macOS, untranslocate Gatekeeper-mangled apps.
     setup(argc, argv);
 
     char *command = NULL;
