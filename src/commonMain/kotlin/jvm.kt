@@ -131,7 +131,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         maybeAssign(vars, "cpuArch", java?.cpuArch)
     }
 
-    override fun processArgs(args: MutableList<String>) {
+    override fun tweakArgs(args: MutableList<String>) {
         // Append or amend argument declaring classpath elements.
         val classpath = defaultClasspath.flatMap { glob(it) }.distinct()
         debugList("Classpath finalized:", classpath)

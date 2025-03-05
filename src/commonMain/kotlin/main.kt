@@ -88,8 +88,8 @@ fun main(args: Array<String>) {
         "print-config-dir" to { _ -> printDir(configDir, "Configuration") },
     )
 
-    // Execute the global directives (e.g. applying updates) before configuring
-    // runtimes (e.g. building classpaths)
+    // Execute the global directives (e.g. applying updates)
+    // before configuring runtimes (e.g. building classpaths).
     val nonGlobalDirectives = executeGlobalDirectives(globalDirectiveFunctions,
         configDirectives, userArgs)
 
@@ -113,12 +113,12 @@ fun main(args: Array<String>) {
         vars.interpolateInto(programArgs.main)
     }
 
-    // Now that our program arguments have been fully interpolated, we offer the
-    // runtimes an additional opportunity to perform any runtime-specific
+    // Now that our program arguments have been fully interpolated, we offer
+    // the runtimes an additional opportunity to perform any runtime-specific
     // custom logic (for example, resolving %'s in -Xmx notation).
     for (programArgs in argsInContext.values) {
         for (runtime in runtimes) {
-            runtime.processArgs(programArgs.runtime)
+            runtime.tweakArgs(programArgs.runtime)
         }
     }
 

@@ -40,8 +40,8 @@ abstract class RuntimeConfig(
     /** Populate variables with information about this runtime. */
     abstract fun injectInto(vars: Vars)
 
-    /** Perform any last-minute runtime argument processing. */
-    abstract fun processArgs(args: MutableList<String>)
+    /** Perform any last-minute runtime argument tweaks. */
+    abstract fun tweakArgs(args: MutableList<String>)
 
     /** Get the launch directive block for this runtime configuration. */
     abstract fun launch(args: ProgramArgs): List<String>

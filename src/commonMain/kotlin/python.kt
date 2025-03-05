@@ -108,7 +108,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         maybeAssign(vars, "version", python?.version)
     }
 
-    override fun processArgs(args: MutableList<String>) {
+    override fun tweakArgs(args: MutableList<String>) {
         // No-op
     }
 
