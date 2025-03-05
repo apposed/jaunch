@@ -101,3 +101,16 @@ The next section offers step-by-step instructions for the second path: signing a
 P.S. Here are links to Apple documentation about this process:
 * [Code signing tasks](https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Procedures/Procedures.html)
 * [Customizing the notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)
+
+### Path randomization
+
+> Starting in OS X v10.12, you can no longer provide external code or data
+> alongside your code-signed app in a zip archive or unsigned disk image. An
+> app distributed outside the Mac App Store runs from a randomized path when it
+> is launched and so cannot access such external resources.
+
+&mdash;"What's New in OS X" circa 2016
+
+In addition to Gatekeeper's requirement that apps be code-signed and notarized, it employs a security feature known as [path randomization](https://en.wikipedia.org/wiki/Gatekeeper_%28macOS%29#Path_randomization) when launching an app downloaded from the Internet. The app is copied into a random directory just before launching, with the goal of making it unable to access sibling resources. Unfortunately, such resources (e.g. the TOML configuration) are exactly what Jaunch needs to successfully launch the application.
+
+To work around this difficulty, Jaunch includes logic to [*"untranslocate"*](https://objective-see.org/blog/blog_0x15.html) itself upon first launch. It works by calling the internal `SecTranslocateIsTranslocatedURL` and `SecTranslocateCreateOriginalPathForURL` functions, which are part of the macOS security framework. The latter function reports the *original* location of the app rather than the transient translocated location; with this information, Jaunch can then remove the `com.apple.quarantine` attribute from the original app bundle, then relaunch it, thus avoiding future translocation by Gatekeeper.
