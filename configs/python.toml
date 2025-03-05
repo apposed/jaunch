@@ -165,11 +165,11 @@ python.root-paths = [
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*',         # bundled (macOS x86-64)
     '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\python\win64\*',         # bundled (Windows x86-64)
     '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\python\win32\*',         # bundled (Windows x86-32)
+    '${CONDA_PREFIX}',                                                 # activated Conda env
     'OS:LINUX|/usr/lib/python*/*',                                     # system (Linux)
     'OS:LINUX|ARCH:X64|/usr/lib/x86_64-linux-gnu',                     # system (Linux)
     'OS:LINUX|ARCH:X86|/usr/lib/i386-linux-gnu',                       # system (Linux)
     'OS:WINDOWS|${LOCALAPPDATA}\Programs\Python\*',                    # system (Windows)
-    '${CONDA_PREFIX}',                                                 # activated Conda env
     '${CONDA_PREFIX}/envs/*',                                          # all Conda envs
 ]
 
