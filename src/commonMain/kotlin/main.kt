@@ -102,23 +102,29 @@ fun main(args: Array<String>) {
 
     val argsInContext = contextualizeArgs(runtimes, userArgs, vars)
 
-    // Now evaluate any expressions in the contextualized arguments.
-    // We do this in a subsequent step separated from the previous one because the expressions
-    // in question might themselves refer to the contextualized arguments of other runtimes.
-    // Why? So that we can e.g. pass the final JVM arguments to a PYTHON launch, where the
-    // Python script being invoked will itself start up a JVM with those given JVM arguments.
-    // In the case of cyclic variable references between runtimes, the interpolation will be incomplete.
+    // Evaluate any `${...}` expressions in the contextualized arguments.
     for (programArgs in argsInContext.values) {
         vars.interpolateInto(programArgs.runtime)
         vars.interpolateInto(programArgs.main)
     }
 
-    // Now that our program arguments have been fully interpolated, we offer
-    // the runtimes an additional opportunity to perform any runtime-specific
+    // Now that our program arguments have been interpolated, we offer
+    // each runtime one final opportunity to perform any runtime-specific
     // custom logic (for example, resolving %'s in -Xmx notation).
     for (runtime in runtimes) {
         val programArgs = argsInContext[runtime.prefix]
         if (programArgs != null) runtime.tweakArgs(programArgs.runtime)
+    }
+
+    // Expand any `@{...}` list expressions.
+    // We do this in a late step separated from the previous ones because the expressions
+    // in question might themselves refer to the contextualized arguments of other runtimes.
+    // Why? So that we can e.g. pass the final JVM arguments to a PYTHON launch, where the
+    // Python script being invoked will itself start up a JVM with those given JVM arguments.
+    // In the case of cyclic variable references between runtimes, the interpolation will be incomplete.
+    for (programArgs in argsInContext.values) {
+        vars.expandLists(programArgs.runtime)
+        vars.expandLists(programArgs.main)
     }
 
     // Finally, execute all the remaining directives! \^_^/

@@ -47,6 +47,13 @@ class Vars(
 
     fun interpolateInto(args: MutableList<String>) {
         val noo = mutableListOf<String>()
+        for (arg in args) noo += interpolate(arg)
+        args.clear()
+        args += noo
+    }
+
+    fun expandLists(args: MutableList<String>) {
+        val noo = mutableListOf<String>()
         for (arg in args) {
             // Check for the special `@{...}` syntax referencing a list.
             // In this case, we want to replace this item with the elements of
@@ -60,7 +67,7 @@ class Vars(
                     continue
                 }
             }
-            noo += interpolate(arg)
+            noo += arg
         }
         args.clear()
         args += noo
