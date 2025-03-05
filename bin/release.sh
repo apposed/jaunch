@@ -118,7 +118,7 @@ zip -r9 "$archive" "jaunch-$release" ||
 
 # Tag the successful release.
 git tag "$release" &&
-git push origin tag ||
+git push origin "$release" ||
   die 'Failed to tag release.'
 
 # Bump to next development version.
