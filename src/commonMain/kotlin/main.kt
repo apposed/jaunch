@@ -116,10 +116,9 @@ fun main(args: Array<String>) {
     // Now that our program arguments have been fully interpolated, we offer
     // the runtimes an additional opportunity to perform any runtime-specific
     // custom logic (for example, resolving %'s in -Xmx notation).
-    for (programArgs in argsInContext.values) {
-        for (runtime in runtimes) {
-            runtime.tweakArgs(programArgs.runtime)
-        }
+    for (runtime in runtimes) {
+        val programArgs = argsInContext[runtime.prefix]
+        if (programArgs != null) runtime.tweakArgs(programArgs.runtime)
     }
 
     // Finally, execute all the remaining directives! \^_^/
