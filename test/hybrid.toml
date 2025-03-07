@@ -1,0 +1,41 @@
+# This configuration file exists to test the passing
+# of JVM configuration args to a Python launch.
+
+jaunch-version = 1
+
+program-name = 'Hybrid'
+
+includes = ['jvm.toml', 'python.toml']
+
+modes = ['LAUNCH:PYTHON']
+
+directives = ['dry-run']
+
+python.version-min = '3.8'
+
+python.script-path = ['${app-dir}/main-script.py']
+
+python.main-args = [
+    '${jvm.libjvmPath}',
+    '@{jvm.runtimeArgs}',
+    '--',
+    '${jvm.mainClass}',
+    '@{jvm.mainArgs}',
+]
+
+# /============================================================================\
+# |                                JAVA CONFIG                                 |
+# \============================================================================/
+
+jvm.version-min = '8'
+
+jvm.classpath = ['${app-dir}/lib/*.jar']
+
+jvm.max-heap = '57m'
+
+jvm.main-class = ['org.apposed.jaunch.MainJavaProgram']
+
+jvm.main-args = [
+    'jvm-main-arg-1',
+    'jvm-main-arg-2',
+]
