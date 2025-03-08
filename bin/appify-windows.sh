@@ -44,36 +44,9 @@ if [ "$app_icon" ]; then
   fi
 
   if [ -f "$icon_outpath" ]; then
-    # Download rcedit.exe as needed.
-    cachedir="$basedir/.cache"
-    rcedit_filename=rcedit-x64.exe
-    rcedit="$cachedir/$rcedit_filename"
-    if [ ! -f "$rcedit" ]; then
-      mkdir -pv "$cachedir"
-      cd "$cachedir"
-      curl -fLO "https://github.com/electron/rcedit/releases/download/v2.0.0/$rcedit_filename" ||
-        die "Failed to download $rcedit_filename for icon embedding."
-      cd - 2>/dev/null
-    fi
-
-    # Embed the icon into relevant EXE files.
-    case "$(uname)" in
-      MINGW*|MSYS*) wine=;; # Windows OS can run rcedit.exe directly.
-      *) wine=1;; # Non-Windows OS must use wine.
-    esac
-
     find "$out_dir" -maxdepth 1 -name "$app_exe-*.exe" |
     while read exe; do
-      if [ "$wine" ]; then
-        if command -v wine >/dev/null; then
-          (set -x; wine "$rcedit" "$exe" --set-icon "$icon_outpath") 2>&1 |
-            grep -v ':fixme:'
-        else
-          warn "Cannot embed icon into '$exe'; please install wine."
-        fi
-      else
-        (set -x; "$rcedit" "$exe" --set-icon "$icon_outpath")
-      fi
+      "$script_dir/embed-icon.sh" "$icon_outpath" "$exe"
     done
   fi
 fi
