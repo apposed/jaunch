@@ -82,8 +82,9 @@ Next steps:
    `~/jaunch-1.0.2/bin/pack.sh`, which uses [UPX](https://upx.github.io/) to
    reduce their file sizes. Be warned that while it is nice to reduce Jaunch
    to the smallest possible size, we have received reports of Windows
-   anti-malware tools misidentifying the Jaunch configurator as infected by
-   TROJ.Win32.TRX.XXPE50FLM011. So caveat emptor on the binary shrinking!
+   anti-malware tools misidentifying Jaunch binaries as infected by
+   [various malware](https://github.com/apposed/jaunch/commit/3ecb2a215f6601cd09ef8985597bb1e85ed5e240).
+   So caveat emptor on the binary shrinking!
 
 2. Code-sign your macOS and/or Windows binaries using
    `~/jaunch-1.0.2/bin/sign.sh`. See these guides for detailed instructions:
