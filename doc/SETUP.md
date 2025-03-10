@@ -2,8 +2,8 @@
 
 1. Download and unpack the
    [latest Jaunch release](https://github.com/apposed/jaunch/releases).
-   The rest of this guide will assume you unpacked the Jaunch v1.0.0
-   release into your home directory at `~/jaunch-1.0.0`.
+   The rest of this guide will assume you unpacked the Jaunch v1.0.2
+   release into your home directory at `~/jaunch-1.0.2`.
 
 2. Alternately, you can [build Jaunch from source](BUILD.md). But if you
    want launchers for all supported platforms (Linux, macOS, and Windows),
@@ -26,7 +26,7 @@
 5. Create a `fizzbuzz.toml` file matching your app's launch requirements.
 
    - To gain an understanding of the various configuration options,
-     read through `~/jaunch-1.0.0/jaunch/common.toml`, and perhaps
+     read through `~/jaunch-1.0.2/jaunch/common.toml`, and perhaps
      also `python.toml` and `jvm.toml`.
 
    - If you are in a hurry, check out some example app configurations
@@ -50,7 +50,7 @@
 7. Use Jaunch's app-generation script to copy Jaunch's various bits
    into the correct places within your application base directory:
    ```shell
-   ~/jaunch-1.0.0/bin/appify.sh \
+   ~/jaunch-1.0.2/bin/appify.sh \
      --app-exe fizzbuzz \
      --app-icon fizzbuzz.svg \
      --app-id com.mycompany.fizzbuzz \
@@ -88,13 +88,13 @@ Or maybe you don't, in which case you can ask for help on the
 Next steps:
 
 1. Optionally, compress the launcher executables using
-   `~/jaunch-1.0.0/bin/pack.sh`, which uses [UPX](https://upx.github.io/) to
+   `~/jaunch-1.0.2/bin/pack.sh`, which uses [UPX](https://upx.github.io/) to
    reduce their file sizes. Be warned that while it is nice to reduce Jaunch
    to the smallest possible size, we have received reports of Windows
    anti-malware tools misidentifying the Jaunch configurator as infected by
    TROJ.Win32.TRX.XXPE50FLM011. So caveat emptor on the binary shrinking!
 
 2. Code-sign your macOS and/or Windows binaries using
-   `~/jaunch-1.0.0/bin/sign.sh`. See these guides for detailed instructions:
+   `~/jaunch-1.0.2/bin/sign.sh`. See these guides for detailed instructions:
    - [Code-signing on macOS](MACOS.md#code-signing)
    - [Code-signing on Windows](WINDOWS.md#code-signing)
