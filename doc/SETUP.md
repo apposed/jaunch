@@ -36,23 +36,22 @@
      [configuration](https://github.com/fiji/fiji/blob/-/config/jaunch/fiji.toml)
      illuminating, since it exercises many of Jaunch's capabilities.
 
-6. Optionally, prepare an icon for your application in SVG format.
+6. Prepare an icon for your application in SVG, ICNS, and ICO formats.
 
-   - If you don't want to bother with an icon, you can leave off
-     the `--app-icon fizzbuzz.svg` arguments in the following step.
+   - On Linux, the png2icns utility from the icnstools package
+     is helpful for creating ICNS files.
 
-   - If you want to use different icons for Linux, macOS, and/or
-     Windows, you can use the `--app-icon-linux`, `--app-icon-macos`,
-     and `--app-icon-windows` arguments, respectively. The
-     `--app-icon-macos` override in particular is useful if you wish
-     to abide by macOS's style of icons with rounded rectangle frames.
+   - If you don't want to bother with icons, you can leave off
+     the `--app-icon-*` arguments in the following step.
 
 7. Use Jaunch's app-generation script to copy Jaunch's various bits
    into the correct places within your application base directory:
    ```shell
    ~/jaunch-1.0.2/bin/appify.sh \
      --app-exe fizzbuzz \
-     --app-icon fizzbuzz.svg \
+     --app-icon-linux fizzbuzz.svg \
+     --app-icon-macos fizzbuzz.icns \
+     --app-icon-windows fizzbuzz.ico \
      --app-id com.mycompany.fizzbuzz \
      --app-title Fizzbuzz \
      --jaunch-toml fizzbuzz.toml \
@@ -61,24 +60,16 @@
    replacing `com.mycompany` with an appropriate reverse-domain-name
    prefix for your organization.
 
-8. Note any `[WARNING]`s that appear in the appify output.
+   Note any `[WARNING]`s that appear in the appify output.
 
-   - In particular, you may need to install ImageMagick and png2icns
-     for your app icon to be successfully converted to the proper
-     OS-specific formats (ICNS for macOS; ICO for Windows), and
-     Wine to successfully embed the ICO into the Windows EXEs
-     if running appify on a non-Windows platform.
-
-   - After installing any needed utilities, repeat the previous step.
-
-9. Copy your application code (Python scripts, Java JAR files, etc.)
+8. Copy your application code (Python scripts, Java JAR files, etc.)
    into the `Fizzbuzz` directory structure into locations of your
    choice. For example, Java JAR files might live in `lib` or `jars`.
 
-10. Test your application by executing the appropriate launcher in debug mode:
-    - Linux: `Fizzbuzz/fizzbuzz --debug`
-    - macOS: `Fizzbuzz/Fizzbuzz.app/Contents/MacOS/fizzbuzz-macos --debug`
-    - Windows: `.\Fizzbuzz\fizzbuzz-windows-x64-console.exe --debug`
+9. Test your application by executing the appropriate launcher in debug mode:
+   - Linux: `Fizzbuzz/fizzbuzz --debug`
+   - macOS: `Fizzbuzz/Fizzbuzz.app/Contents/MacOS/fizzbuzz-macos --debug`
+   - Windows: `.\Fizzbuzz\fizzbuzz-windows-x64-console.exe --debug`
 
 Congratulations! You have a working Jaunch launcher!
 
