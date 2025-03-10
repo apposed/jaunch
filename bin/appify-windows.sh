@@ -46,7 +46,7 @@ if [ "$app_icon" ]; then
   if [ -f "$icon_outpath" ]; then
     find "$out_dir" -maxdepth 1 -name "$app_exe-*.exe" |
     while read exe; do
-      "$script_dir/embed-icon.sh" "$icon_outpath" "$exe"
+      "$script_dir/inject-icon.sh" "$icon_outpath" "$exe"
     done
   fi
 fi
