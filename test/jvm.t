@@ -18,7 +18,7 @@ This is highly variable with java version & build
 
 Memory tests: Verify that all the aliases pass the heap size
   $ ./jaunch/jaunch-linux-x64 hi --print-class-path
-  <none>
+  */jaunch/demo (glob)
   ABORT
 
   $ ./jaunch/jaunch-linux-x64 hi --heap 2g
