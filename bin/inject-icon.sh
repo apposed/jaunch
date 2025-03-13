@@ -25,7 +25,7 @@ test -f "$exe" || die "Not a file: $exe"
 step 'Checking for existing code signature'
 isSigned=
 if strings "$exe" |
-  grep -iq "certificat\|signature\|authenticode\|digisign"
+  grep -iq "certificat\|authenticode\|digisign"
 then
   # Executable is already signed! The signature
   # needs to be removed before injecting the icon.
