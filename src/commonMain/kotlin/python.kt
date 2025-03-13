@@ -15,8 +15,8 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     var python: PythonInstallation? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
-        "print-python-home" to { printlnErr(pythonHome()) },
-        "print-python-info" to { printlnErr(pythonInfo()) },
+        "print-python-home" to { _ -> printlnErr(pythonHome()) },
+        "print-python-info" to { _ -> printlnErr(pythonInfo()) },
     )
 
     override fun configure(

@@ -22,9 +22,9 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     private var defaultMaxHeap: String? = null
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
-        "print-class-path" to { printlnErr(classpath() ?: "<none>") },
-        "print-java-home" to { printlnErr(javaHome()) },
-        "print-java-info" to { printlnErr(javaInfo()) },
+        "print-class-path" to { args -> printlnErr(classpath(args) ?: "<none>") },
+        "print-java-home" to { _ -> printlnErr(javaHome()) },
+        "print-java-info" to { _ -> printlnErr(javaInfo()) },
     )
 
     override fun configure(
@@ -202,9 +202,9 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
 
     // -- Directive handlers --
 
-    fun classpath(divider: String = NL): String? {
+    fun classpath(args: ProgramArgs, divider: String = NL): String? {
         val prefix = "-Djava.class.path="
-        val classpathArg = runtimeArgs.firstOrNull { it.startsWith(prefix) } ?: return null
+        val classpathArg = args.runtime.firstOrNull { it.startsWith(prefix) } ?: return null
         return classpathArg.substring(prefix.length).replace(COLON, divider)
     }
 
