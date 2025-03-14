@@ -511,6 +511,7 @@ jvm.root-paths = [
     'OS:LINUX|~/.jdk/*',                                             # github.com/jyksnw/install-jdk
     'OS:LINUX|~/.jre/*',                                             # github.com/jyksnw/install-jdk
     'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',   # Java 8+
+    'OS:MACOSX|/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home',   # JRE 8 by Oracle
     'OS:MACOSX|${HOMEBREW_PREFIX}/Cellar/openjdk*/*/libexec/openjdk.jdk/Contents/Home', # Homebrew
     'OS:MACOSX|/opt/homebrew/Cellar/openjdk*/*/libexec/openjdk.jdk/Contents/Home',      # Homebrew (arm64 default)
     'OS:MACOSX|/usr/local/Cellar/openjdk*/*/libexec/openjdk.jdk/Contents/Home',         # Homebrew (x64 default)
