@@ -13,7 +13,7 @@
 3. Fire up a POSIX-friendly shell like zsh or bash.
    * On Linux and macOS, the built-in Terminal app will do the trick.
    * On Windows, use [Git Bash](https://gitforwindows.org/), which we
-     recommend installing via [Scoop](https://scoop.sh/).
+     recommend installing via [Scoop](https://scoop.sh/) (`scoop install git`).
 
 4. Create a directory to serve as your application's base directory.
    For example, if your application is called Fizzbuzz, you might do:
@@ -26,8 +26,12 @@
 5. Create a `fizzbuzz.toml` file matching your app's launch requirements.
 
    - To gain an understanding of the various configuration options,
-     read through `~/jaunch-1.0.2/jaunch/common.toml`, and perhaps
-     also `python.toml` and `jvm.toml`.
+     read through
+     [`common.toml`](https://github.com/apposed/jaunch/tree/main/configs/common.toml),
+     and perhaps also
+     [`python.toml`](https://github.com/apposed/jaunch/tree/main/configs/python.toml)
+     and
+     [`jvm.toml`](https://github.com/apposed/jaunch/tree/main/configs/jvm.toml).
 
    - If you are in a hurry, check out some example app configurations
      [here](https://github.com/apposed/jaunch/tree/main/configs).
