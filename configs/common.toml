@@ -18,14 +18,11 @@
 # FizzBuzz application, you would also write a fizzbuzz.toml companion file that
 # overrides or augments this configuration with fizzbuzz-specific settings.
 #
-# For simple examples of specific applications, see:
-# - paunch.toml - Paunch, a Jaunch-based Python launcher
-# - jy.toml     - Jy, a Jaunch-based Jython launcher
-# - parsy.toml  - Parsy, a launcher for the Parsington library.
-#
 # Alternately, if you would like to keep all configuration together in one file
 # for simplicity, you can write a single TOML file with everything, and name it
 # either `jaunch.toml` or the same as your native launcher (e.g. `fizzbuzz.toml`).
+#
+# For simple and concrete demo application examples, see doc/EXAMPLES.md.
 #
 # Without further ado, let's dive into the configuration!
 

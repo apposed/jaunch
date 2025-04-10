@@ -1,6 +1,7 @@
 ## Example apps
 
-The Jaunch repository includes several demo applications powered by Jaunch:
+The [Jaunch repository](https://github.com/apposed/jaunch)
+includes several demo applications powered by Jaunch:
 
 * Parsy -
   A simple console for evaluating expressions, backed by the
