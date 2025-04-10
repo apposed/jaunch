@@ -517,7 +517,7 @@ jvm.root-paths = [
     'OS:MACOSX|/usr/local/Cellar/openjdk*/*/libexec/openjdk.jdk/Contents/Home',         # Homebrew (x64 default)
     'OS:WINDOWS|${ProgramFiles}\Java\*',
     'OS:WINDOWS|${ProgramFiles(x86)}\Java\*',
-    'OS:WINDOWS|~\scoop\apps\openjdk*\*',                            # Scoop openjdk
+    'OS:WINDOWS|~\scoop\apps\*jdk*\*',                               # Scoop openjdk, temurin-jdk, ...
     'OS:WINDOWS|~\scoop\apps\mambaforge\*\envs\*\Library\lib\jvm',   # Scoop mambaforge
 ]
 
