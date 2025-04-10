@@ -13,6 +13,7 @@ set -e
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 basedir="$(cd "$script_dir/.." && pwd)"
 distdir="$basedir/dist"
+test -d "$distdir" || distdir="$basedir"
 cfgdir="$basedir/configs"
 
 cecho() { color=$1; shift; echo -e "\033[${color}m$*\033[0m"; }
