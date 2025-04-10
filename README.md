@@ -31,7 +31,7 @@ The only exception is the icons in the `icons` folder, which are
 from the [OpenMoji] project, licensed under the [CC BY-SA 4.0].
 These icons are used by Jaunch's demo apps, and therefore the demo apps
 as a whole are licensed under CC BY-SA 4.0 as well. But of course you can
-change out the icons, and then the CC BY-SA 4.0 license will longer apply.
+change out the icons, and then the CC BY-SA 4.0 license will no longer apply.
 See [icons/NOTICE.txt](icons/NOTICE.txt) for further details.
 
 ## Why Jaunch
