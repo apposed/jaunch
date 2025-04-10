@@ -634,7 +634,7 @@ jvm.runtime-args = [
 # criteria such as OS, CPU architecture, or which options are given on the CLI.
 
 #jvm.main-class = [
-#    '--fizzbuzz|org.fizzbuzz.FizzBuzz'
+#    '--fizzbuzz|org.fizzbuzz.FizzBuzz',
 #    '--main-class|${main-class}',
 #    'org.fizzbuzz.Main', # default behavior
 #]
