@@ -1,6 +1,6 @@
 # Shared Jaunch configuration for JVM-based programs.
 #
-# See the common.toml file for more details about Jaunch configuration.
+# See the common.toml file for an introduction to Jaunch configuration.
 
 includes = ['common.toml']
 
@@ -82,7 +82,7 @@ jvm.enabled = true
 #
 # For example, suppose the user invokes:
 #
-#     ./fizzbuzz 1 2 3 4 5 -Xms1g 
+#     ./fizzbuzz 1 2 3 4 5 -Xms1g
 #
 # Because '-X*' is on the jvm.recognized-args list out of the box,
 # Jaunch will translate this invocation to:
@@ -428,43 +428,21 @@ jvm.distros-blocked = []
 # Directories are checked sequentially until one is found that matches all criteria.
 #
 # This is also the first field where we see Jaunch's hints/rules system in action.
-# Each entry on the root-dirs list may be prefixed with string separated by pipes.
-# Each segment is a *hint* for Jaunch regarding a flag that must be set for that
-# particular line to be considered. Jaunch sets hint flags based on a few sources:
+# See the `modes` section of common.toml for an introduction to hints.
 #
-# * Active operating system: OS:LINUX, OS:MACOSX, OS:WINDOWS,
-#   OS:IOS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS, or OS:UNKNOWN.
+# The JVM runtime adds hints based on the Java installation selected:
 #
-# * Active CPU architecture: ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64,
-#   ARCH:MIPS32, ARCH:MIPSEL32, ARCH:WASM32, or ARCH:UNKNOWN.
+# - JAVA:8 if the selected Java installation is version 8.
+# - JAVA:8+ if the selected Java installation is version 8 or later.
+# - JAVA:9 if the selected Java installation is version 9.
+# - JAVA:9+ if the selected Java installation is version 9 or later.
+# - and so on.
 #
-# * Option hints, set from arguments passed to Jaunch, each of which sets a matching
-#   hint. For example, passing the --headless option will set a hint '--headless'.
-#
-# * Mode hints, set from evaluation of the modes field (see common.toml).
-#
-# * Java hints, based on the Java installation selected:
-#   - JAVA:8 if the selected Java installation is version 8.
-#   - JAVA:8+ if the selected Java installation is version 8 or later.
-#   - JAVA:9 if the selected Java installation is version 9.
-#   - JAVA:9+ if the selected Java installation is version 9 or later.
-#   - and so on.
-#   Of course, Java hints will only be set after a Java installation matches,
-#   so they won't work here in jvm.root-paths, nor in jvm.lib-suffixes.
-#   But they can be useful in the jvm.runtime-args section to ensure Jaunch
-#   passes JVM args only to those versions of the JVM that support them, such
-#   as the JPMS-related flags like --add-opens which were introduced in Java 9.
-#
-# Finally, a segment prefixed by a bang symbol (!) negates the hint,
-# making that line match only when that particular hint is *not* set.
-#
-# For example, consider the following jvm.root-paths line:
-#
-#     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x64/*',
-#
-# The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path of
-# ${app-dir}/java/linux-x64/* will only be considered on 64-bit Linux systems, and
-# only when the --system option was *not* given as part of the launcher invocation.
+# Of course, Java hints will only be set after a Java installation matches,
+# so they won't work here in jvm.root-paths, nor in jvm.lib-suffixes.
+# But they can be useful in the jvm.runtime-args section to ensure Jaunch
+# passes JVM args only to those versions of the JVM that support them, such
+# as the JPMS-related flags like --add-opens which were introduced in Java 9.
 #
 # This is also the first field where we see Jaunch's variables in use:
 #
@@ -473,7 +451,7 @@ jvm.distros-blocked = []
 # Thanks to the above line, when the user passes '--java-home=/the-best-jdk', the
 # --java-home hint will be set, and the java-home variable will be set to /the-best-jdk.
 # So not only will the line match, but the root path to check will become /the-best-jdk.
-# 
+#
 # Similarly, variable expressions are also sourced from environment variables, so the
 # lines containing '${CONDA_PREFIX}' will use the CONDA_PREFIX environment variable.
 

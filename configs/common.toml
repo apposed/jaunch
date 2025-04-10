@@ -74,12 +74,16 @@ includes = []
 # * Jaunch parses parameters given as either a single argument --count=123 with an
 #   equals sign (=), or as two arguments (--count 123) separated by a space.
 #
-# * The parameter value given by the user will be stored into Jaunch's variables using
-#   the canonical name of the option in question. So for example, --count=456 will store
-#   the value "456" into the variable called count.
+# * The parameter value given by the user will be stored into Jaunch's variables
+#   using the canonical name of the option in question. So for example,
+#   --count=456 will store the value "456" into the variable called count.
+#   Variables can be used within strings using `${...}` syntax, e.g. `${count}`.
+#   Jaunch also recognizes system environment variables, so you can use
+#   expressions like e.g. `${PATH}` if you like as well.
 #
 # * Options may have any number of aliases, separated by commas. So e.g.
-#   --size,length=<number> would let both --size=37 and --length=37 work.
+#   --size,length=<number> would let both --size=37 and --length=37 work,
+#   storing the value "37" into the variable called "size" since it comes first.
 #
 # * If you need to use an actual pipe symbol (|) as part of your option or help text, you
 #   can't, sorry! It's not a good idea anyway, because that symbol is used by shells to
@@ -123,13 +127,55 @@ arch-aliases = [
 # ==============================================================================
 # List of additional hints to enable or disable based on other hints.
 #
-# TODO: Rework this section to introduce hints, rather than referring to below.
+# ------------------------------------------------------------------------------
+# Before we talk about modes, though, we need to explain what hints are.
 #
-# See "jvm.root-paths" below for an overview of hints.
+# In many of Jaunch's sections, each string element may be prefixed with one or
+# more segments separated by pipes. Each such segment is a *hint* for Jaunch
+# regarding a flag that must be set for that particular line to be considered.
+# A hint prefixed by a bang symbol (!) negates the hint, making that segment
+# match only when that particular hint is *not* set.
 #
-# With modes, you can set a single hint in response to several different other hints,
-# which can help to consolidate rules in other sections of the configuration.
+# Here is an example:
+#     '!--quiet|OS:LINUX|ARCH:X64|-Dmessage=Linuuuux-64-BITS!',
+#
+# Above, the string '-Dmessage=Linuuuux-64-BITS!' will be included in
+# the list if and only if the hints OS:LINUX and ARCH:X64 are set, and
+# the --quiet hint is NOT set (since it is negated with the bang symbol).
+#
+# Jaunch sets hint flags based on a few sources:
+#
+# * Active operating system: OS:LINUX, OS:MACOSX, OS:WINDOWS,
+#   OS:IOS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS, or OS:UNKNOWN.
+#
+# * Active CPU architecture: ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64,
+#   ARCH:MIPS32, ARCH:MIPSEL32, ARCH:WASM32, or ARCH:UNKNOWN.
+#
+# * Option hints, set from arguments passed to Jaunch, each of which sets a matching
+#   hint. For example, passing the --system option will set a hint '--system'.
+#
+# * Mode hints, set from evaluation of the modes field (we're getting there!).
+#
+# * Runtime-specific hints, based on the runtime installation(s) selected.
+#   For example:
+#
+#   - PYTHON:3.9 if the selected Python installation is version 3.9.
+#   - PYTHON:3.9+ if the selected Python installation is version 3.9 or later.
+#   - JAVA:9 if the selected Java installation is version 9.
+#   - JAVA:9+ if the selected Java installation is version 9 or later.
+#   - and so on.
+#
+#   Of course, runtime hints will only be set after matching an installation.
+#   For more details about runtime hints, see the root-paths documentation in
+#   runtime-specific configuration files python.toml and jvm.toml.
+#
+# ------------------------------------------------------------------------------
+# Now that we understand hints: what is this modes section all about?
+#
+# With modes, you can set (or unset) a single hint in response to different other
+# hints, which can help to consolidate rules in other sections of the configuration.
 # Modes can also be used to negate hints. It's easiest to explain via an example.
+#
 # Suppose your program wants to support the following three options:
 #
 # * --headless, which enables headless mode, disabling the GUI.
@@ -149,6 +195,11 @@ arch-aliases = [
 # will be enabled, and whenever --big-gui is passed, the headless mode is disabled.
 # If multiple conflicting arguments are passed, the ultimate state of headless mode will
 # depend on the order of such arguments, since mode lines are evaluated sequentially.
+#
+# The main advantage of this extra layer of indirection is that configuration elsewhere
+# in the TOML file based on whether headless mode is active can simply use the single
+# unified headless hint, rather than needing to recapitulate all the (possibly evolving
+# over time) special cases in multiple places, improving config clarity and maintenance.
 
 modes = []
 
@@ -181,6 +232,9 @@ modes = []
 # Directives in UPPER CASE are native launch modes handled on the C/native side,
 # while directives in web-case are executed on the configurator side.
 #
+# Some additional directives are runtime-specific; see the directives documentation
+# in runtime-specific configuration files python.toml and jvm.toml.
+#
 # If you need to support other directives besides those above, you'll have to
 # hack the Kotlin and/or C source code, and also write rules here in the TOML.
 #
@@ -200,22 +254,11 @@ directives = [
 # ==============================================================================
 # Whether to allow unrecognized arguments to be passed to the runtime.
 #
-# When the minus-minus divider is absent, the only args that end up as runtime
-# args will be ones from the runtime-specific `recognized-args` lists (see
-# python.toml and jvm.toml for examples). But if the minus-minus divider *is*
-# given, it becomes possible to force a particular argument to be construed as
-# an argument to the runtime, even when it does not appear on the list.
-#
-# Depending on your application, it might not be desirable for such
-# unrecognized args to be allowed through to the program launch.
-#
-# If you want to allow all user-specified runtime args through to the program
-# launch, set this value to true.
-#
-# If you want full control over what arguments the user can pass to the runtime,
-# set this value to false, and edit the appropriate recognized-args list
-# according to your needs. Then Jaunch will fail fast when told to pass an
-# unrecognized option to the runtime.
+# When the minus-minus (--) divider is absent, the only args that end up as
+# runtime args will be ones from the runtime-specific `recognized-args` lists
+# (see python.toml and jvm.toml for examples). But if the minus-minus divider
+# *is* given, it becomes possible to force a particular argument to be construed
+# as an argument to the runtime, even when it does not appear on the list.
 #
 # For example, suppose for a JVM-based application called JFizzBuzz the user writes:
 #
@@ -224,6 +267,17 @@ directives = [
 # Using the config in jvm.toml, Jaunch would translate this into something like:
 #
 #     .../bin/java -ZZ:SuperSecretOption org.fizzbuzz.FizzBuzz 1 2 3 4 5
+#
+# However, depending on your application, it might not be desirable for
+# such unrecognized args to be allowed through to the program launch.
+#
+# * If you want to allow all user-specified runtime args through to the
+#   program launch, even when they aren't recognized, set this value to true.
+#
+# * If you want full control over what arguments the user can pass to the runtime,
+#   set this value to false, and edit the appropriate recognized-args list
+#   according to your needs. Then Jaunch will fail fast when told to pass an
+#   unrecognized option to the runtime.
 #
 # If you know Java, you probably know that it will barf when confronted with an
 # argument like -ZZ:SuperSecretOption. But maybe you are using a custom build of

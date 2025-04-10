@@ -1,6 +1,6 @@
 # Shared Jaunch configuration for Python-based programs.
 #
-# See the common.toml file for more details about Jaunch configuration.
+# See the common.toml file for an introduction to Jaunch configuration.
 
 includes = ['common.toml']
 
@@ -105,43 +105,21 @@ python.recognized-args = [
 # Directories are checked sequentially until one is found that matches all criteria.
 #
 # This is also the first field where we see Jaunch's hints/rules system in action.
-# Each entry on the root-dirs list may be prefixed with string separated by pipes.
-# Each segment is a *hint* for Jaunch regarding a flag that must be set for that
-# particular line to be considered. Jaunch sets hint flags based on a few sources:
+# See the `modes` section of common.toml for an introduction to hints.
 #
-# * Active operating system: OS:LINUX, OS:MACOSX, OS:WINDOWS,
-#   OS:IOS, OS:ANDROID, OS:WASM, OS:TVOS, OS:WATCHOS, or OS:UNKNOWN.
+# The Python runtime adds hints based on the Python installation selected:
 #
-# * Active CPU architecture: ARCH:ARM32, ARCH:ARM64, ARCH:X86, ARCH:X64,
-#   ARCH:MIPS32, ARCH:MIPSEL32, ARCH:WASM32, or ARCH:UNKNOWN.
-
-# * Option hints, set from arguments passed to Jaunch, each of which sets a matching
-#   hint. For example, passing the --headless option will set a hint '--headless'.
+# - PYTHON:3.9 if the selected Python installation is version 3.9.
+# - PYTHON:3.9+ if the selected Python installation is version 3.9 or later.
+# - PYTHON:3.10 if the selected Python installation is version 3.10.
+# - PYTHON:3.10+ if the selected Python installation is version 3.10 or later.
+# - and so on.
 #
-# * Mode hints, set from evaluation of the modes field (see common.toml).
-#
-# * Python hints, based on the Python installation selected:
-#   - PYTHON:3.9 if the selected Python installation is version 3.9.
-#   - PYTHON:3.9+ if the selected Python installation is version 3.9 or later.
-#   - PYTHON:3.10 if the selected Python installation is version 3.10.
-#   - PYTHON:3.10+ if the selected Python installation is version 3.10 or later.
-#   - and so on.
-#   Of course, Python hints will only be set after a Python installation matches,
-#   so they won't work here in python.root-paths, nor in python.lib-suffixes.
-#   But they can be useful in the python.runtime-args section to ensure Jaunch
-#   passes runtime args only to those versions of Python that support them,
-#   such as the -P flag which was introduced in Python 3.11.
-#
-# Finally, a segment prefixed by a bang symbol (!) negates the hint,
-# making that line match only when that particular hint is *not* set.
-#
-# For example, consider the following python.root-paths line:
-#
-#     '!--system|OS:LINUX|ARCH:X64|${app-dir}/python/linux64/*',
-#
-# The applicable hints are !--system, OS:LINUX, and ARCH:X64, so the root path of
-# ${app-dir}/python/linux64/* will only be considered on 64-bit Linux systems, and
-# only when the --system option was *not* given as part of the launcher invocation.
+# Of course, Python hints will only be set after a Python installation matches,
+# so they won't work here in python.root-paths, nor in python.lib-suffixes.
+# But they can be useful in the python.runtime-args section to ensure Jaunch
+# passes runtime args only to those versions of Python that support them,
+# such as the -P flag which was introduced in Python 3.11.
 #
 # This is also the first field where we see Jaunch's variables in use:
 #
