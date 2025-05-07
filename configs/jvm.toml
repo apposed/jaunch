@@ -459,17 +459,17 @@ jvm.root-paths = [
     '--java-home|${java-home}',                                      # user override (CLI flag)
     '!--system|${cfg.jvm-dir}',                                      # read from <app>.cfg
     '!--system|${app-dir}/lib/runtime',                              # jpackage
-    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux aarch64)
+    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux arm64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x64/*',       # bundled (Linux x86-64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-amd64/*',     # bundled (Linux x86-64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',         # bundled (Linux x86-64)
     '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x32/*',       # bundled (Linux x86-32)
     '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',         # bundled (Linux x86-32)
     '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux/*',           # bundled (Linux x86-32)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*/Contents/Home', # bundled (macOS aarch64)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*',  # bundled (macOS aarch64)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*/Contents/Home', # bundled (macOS aarch64)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS aarch64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*/Contents/Home', # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*',  # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*/Contents/Home', # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS arm64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*/Contents/Home', # bundled (macOS x86-64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*',          # bundled (macOS x86-64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/Contents/Home', # bundled (macOS x86-64)
@@ -477,8 +477,11 @@ jvm.root-paths = [
     # Fiji used to ship versions of OpenJDK 8 with a mangled directory structure.
     # The mangling was done to work around limitations of the old ImageJ Launcher.
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
-    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}/java\win64\*',         # bundled (Windows x86-64)
-    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}/java\win32\*',         # bundled (Windows x86-32)
+    '!--system|OS:WINDOWS|ARCH:ARM64|${app-dir}\java\windows-arm64\*', # bundled (Windows arm64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\windows-x64\*',   # bundled (Windows x86-64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\win64\*',         # bundled (Windows x86-64)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\windows-x32\*',   # bundled (Windows x86-32)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\win32\*',         # bundled (Windows x86-32)
     '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                         # Conda (openjdk 9+)
     '${CONDA_PREFIX}/pkgs/openjdk*',                                 # Conda (openjdk 8)
     'OS:LINUX|/usr/lib/jvm/*',                                       # Linux distro package manager (e.g. apt)
