@@ -33,8 +33,7 @@ test -e "$launcher" || {
   case "$os" in
     Darwin)
       # Toplevel launcher or symlink not present; look in .app bundles.
-      find "$dir" -name '*.app' -maxdepth 1 |
-      while read macAppDir; do
+      for macAppDir in "$dir"/*.app; do
         candidate="$macAppDir"/Contents/MacOS/"$name-macos-$arch"
         if [ -e "$candidate" ]; then
           launcher="$candidate"
