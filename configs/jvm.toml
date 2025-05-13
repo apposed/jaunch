@@ -470,6 +470,8 @@ jvm.root-paths = [
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*',  # bundled (macOS arm64)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*/Contents/Home', # bundled (macOS arm64)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos64/*/Contents/Home', # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos64/*',          # bundled (macOS x86-64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*/Contents/Home', # bundled (macOS x86-64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*',          # bundled (macOS x86-64)
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/Contents/Home', # bundled (macOS x86-64)
