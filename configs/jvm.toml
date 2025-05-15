@@ -542,7 +542,9 @@ jvm.root-paths = [
 
 jvm.lib-suffixes = [
     'OS:LINUX|lib/server/libjvm.so',                    # Java 9+
+    'OS:LINUX|ARCH:X64|lib/amd64/server/libjvm.so',     # Java 8 (64-bit)
     'OS:LINUX|ARCH:X64|jre/lib/amd64/server/libjvm.so', # Java 8 (64-bit)
+    'OS:LINUX|ARCH:X86|lib/i386/server/libjvm.so',      # Java 8 (32-bit)
     'OS:LINUX|ARCH:X86|jre/lib/i386/server/libjvm.so',  # Java 8 (32-bit)
     'OS:MACOSX|lib/libjli.dylib',                       # Java 12+
     'OS:MACOSX|lib/jli/libjli.dylib',                   # Java 9-11
