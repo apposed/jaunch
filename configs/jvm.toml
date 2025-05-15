@@ -481,6 +481,7 @@ jvm.root-paths = [
     # The mangling was done to work around limitations of the old ImageJ Launcher.
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
     '!--system|OS:WINDOWS|ARCH:ARM64|${app-dir}\java\windows-arm64\*', # bundled (Windows arm64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\win-arm64\*',     # bundled (Windows arm64)
     '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\windows-x64\*',   # bundled (Windows x86-64)
     '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\win64\*',         # bundled (Windows x86-64)
     '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\windows-x32\*',   # bundled (Windows x86-32)
