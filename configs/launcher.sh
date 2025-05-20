@@ -13,8 +13,8 @@ die() { echo "$*" >&2; exit 1; }
 # Glean CPU architecture.
 arch=$(uname -m 2>/dev/null)
 case "$arch" in
-  arm64) arch=arm64 ;;
-  x86_64) arch=x64 ;;
+  arm64|aarch64) arch=arm64 ;;
+  x86_64|amd64) arch=x64 ;;
   *) die "Unsupported CPU architecture: $arch" ;;
 esac
 
