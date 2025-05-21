@@ -320,8 +320,16 @@ fun readConfig(
     }
 
     // Recursively read config file includes.
-    for (path in includes ?: emptyList()) {
-        theConfig = readConfig(tomlFile.dir / path, theConfig, theVisited)
+    for (include in includes ?: emptyList()) {
+        val includeFile = tomlFile.dir / include
+        if (include.contains("*")) {
+            for (p in glob(includeFile.path)) {
+                theConfig = readConfig(File(p), theConfig, theVisited)
+            }
+        }
+        else {
+            theConfig = readConfig(includeFile, theConfig, theVisited)
+        }
     }
 
     // Return the final result.
