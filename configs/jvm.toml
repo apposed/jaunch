@@ -456,60 +456,60 @@ jvm.distros-blocked = []
 # lines containing '${CONDA_PREFIX}' will use the CONDA_PREFIX environment variable.
 
 jvm.root-paths = [
-    '--java-home|${java-home}',                                      # user override (CLI flag)
-    '!--system|${cfg.jvm-dir}',                                      # read from <app>.cfg
-    '!--system|${app-dir}/lib/runtime',                              # jpackage
-    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',   # bundled (Linux arm64)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x64/*',       # bundled (Linux x86-64)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-amd64/*',     # bundled (Linux x86-64)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',         # bundled (Linux x86-64)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x32/*',       # bundled (Linux x86-32)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x86/*',       # bundled (Linux x86-32)
-    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',         # bundled (Linux x86-32)
-    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux/*',           # bundled (Linux x86-32)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*/Contents/Home', # bundled (macOS arm64)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*',  # bundled (macOS arm64)
+    '--java-home|${java-home}',                                                    # user override (CLI flag)
+    '!--system|${cfg.jvm-dir}',                                                    # read from <app>.cfg
+    '!--system|${app-dir}/lib/runtime',                                            # jpackage
+    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/java/linux-arm64/*',                 # bundled (Linux arm64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x64/*',                     # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-amd64/*',                   # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux64/*',                       # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x32/*',                     # bundled (Linux x86-32)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/java/linux-x86/*',                     # bundled (Linux x86-32)
+    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux32/*',                       # bundled (Linux x86-32)
+    '!--system|OS:LINUX|ARCH:X86|${app-dir}/java/linux/*',                         # bundled (Linux x86-32)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*/Contents/Home',  # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macos-arm64/*',                # bundled (macOS arm64)
     '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*/Contents/Home', # bundled (macOS arm64)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*', # bundled (macOS arm64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos64/*/Contents/Home', # bundled (macOS x86-64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos64/*',          # bundled (macOS x86-64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*/Contents/Home', # bundled (macOS x86-64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*',          # bundled (macOS x86-64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/Contents/Home', # bundled (macOS x86-64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*',         # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/java/macosx-arm64/*',               # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos64/*/Contents/Home',        # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos64/*',                      # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*/Contents/Home',          # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macos/*',                        # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/Contents/Home',         # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*',                       # bundled (macOS x86-64)
     # Fiji used to ship versions of OpenJDK 8 with a mangled directory structure.
     # The mangling was done to work around limitations of the old ImageJ Launcher.
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home',
-    '!--system|OS:WINDOWS|ARCH:ARM64|${app-dir}\java\windows-arm64\*', # bundled (Windows arm64)
-    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\win-arm64\*',     # bundled (Windows arm64)
-    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\windows-x64\*',   # bundled (Windows x86-64)
-    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\win64\*',         # bundled (Windows x86-64)
-    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\windows-x32\*',   # bundled (Windows x86-32)
-    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\windows-x86\*',   # bundled (Windows x86-32)
-    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\win32\*',         # bundled (Windows x86-32)
-    '${CONDA_PREFIX}/pkgs/openjdk*/lib/jvm',                         # Conda (openjdk 9+)
-    '${CONDA_PREFIX}/pkgs/openjdk*',                                 # Conda (openjdk 8)
-    'OS:LINUX|/usr/lib/jvm/*',                                       # Linux distro package manager (e.g. apt)
-    'OS:LINUX|/var/lib/flatpak/runtime/org.freedesktop.Sdk.Extension.openjdk*/*/*/*/files/jvm/*', # Flatpak
-    'OS:LINUX|/snap/openjdk/*/jdk',                                  # snap
-    'OS:LINUX|~/.sdkman/candidates/java/*',                          # sdkman.io
-    '${CJDK_CACHE_DIR}/v*/jdks/*/*',                                 # github.com/cachedjdk/cjdk
-    '${XDG_CACHE_HOME}/cjdk/v*/jdks/*/*',                            # github.com/cachedjdk/cjdk
-    'OS:LINUX|~/.cache/cjdk/v*/jdks/*/*',                            # github.com/cachedjdk/cjdk
-    'OS:MACOSX|~/Library/Caches/cjdk/v*/jdks/*/*',                   # github.com/cachedjdk/cjdk
-    'OS:WINDOWS|${LOCALAPPDATA}\cjdk\cache\v*\jdks\*\*',             # github.com/cachedjdk/cjdk
-    'OS:WINDOWS|${USERPROFILE}\AppData\Local\cjdk\cache\v*\jdks\*\*', # github.com/cachedjdk/cjdk
-    'OS:LINUX|~/.jdk/*',                                             # github.com/jyksnw/install-jdk
-    'OS:LINUX|~/.jre/*',                                             # github.com/jyksnw/install-jdk
-    'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',   # Java 8+
-    'OS:MACOSX|/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home',   # JRE 8 by Oracle
-    'OS:MACOSX|${HOMEBREW_PREFIX}/Cellar/openjdk*/*/libexec/openjdk.jdk/Contents/Home', # Homebrew
-    'OS:MACOSX|/opt/homebrew/Cellar/openjdk*/*/libexec/openjdk.jdk/Contents/Home',      # Homebrew (arm64 default)
-    'OS:MACOSX|/usr/local/Cellar/openjdk*/*/libexec/openjdk.jdk/Contents/Home',         # Homebrew (x64 default)
-    'OS:WINDOWS|${ProgramFiles}\Java\*',
-    'OS:WINDOWS|${ProgramFiles(x86)}\Java\*',
-    'OS:WINDOWS|~\scoop\apps\*jdk*\*',                               # Scoop openjdk, temurin-jdk, ...
-    'OS:WINDOWS|~\scoop\apps\mambaforge\*\envs\*\Library\lib\jvm',   # Scoop mambaforge
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/java/macosx/*/jre/Contents/Home'
+    '!--system|OS:WINDOWS|ARCH:ARM64|${app-dir}\java\windows-arm64\*',             # bundled (Windows arm64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\win-arm64\*',                   # bundled (Windows arm64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\windows-x64\*',                 # bundled (Windows x86-64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\java\win64\*',                       # bundled (Windows x86-64)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\windows-x32\*',                 # bundled (Windows x86-32)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\windows-x86\*',                 # bundled (Windows x86-32)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\java\win32\*',                       # bundled (Windows x86-32)
+    '${CONDA_PREFIX}/pkgs/*jdk*/lib/jvm',                                          # Conda (openjdk 9+)
+    '${CONDA_PREFIX}/pkgs/*jdk*',                                                  # Conda (openjdk 8)
+    'OS:LINUX|/usr/lib/jvm/*',                                                     # Linux distro package manager (e.g. apt)
+    'OS:LINUX|/var/lib/flatpak/runtime/*jdk*/*/*/*/files/jvm/*',                   # Flatpak
+    'OS:LINUX|/snap/*jdk/*/jdk',                                                   # snap
+    'OS:LINUX|~/.sdkman/candidates/java/*',                                        # sdkman.io
+    '${CJDK_CACHE_DIR}/v*/jdks/*/*',                                               # github.com/cachedjdk/cjdk
+    '${XDG_CACHE_HOME}/cjdk/v*/jdks/*/*',                                          # github.com/cachedjdk/cjdk
+    'OS:LINUX|~/.cache/cjdk/v*/jdks/*/*',                                          # github.com/cachedjdk/cjdk
+    'OS:MACOSX|~/Library/Caches/cjdk/v*/jdks/*/*',                                 # github.com/cachedjdk/cjdk
+    'OS:WINDOWS|${LOCALAPPDATA}\cjdk\cache\v*\jdks\*\*',                           # github.com/cachedjdk/cjdk
+    'OS:WINDOWS|${USERPROFILE}\AppData\Local\cjdk\cache\v*\jdks\*\*',              # github.com/cachedjdk/cjdk
+    'OS:LINUX|~/.jdk/*',                                                           # github.com/jyksnw/install-jdk
+    'OS:LINUX|~/.jre/*',                                                           # github.com/jyksnw/install-jdk
+    'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',                 # Java 8+
+    'OS:MACOSX|/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home',  # JRE 8 by Oracle
+    'OS:MACOSX|${HOMEBREW_PREFIX}/Cellar/*jdk*/*/libexec/*.jdk/Contents/Home',     # Homebrew
+    'OS:MACOSX|/opt/homebrew/Cellar/*jdk*/*/libexec/*.jdk/Contents/Home',          # Homebrew (arm64 default)
+    'OS:MACOSX|/usr/local/Cellar/*jdk*/*/libexec/*.jdk/Contents/Home',             # Homebrew (x64 default)
+    'OS:WINDOWS|${ProgramFiles}\Java\*',                                           # System-wide install on Windows
+    'OS:WINDOWS|${ProgramFiles(x86)}\Java\*',                                      # System-wide install on Windows
+    'OS:WINDOWS|~\scoop\apps\*jdk*\*',                                             # Scoop openjdk, temurin-jdk, ...
+    'OS:WINDOWS|~\scoop\apps\mambaforge\*\envs\*\Library\lib\jvm',                 # Scoop mambaforge
 ]
 
 # ==============================================================================
