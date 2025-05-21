@@ -493,7 +493,12 @@ jvm.root-paths = [
     'OS:LINUX|/var/lib/flatpak/runtime/org.freedesktop.Sdk.Extension.openjdk*/*/*/*/files/jvm/*', # Flatpak
     'OS:LINUX|/snap/openjdk/*/jdk',                                  # snap
     'OS:LINUX|~/.sdkman/candidates/java/*',                          # sdkman.io
+    '${CJDK_CACHE_DIR}/v*/jdks/*/*',                                 # github.com/cachedjdk/cjdk
+    '${XDG_CACHE_HOME}/cjdk/v*/jdks/*/*',                            # github.com/cachedjdk/cjdk
     'OS:LINUX|~/.cache/cjdk/v*/jdks/*/*',                            # github.com/cachedjdk/cjdk
+    'OS:MACOSX|~/Library/Caches/cjdk/v*/jdks/*/*',                   # github.com/cachedjdk/cjdk
+    'OS:WINDOWS|${LOCALAPPDATA}\cjdk\cache\v*\jdks\*\*',             # github.com/cachedjdk/cjdk
+    'OS:WINDOWS|${USERPROFILE}\AppData\Local\cjdk\cache\v*\jdks\*\*', # github.com/cachedjdk/cjdk
     'OS:LINUX|~/.jdk/*',                                             # github.com/jyksnw/install-jdk
     'OS:LINUX|~/.jre/*',                                             # github.com/jyksnw/install-jdk
     'OS:MACOSX|/Library/Java/JavaVirtualMachines/*/Contents/Home',   # Java 8+
