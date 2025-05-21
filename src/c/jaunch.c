@@ -22,7 +22,7 @@
  * function.
  *
  * In this way, the non-native runtime is launched in the same process by C,
- * but in a way that is fuily customizable from the Jaunch code written in a
+ * but in a way that is fully customizable from the Jaunch code written in a
  * high-level language.
  *
  * For example, a command line invocation of:
@@ -66,7 +66,7 @@
     #define OS_ARCH "arm64"
 #endif
 
-// -- DIRECTIVES --
+// -- RUNTIMES --
 #include "jvm.h"
 #include "python.h"
 
@@ -161,7 +161,7 @@ int main(const int argc, const char *argv[]) {
     CHECK_ARGS("JAUNCH", "out", out_argc, 1, 99999, out_argv);
     // Maximum # of lines to treat as valid. ^^^^^
     // We could of course leave this unbounded, but pragmatically, the value
-    // will probably never exceed this size -- it is more likely that a
+    // will probably never exceed this size -- it is more likely that a
     // programming error in the configurator yields a much-too-large argc
     // value, and it is better to fail fast than to access invalid memory.
 
