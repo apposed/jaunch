@@ -228,7 +228,8 @@ int main(const int argc, const char *argv[]) {
         else {
             // Mysterious directive! Fail fast.
             error("Unknown directive: %s", directive);
-            return ERROR_UNKNOWN_DIRECTIVE;
+            exit_code = ERROR_UNKNOWN_DIRECTIVE;
+            break;
         }
     }
 
