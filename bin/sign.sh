@@ -23,7 +23,7 @@ sign_macos() {
       *.app)
         # Sign and verify the app bundle recursively.
         step "Signing app: $f"
-        codesign --force --options runtime \
+        codesign --force --timestamp --options runtime \
           --entitlements "$basedir/configs/entitlements.plist" \
           --sign "Developer ID Application: $DEV_ID" --deep "$f"
         step 'Verifying signature'
@@ -44,7 +44,7 @@ sign_macos() {
       *)
         # Assume standalone binary; just sign and verify.
         step "Signing executable: $f"
-        codesign --force --options runtime \
+        codesign --force --timestamp --options runtime \
           --entitlements "$basedir/configs/entitlements.plist" \
           --sign "$DEV_ID" "$f"
         step 'Verifying signature'
