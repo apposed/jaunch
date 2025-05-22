@@ -17,6 +17,9 @@ sign_linux() {
 sign_macos() {
   test "$DEV_ID" ||
     die 'Please set DEV_ID environment variable; see doc/MACOS.md#code-signing'
+  # Normalize: Penelope Realperson - XY1Q234ABC
+  #        to: Penelope Realperson (XY1Q234ABC)
+  appID="Developer ID Application: $(echo "$DEV_ID" | sed -e 's/^ *//' -e 's/ *$//' -e 's/^\(.*\) - \([A-Z0-9]*\)$/\1 (\2)/')"
 
   for f in "$@"; do
     case "$f" in
@@ -25,7 +28,7 @@ sign_macos() {
         step "Signing app: $f"
         codesign --force --timestamp --options runtime \
           --entitlements "$basedir/configs/entitlements.plist" \
-          --sign "Developer ID Application: $DEV_ID" --deep "$f"
+          --sign "$appID" --deep "$f"
         step 'Verifying signature'
         codesign -vv --deep "$f"
 
@@ -46,7 +49,7 @@ sign_macos() {
         step "Signing executable: $f"
         codesign --force --timestamp --options runtime \
           --entitlements "$basedir/configs/entitlements.plist" \
-          --sign "$DEV_ID" "$f"
+          --sign "$appID" "$f"
         step 'Verifying signature'
         codesign -vv "$f"
         ;;
