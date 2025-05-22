@@ -13,9 +13,9 @@ test "$(uname -s)-$(uname -p)" = Linux-x86_64 || {
 
 if ! command -v prysk >/dev/null 2>&1
 then
-  echo '[ERROR] Please install prysk. One easy way is via pipx:'
+  echo '[ERROR] Please install prysk. One easy way is via uv:'
   echo
-  echo '    pipx install prysk'
+  echo '    uv tool install prysk'
   exit 2
 fi
 
