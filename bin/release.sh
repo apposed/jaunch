@@ -108,8 +108,8 @@ zip -r9 jaunch-bin-windows.zip jaunch-bin-windows ||
 step 'Waiting for code signing' &&
 echo 'Sign the .app inside jaunch-bin-macos.zip on a macOS machine.' &&
 echo 'Sign the EXEs inside jaunch-bin-windows.zip on a Windows machine.' &&
-echo 'Then transfer the files back to their original spots within' &&
-echo "     $distdir" &&
+echo 'Then transfer the files back to their original spots here at' &&
+echo "     $(pwd)" &&
 echo 'For instructions, see doc/MACOS.md and doc/WINDOWS.md.' &&
 echo 'Once you have done so, press ENTER to continue.' &&
 read answer ||
