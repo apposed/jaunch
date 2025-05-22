@@ -26,9 +26,15 @@ version=$(grep '^version = ' build.gradle.kts |
   sed 's/version = "\([^"]*\)".*/\1/') ||
   die 'Version bump failed.'
 
+# Use this release version in the documentation.
+sed -i \
+  -e "s/jaunch-[0-9][0-9.]*/jaunch-$version/g" \
+  -e "s/Jaunch v[0-9][0-9.]*/Jaunch v$version/g" \
+  doc/*.md
+
 # Commit and push.
 step 'Performing git operations' &&
-git commit -m "Release version $release" build.gradle.kts &&
+git commit -m "Release version $release" build.gradle.kts doc/*.md &&
 git push ||
   die 'Git operations failed.'
 
