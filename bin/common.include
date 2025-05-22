@@ -12,8 +12,15 @@ set -e
 # The `script_dir=` line below takes care to normalize the path to POSIX style.
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 basedir="$(cd "$script_dir/.." && pwd)"
-distdir="$basedir/dist"
-test -d "$distdir" || distdir="$basedir"
+if [ -d "$basedir/jaunch" ]; then
+  # Smells like a release distribution of Jaunch.
+  # The launcher binaries should exist in the base folder.
+  distdir="$basedir"
+else
+  # Assume it's a source distribution of Jaunch.
+  # The launcher binaries (if any) should be in a dist subfolder.
+  distdir="$basedir/dist"
+fi
 cfgdir="$basedir/configs"
 
 cecho() { color=$1; shift; echo -e "\033[${color}m$*\033[0m"; }
