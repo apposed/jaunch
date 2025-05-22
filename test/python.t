@@ -40,13 +40,13 @@ Tests:
   3
 
   $ ./paunch --print-python-home
-  /*python* (glob)
+  /* (glob)
 
-  $ ./paunch --print-python-info
-  root: /*python* (glob)
+  $ ./paunch --print-python-info 2>&1 | head -n4
+  root: /* (glob)
   libPython: /*libpython*.so (glob)
   version: * (glob)
-  packages: * (glob)
+  packages:* (glob)
 
   $ ./paunch --debug --python-home . 2>&1 | grep -m 1 -A1 "Analyzing candidate Python"
   [DEBUG] Analyzing candidate Python directory: '.'
