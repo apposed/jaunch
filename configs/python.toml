@@ -131,6 +131,7 @@ python.recognized-args = [
 
 python.root-paths = [
     '--python-home|${python-home}',                                    # user override (CLI arg)
+    '!--system|${cfg.python-dir}',                                     # read from <app>.cfg
     '!--system|${app-dir}/lib/runtime',                                # bundled
     '!--system|${app-dir}/python',                                     # bundled
     '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/python/linux-arm64/*',   # bundled (Linux aarch64)
