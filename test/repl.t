@@ -31,8 +31,6 @@ Test help text
                       print path to the selected Java
   --print-java-info
                       print information about the selected Java
-  --headless
-                      run in text mode
   --heap, --mem, --memory <amount>
                       set Java's heap size to <amount> (e.g. 512M or 64%)
   --class-path, --classpath, -classpath, --cp, -cp <path>
@@ -53,6 +51,8 @@ Test help text
                       show the command line, but do not run anything
   --debug
                       verbose output
+  --headless
+                      run in text mode (without any GUI)
   --print-app-dir
                       print directory where the application is located
   --print-config-dir
