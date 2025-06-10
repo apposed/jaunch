@@ -30,6 +30,8 @@ Test help text
                       show the command line, but do not run anything
   --debug
                       verbose output
+  --headless
+                      run in text mode (without any GUI)
   --print-app-dir
                       print directory where the application is located
   --print-config-dir
