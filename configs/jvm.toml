@@ -25,7 +25,6 @@ supported-options = [
     '--print-class-path,--print-classpath|print runtime classpath elements',
     '--print-java-home|print path to the selected Java',
     '--print-java-info|print information about the selected Java',
-    '--headless|run in text mode',
     "--heap,--mem,--memory=<amount>|set Java's heap size to <amount> (e.g. 512M or 64%)",
     '--class-path,--classpath,-classpath,--cp,-cp=<path>|append <path> to the class path',
     "--ext=<path>|set Java's extension directory to <path>",

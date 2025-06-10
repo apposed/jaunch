@@ -113,6 +113,7 @@ int main(const int argc, const char *argv[]) {
     // Enable debug mode when --debug is an argument.
     for (size_t i = 0; i < argc; i++)
         if (strcmp(argv[i], "--debug") == 0) debug_mode = 1;
+        else if (strcmp(argv[i], "--headless") == 0) headless_mode = 1;
 
     // Perform initial platform-specific setup.
     // * On Windows, initialize the console.
@@ -217,12 +218,12 @@ int main(const int argc, const char *argv[]) {
             // Now join the error lines and display in an alert box.
             char *message = join_strings(dir_argv + 1, dir_argc - 1, "\n");
             if (message != NULL) {
-                show_alert("Error", message);
+                if (!headless_mode) show_alert("Error", message);
                 free(message);
             }
             else {
                 error("An unknown error occurred.");
-                show_alert("Error", "An unknown error occurred.");
+                if (!headless_mode) show_alert("Error", "An unknown error occurred.");
             }
         }
         else {

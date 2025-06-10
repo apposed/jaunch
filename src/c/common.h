@@ -52,6 +52,7 @@ int launch(const LaunchFunc launch_func,
 // =================
 
 int debug_mode = 0;
+int headless_mode = 0;
 
 void print_at_level(int verbosity, const char *fmt, ...) {
     if (debug_mode < verbosity) return;
