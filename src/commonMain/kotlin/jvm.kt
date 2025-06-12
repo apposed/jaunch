@@ -36,6 +36,12 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         // Calculate all the places to search for Java.
         val jvmRootPaths = vars.calculate(config.jvmRootPaths, hints)
                 .flatMap { glob(it) }
+                .map {
+                    if (File(it).isDirectory) it
+                    else if (vars["app-dir"] is String) {
+                        (File(vars["app-dir"] as String) / it).path
+                    } else it
+                }
                 .filter { File(it).isDirectory }
                 .toSet()
 
