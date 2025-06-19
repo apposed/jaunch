@@ -64,7 +64,7 @@ Test help text
 Hard to test REPLs in an automated way so we just make sure that the launcher
 will try to launch each repl appropriately
   $ ./repl --python --dry-run
-  [DRY-RUN] *python -i (glob)
+  \[DRY-RUN\] .*python3? -i (re)
 
   $ ./repl --jshell --dry-run
   [DRY-RUN] /*/bin/java jdk.internal.jshell.tool.JShellToolProvider (glob)
