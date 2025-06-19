@@ -68,6 +68,13 @@ mv "$distdir"/launcher.desktop "$distdir"/jaunch.desktop ||
 # Copy documentation and shell scripts into the distribution.
 step 'Copying resources into the Jaunch distribution' &&
 cp -rpv README.md UNLICENSE bin doc "$distdir/" &&
+mkdir -p "$distdir/configs" &&
+cp -rpv \
+  configs/Info.plist \
+  configs/entitlements.plist \
+  configs/launcher.desktop \
+  "$distdir/configs" &&
+
 # Remove the build-system-specific scripts, leaving only the utility scripts.
 rm -v "$distdir/bin/release.sh" \
   $(grep -o 'bin/[^ ]*.sh' Makefile | sed "s;^;$distdir/;" ) ||
