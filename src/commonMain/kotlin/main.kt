@@ -240,7 +240,7 @@ private fun createHints(): MutableSet<String> {
         "OS:$OS_NAME",
         // Kotlin knows these CPU architectures:
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
-        "ARCH:$CPU_ARCH"
+        "ARCH:$TARGET_ARCH"
     )
     return hints
 }

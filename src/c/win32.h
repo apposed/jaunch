@@ -7,6 +7,16 @@
 #define SLASH "\\"
 #define EXE_SUFFIX ".exe"
 
+#ifdef __aarch64__
+    // Kotlin Native does not yet support targeting windows-arm64.
+    // But windows-arm64 has good support for emulating windows-x64.
+    // Therefore, we let windows-arm64 fall back to windows-x64 for
+    // the purpose of discovering a suitable configurator to call.
+    #define SUFFIX_FALLBACK "windows-x64"
+#else
+    #define SUFFIX_FALLBACK ""
+#endif
+
 // ===========================================================
 //                      HELPER FUNCTIONS
 // ===========================================================

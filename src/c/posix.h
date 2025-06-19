@@ -5,6 +5,7 @@
 
 #define SLASH "/"
 #define EXE_SUFFIX ""
+#define SUFFIX_FALLBACK ""
 
 // -- Helper functions --
 

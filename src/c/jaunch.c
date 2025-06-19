@@ -130,20 +130,32 @@ int main(const int argc, const char *argv[]) {
             "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX
         );
         if (file_exists(command)) break;
-        else debug("[JAUNCH] No configurator at %s", command);
+        debug("[JAUNCH] No configurator at %s", command);
+        free(command);
+
+        // If not found, look for jaunch configurator with fallback suffix.
+        if (SUFFIX_FALLBACK[0] != '\0') {
+            command = path(
+                argc == 0 ? NULL : argv[0],
+                JAUNCH_SEARCH_PATHS[i],
+                "jaunch-" SUFFIX_FALLBACK EXE_SUFFIX
+            );
+            if (file_exists(command)) break;
+            debug("[JAUNCH] No fallback configurator at %s", command);
+            free(command);
+        }
 
         // If not found, look for plain jaunch configurator with no suffix.
-        free(command);
         command = path(
             argc == 0 ? NULL : argv[0],
             JAUNCH_SEARCH_PATHS[i],
             "jaunch" EXE_SUFFIX
         );
         if (file_exists(command)) break;
-        else debug("[JAUNCH] No configurator at %s", command);
-
-        // Nothing at this search path; clean up and move on to the next one.
+        debug("[JAUNCH] No plain configurator at %s", command);
         free(command);
+
+        // Nothing at this search path; move on to the next one.
         command = NULL;
     }
     if (command == NULL) {

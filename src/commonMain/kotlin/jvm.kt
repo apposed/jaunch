@@ -397,8 +397,8 @@ class JavaInstallation(
             return fail("Operating system '$osName' does not match current platform $OS_NAME")
         if (cpuArch == null && strict)
             return fail("Unknown CPU architecture, and weird JVMs are disallowed.")
-        if (cpuArch != null && cpuArch != CPU_ARCH)
-            return fail("CPU architecture '$cpuArch' does not match current architecture $CPU_ARCH")
+        if (cpuArch != null && cpuArch != TARGET_ARCH)
+            return fail("CPU architecture '$cpuArch' does not match target architecture $TARGET_ARCH")
 
         // Check Java version constraints.
         if (constraints.versionMin != null || constraints.versionMax != null) {
