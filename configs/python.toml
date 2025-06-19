@@ -130,26 +130,36 @@ python.recognized-args = [
 # So not only will the line match, but the root path to check will become /best.
 
 python.root-paths = [
-    '--python-home|${python-home}',                                    # user override (CLI arg)
-    '!--system|${cfg.python-dir}',                                     # read from <app>.cfg
-    '!--system|${app-dir}/lib/runtime',                                # bundled
-    '!--system|${app-dir}/python',                                     # bundled
-    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/python/linux-arm64/*',   # bundled (Linux aarch64)
-    '!--system|OS:LINUX|ARCH:X64|${app-dir}/python/linux64/*',         # bundled (Linux x86-64)
-    '!--system|OS:LINUX|ARCH:X86|${app-dir}/python/linux32/*',         # bundled (Linux x86-32)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/python/macosx-arm64/*/Contents/Home', # bundled (macOS aarch64)
-    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/python/macosx-arm64/*', # bundled (macOS aarch64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*/Contents/Home', # bundled (macOS x86-64)
-    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*',         # bundled (macOS x86-64)
-    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\python\win64\*',         # bundled (Windows x86-64)
-    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\python\win32\*',         # bundled (Windows x86-32)
-    '${PYTHON_HOME}',                                                  # PYTHON_HOME environment variable
-    '${CONDA_PREFIX}',                                                 # activated Conda env
-    'OS:LINUX|/usr/lib/python*/*',                                     # system (Linux)
-    'OS:LINUX|ARCH:X64|/usr/lib/x86_64-linux-gnu',                     # system (Linux)
-    'OS:LINUX|ARCH:X86|/usr/lib/i386-linux-gnu',                       # system (Linux)
-    'OS:WINDOWS|${LOCALAPPDATA}\Programs\Python\*',                    # system (Windows)
-    '${CONDA_PREFIX}/envs/*',                                          # all Conda envs
+    '--python-home|${python-home}',                                                               # user override (CLI arg)
+    '!--system|${cfg.python-dir}',                                                                # read from <app>.cfg
+    '!--system|${app-dir}/lib/runtime',                                                           # bundled
+    '!--system|${app-dir}/python',                                                                # bundled
+    '!--system|OS:LINUX|ARCH:ARM64|${app-dir}/python/linux-arm64/*',                              # bundled (Linux arm64)
+    '!--system|OS:LINUX|ARCH:X64|${app-dir}/python/linux64/*',                                    # bundled (Linux x86-64)
+    '!--system|OS:LINUX|ARCH:X86|${app-dir}/python/linux32/*',                                    # bundled (Linux x86-32)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/python/macosx-arm64/*/Contents/Home',              # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:ARM64|${app-dir}/python/macosx-arm64/*',                            # bundled (macOS arm64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*/Contents/Home',                      # bundled (macOS x86-64)
+    '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*',                                    # bundled (macOS x86-64)
+    '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\python\win64\*',                                    # bundled (Windows x86-64)
+    '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\python\win32\*',                                    # bundled (Windows x86-32)
+    '${PYTHON_HOME}',                                                                             # PYTHON_HOME environment variable
+    '${CONDA_PREFIX}',                                                                            # activated Conda/Mamba env
+    'OS:LINUX|/usr/lib/python*/*',                                                                # system (Linux)
+    'OS:LINUX|ARCH:X64|/usr/lib/x86_64-linux-gnu',                                                # system (Linux x86-64)
+    'OS:LINUX|ARCH:X86|/usr/lib/i386-linux-gnu',                                                  # system (Linux x86-32)
+    'OS:MACOSX|${HOMEBREW_PREFIX}/Caskroom/miniforge/base',                                       # miniforge from Homebrew
+    'OS:MACOSX|/opt/homebrew/Caskroom/miniforge/base',                                            # miniforge from Homebrew (arm64 default)
+    'OS:MACOSX|/usr/local/Caskroom/miniforge/base',                                               # miniforge from Homebrew (x86-64 default)
+    'OS:MACOSX|${HOMEBREW_PREFIX}/Cellar/python*/*/Frameworks/Python.framework/Versions/Current', # python from Homebrew
+    'OS:MACOSX|/opt/homebrew/Cellar/python*/*/Frameworks/Python.framework/Versions/Current',      # python from Homebrew (arm64 default)
+    'OS:MACOSX|/usr/local/Cellar/python*/*/Frameworks/Python.framework/Versions/Current',         # python from Homebrew (x86-64 default)
+    'OS:MACOSX|${HOMEBREW_PREFIX}/Cellar/python*/*/Frameworks/Python.framework/Versions/*',       # python from Homebrew
+    'OS:MACOSX|/opt/homebrew/Cellar/python*/*/Frameworks/Python.framework/Versions/*',            # python from Homebrew (arm64 default)
+    'OS:MACOSX|/usr/local/Cellar/python*/*/Frameworks/Python.framework/Versions/*',               # python from Homebrew (x86-64 default)
+    'OS:WINDOWS|${LOCALAPPDATA}\Programs\Python\*',                                               # system (Windows)
+    '${MAMBA_ROOT_PREFIX}/envs/*',                                                                # all Mamba envs
+    '${CONDA_ROOT}/envs/*',                                                                       # all Conda envs
 ]
 
 # ==============================================================================

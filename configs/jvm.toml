@@ -505,7 +505,7 @@ jvm.root-paths = [
     'OS:MACOSX|/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home',  # JRE 8 by Oracle
     'OS:MACOSX|${HOMEBREW_PREFIX}/Cellar/*jdk*/*/libexec/*.jdk/Contents/Home',     # Homebrew
     'OS:MACOSX|/opt/homebrew/Cellar/*jdk*/*/libexec/*.jdk/Contents/Home',          # Homebrew (arm64 default)
-    'OS:MACOSX|/usr/local/Cellar/*jdk*/*/libexec/*.jdk/Contents/Home',             # Homebrew (x64 default)
+    'OS:MACOSX|/usr/local/Cellar/*jdk*/*/libexec/*.jdk/Contents/Home',             # Homebrew (x86-64 default)
     'OS:WINDOWS|${ProgramFiles}\Java\*',                                           # System-wide install on Windows
     'OS:WINDOWS|${ProgramFiles(x86)}\Java\*',                                      # System-wide install on Windows
     'OS:WINDOWS|~\scoop\apps\*jdk*\*',                                             # Scoop openjdk, temurin-jdk, ...
