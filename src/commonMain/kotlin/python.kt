@@ -181,7 +181,52 @@ class PythonInstallation(
 
     private fun findBinPython(): String? {
         val extension = if (OS_NAME == "WINDOWS") ".exe" else ""
-        for (candidate in arrayOf("python", "python3", "bin${SLASH}python", "bin${SLASH}python3")) {
+
+        // Note: The order below matters! In particular, on macOS,
+        // Homebrew Python will be installed somewhere like:
+        //
+        //     /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/Current
+        //
+        // Beneath that is something like:
+        //
+        //     $ tree -L 1 . bin lib
+        //     .
+        //     |-- _CodeSignature
+        //     |-- bin
+        //     |-- Headers -> include/python3.13
+        //     |-- include
+        //     |-- lib
+        //     |-- Python
+        //     |-- Resources
+        //     \-- share
+        //     bin
+        //     |-- idle3 -> idle3.13
+        //     |-- idle3.13
+        //     |-- pip3
+        //     |-- pip3.13
+        //     |-- pydoc3 -> pydoc3.13
+        //     |-- pydoc3.13
+        //     |-- python3 -> python3.13
+        //     |-- python3-config -> python3.13-config
+        //     |-- python3.13
+        //     \-- python3.13-config
+        //     lib
+        //     |-- libpython3.13.dylib -> ../Python
+        //     |-- pkgconfig
+        //     \-- python3.13
+        //
+        // So we have this bizarre situation where `${root}/lib/libpython*.dylib`
+        // is symlinked to `${root}/Python`. But because macOS filesystems are
+        // typically case-insensitive, the candidate check for `${root}/python`
+        // will match this `${root}/Python`, Jaunch will attempt to execute it,
+        // and the execution will fail with an error like:
+        //
+        //     sh: .../Python.framework/Versions/3.13/python: cannot execute binary file
+        //
+        // To sidestep this headache, we check for `bin/python` and `bin/python3`
+        // before `python` and `python3`.
+
+        for (candidate in arrayOf("bin${SLASH}python", "bin${SLASH}python3", "python", "python3")) {
             val pythonFile = File("$rootPath$SLASH$candidate$extension")
             if (pythonFile.exists) return pythonFile.path
         }
