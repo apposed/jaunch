@@ -7,6 +7,7 @@ Pre-requisites:
 
 Setup:
 
+  $ . "$TESTDIR/common.include"
   $ cd "$TESTDIR/../demo"
 
 Test help text

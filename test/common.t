@@ -1,12 +1,13 @@
-NB: general tests for common configuration, using 'hello' 
+General tests for common configuration, using 'hello'
 Pre-requisites: run `make clean demo` in the root directory
 
 Setup:
 
+  $ . "$TESTDIR/common.include"
   $ cd "$TESTDIR/../demo"
 
 Test: Help text with --help
-  $ ./jaunch/jaunch-linux-x64 hello --help
+  $ ./jaunch/jaunch-$os-$arch hello --help
   Usage: hello [<Runtime options>.. --] [<main arguments>..]
   
   Hello launcher (Jaunch v* / * / *) (glob)
@@ -48,7 +49,7 @@ Test: Help text with --help
 --End of expected output--
 
 Test: Help text with -h
-  $ ./jaunch/jaunch-linux-x64 hello -h
+  $ ./jaunch/jaunch-$os-$arch hello -h
   Usage: hello [<Runtime options>.. --] [<main arguments>..]
   
   Hello launcher (Jaunch v* / * / *) (glob)
@@ -90,37 +91,37 @@ Test: Help text with -h
 --End of expected output--
 
 Test: Debug output
-  $ ./jaunch/jaunch-linux-x64 hello --debug 2>&1 | grep "JAUNCH CONFIGURATION COMPLETE"
+  $ ./jaunch/jaunch-$os-$arch hello --debug 2>&1 | grep "JAUNCH CONFIGURATION COMPLETE"
   [DEBUG] | JAUNCH CONFIGURATION COMPLETE |
 
   $ ls hello.log
   hello.log
 
 Test: dry-run
-  $ ./jaunch/jaunch-linux-x64 hello --dry-run
+  $ ./jaunch/jaunch-$os-$arch hello --dry-run
   [DRY-RUN] /*/bin/java -Djava.class.path=/*/demo HelloSwing (glob)
   ABORT
 
 Test: print-app-dir
-  $ ./jaunch/jaunch-linux-x64 hello --print-app-dir
+  $ ./jaunch/jaunch-$os-$arch hello --print-app-dir
   --- Application Directory ---
   /*/demo (glob)
   
   JVM
   4
-  /*/libjvm.so (glob)
+  .*/(libjvm.so|libjli.dylib|jvm.dll) (re)
   1
   -Djava.class.path=/*/demo (glob)
   HelloSwing
 
 Test: print-config-dir
-  $ ./jaunch/jaunch-linux-x64 hello --print-config-dir
+  $ ./jaunch/jaunch-$os-$arch hello --print-config-dir
   --- Configuration Directory ---
-  /home/*/demo/jaunch (glob)
+  */demo/jaunch (glob)
   
   JVM
   4
-  /*/libjvm.so (glob)
+  .*/(libjvm.so|libjli.dylib|jvm.dll) (re)
   1
   -Djava.class.path=/*/demo (glob)
   HelloSwing

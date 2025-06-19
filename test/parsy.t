@@ -5,6 +5,7 @@ Pre-requisites:
 
 Setup:
 
+  $ . "$TESTDIR/common.include"
   $ cd "$TESTDIR/../demo"
 
 Test that the correct Java program actually runs.

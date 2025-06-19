@@ -1,0 +1,29 @@
+#!/bin/sh
+
+die() { echo "$*" >&2; exit 1; }
+
+# Glean CPU architecture.
+arch=$(uname -m 2>/dev/null)
+case "$arch" in
+  arm64|aarch64) arch=arm64 ;;
+  x86_64|amd64) arch=x64 ;;
+  *) die "Unsupported CPU architecture: $arch" ;;
+esac
+
+# Glean operating system.
+os=$(uname -s 2>/dev/null)
+case "$os" in
+  Linux) os=linux ;;
+  Darwin) os=macos ;;
+  MINGW*|MSYS*) os=windows ;;
+  *) die "Unsupported operating system: $os" ;;
+esac
+
+# Set platform-specific values.
+libpre=
+libext=
+case "$os" in
+  linux) libpre=lib; libext=so ;;
+  macos) libpre=lib; libext=dylib ;;
+  windows) libpre=; libext=dll ;;
+esac

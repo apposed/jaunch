@@ -1,10 +1,11 @@
-NB: general tests for python configuration, using 'paunch'
+General tests for python configuration, using 'paunch'
 Pre-requisites:
 1. run `make clean demo` in the root directory
 2. Ensure python 3.8+ is available (system or by running in conda env)
 
 Setup:
 
+  $ . "$TESTDIR/common.include"
   $ cd "$TESTDIR/../demo"
 
 Tests:
@@ -46,7 +47,7 @@ Tests:
 
   $ ./paunch --print-python-info 2>&1 | head -n4
   root: /* (glob)
-  libPython: /*libpython*.so (glob)
+  libPython: .*(libpython[0-9\.]*\.so|libpython[0-9\.]*\.dylib|python[0-9\.]*\.dll) (re)
   version: * (glob)
   packages:* (glob)
 

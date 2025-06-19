@@ -5,6 +5,7 @@ Pre-requisites:
 
 Setup:
 
+  $ . "$TESTDIR/common.include"
   $ cd "$TESTDIR/../demo"
 
 Test 1: help text

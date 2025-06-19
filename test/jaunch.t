@@ -1,13 +1,14 @@
-NB: assumes running on linux x64 system.
+General tests for Jaunch configurator
 Pre-requisites: run `make clean demo` in the root directory
 
 Setup:
 
+  $ . "$TESTDIR/common.include"
   $ cd "$TESTDIR/../demo"
 
 Test 1: help text
 
-  $ ./jaunch/jaunch-linux-x64
+  $ ./jaunch/jaunch-$os-$arch
   
   Hello! You have found the Jaunch configurator.
   Your curiosity is an asset. :-)
@@ -39,7 +40,7 @@ Test 1: help text
 
 Test 2: using jaunch to launch an absent application
 
-  $ ./jaunch/jaunch-linux-x64 missing a b c
+  $ ./jaunch/jaunch-$os-$arch missing a b c
   ERROR
   2
   20
@@ -49,10 +50,10 @@ Test 2: using jaunch to launch an absent application
 
 Test 3: use jaunch configurator manually
 
-  $ ./jaunch/jaunch-linux-x64 parsy a b c
+  $ ./jaunch/jaunch-$os-$arch parsy a b c
   JVM
   8
-  *libjvm.so (glob)
+  .*/(libjvm.so|libjli.dylib|jvm.dll) (re)
   2
   -Djava.class.path=* (glob)
   -Xmx64m

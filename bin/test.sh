@@ -6,11 +6,6 @@ echo -e "\033[1;33m[test]\033[0m"
 
 test -d demo || { echo '[ERROR] No demo folder; please `make demo` first.' 1>&2; exit 1; }
 
-test "$(uname -s)-$(uname -p)" = Linux-x86_64 || {
-  echo '[ERROR] Sorry, tests only exist for Linux-x64 right now.'
-  exit 1
-}
-
 if ! command -v prysk >/dev/null 2>&1
 then
   echo '[ERROR] Please install prysk. One easy way is via uv:'
