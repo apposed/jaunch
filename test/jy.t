@@ -77,7 +77,5 @@ Test divider symbol handling.
   $ ./jy -Dfoo=before -- -Dfoo=after -c 'from java.lang import System; print(System.getProperty("foo"))'
   after
 
-TEMP: Disable the following test, which hangs on macOS, until the bug is fixed.
-
-$ ./jy bad -- good 2>&1 | head -n1
-Unrecognized runtime argument: bad
+  $ ./jy --headless bad -- good 2>&1 | head -n1
+  Unrecognized runtime argument: bad
