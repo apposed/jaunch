@@ -18,11 +18,10 @@ private fun detectNativeCpuArch(): String {
     for (line in regResult) {
         val parts = line.trim().split(Regex("\\s+"))
         if (parts.size >= 3 && parts[0] == "PROCESSOR_ARCHITECTURE" && parts[1] == "REG_SZ") {
-            return when (parts[2].uppercase()) {
-                "ARM64" -> "ARM64"
-                "AMD64", "X64" -> "X64"
-                "X86" -> "X86"
-                else -> CPU_ARCH
+            val arch = parts[2].uppercase()
+            return when (arch) {
+                "AMD64" -> "X64"
+                else -> arch
             }
         }
     }
