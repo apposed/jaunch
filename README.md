@@ -11,15 +11,28 @@ To use Jaunch for launching for your application, see [SETUP.md](doc/SETUP.md).
 
 To build Jaunch's demo apps from source, see [EXAMPLES.md](doc/EXAMPLES.md).
 
+## Minimum requirements
+
+| Runtime | Minimum |
+|---------|---------|
+| Java    | 1.8     |
+| Python  | 3.8     |
+
+| Operating system | Minimum      |
+|------------------|--------------|
+| [Linux]          | glibc 2.34   |
+| [Ubuntu]         | 22.04 LTS    |
+| [macOS]          | 11 "Big Sur" |
+| [Windows]        | 10           |
+
+**CPU architecture:** arm64 or x86-64
+
 ## Documentation
 
 * [Example apps](doc/EXAMPLES.md)
 * [Building from source](doc/BUILD.md)
 * [How to launch your app with Jaunch](doc/SETUP.md)
-* OS-specific concerns:
-  [Linux](doc/LINUX.md),
-  [macOS](doc/MACOS.md),
-  [Windows](doc/WINDOWS.md)
+* OS-specific concerns: [Linux], [macOS], [Windows]
 
 ## License
 
@@ -354,11 +367,15 @@ From [the constructor website](https://conda.github.io/constructor/):
 [JNI]: https://en.wikipedia.org/wiki/Java_Native_Interface
 [JPype]: https://jpype.readthedocs.io/
 [Kotlin Native]: https://kotlinlang.org/docs/native-overview.html
+[Linux]: doc/LINUX.md
 [OpenMoji]: https://openmoji.org/
 [QuPath]: https://qupath.readthedocs.io/
 [SmartScreen]: https://en.wikipedia.org/wiki/Microsoft_SmartScreen#Windows_malware_protection
 [Stable ABI]: https://docs.python.org/3/c-api/stable.html#stable-abi
+[Ubuntu]: doc/LINUX.md
+[Windows]: doc/WINDOWS.md
 [`JNI_CreateJavaVM`]: https://docs.oracle.com/en/java/javase/21/docs/specs/jni/invocation.html#creating-the-vm
 [`Py_BytesMain`]: https://docs.python.org/3/c-api/veryhigh.html#c.Py_BytesMain
 [jpackage]: https://docs.oracle.com/en/java/javase/21/docs/specs/jni/invocation.html#creating-the-vm
+[macOS]: doc/MACOS.md
 [upx]: https://upx.github.io/
