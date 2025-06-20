@@ -7,22 +7,26 @@ actual val TARGET_ARCH = detectNativeCpuArch()
 
 @OptIn(ExperimentalForeignApi::class)
 private fun detectNativeCpuArch(): String {
-    try {
-        memScoped {
-            val systemInfo = alloc<SYSTEM_INFO>()
-            GetNativeSystemInfo(systemInfo.ptr)
-
-            return when (systemInfo.wProcessorArchitecture.toInt()) {
-                PROCESSOR_ARCHITECTURE_AMD64 -> "X64"
-                PROCESSOR_ARCHITECTURE_ARM64 -> "ARM64"
-                PROCESSOR_ARCHITECTURE_INTEL -> "X86"
-                else -> /*CPU_ARCH*/"UNKNOWN-${systemInfo.wProcessorArchitecture.toInt()}"
+    // When running in x64 emulation mode:
+    // * CPU_ARCH is X64.
+    // * The PROCESSOR_ARCHITECTURE environment variable is AMD64.
+    // * The GetNativeSystemInfo function's wProcessorArchitecture field is PROCESSOR_ARCHITECTURE_AMD64.
+    // So it ends up being quite tricky to realize we are actually on an ARM64 machine.
+    // Good old Windows registry to the rescue!
+    val regResult = execute("reg query \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\" /v PROCESSOR_ARCHITECTURE")
+    if (regResult == null) return CPU_ARCH
+    for (line in regResult) {
+        val parts = line.trim().split(Regex("\\s+"))
+        if (parts.size >= 3 && parts[0] == "PROCESSOR_ARCHITECTURE" && parts[1] == "REG_SZ") {
+            return when (parts[2].uppercase()) {
+                "ARM64" -> "ARM64"
+                "AMD64", "X64" -> "X64"
+                "X86" -> "X86"
+                else -> CPU_ARCH
             }
         }
-    } catch (e: Exception) {
-        debug(e)
-        return CPU_ARCH
     }
+    return CPU_ARCH
 }
 
 @OptIn(ExperimentalForeignApi::class)
