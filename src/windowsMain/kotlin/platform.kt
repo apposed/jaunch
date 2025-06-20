@@ -30,10 +30,11 @@ private fun detectNativeCpuArch(): String {
                         PROCESSOR_ARCHITECTURE_AMD64 -> "X64"
                         PROCESSOR_ARCHITECTURE_ARM64 -> "ARM64"
                         PROCESSOR_ARCHITECTURE_INTEL -> "X86"
-                        else -> CPU_ARCH
+                        else -> /*CPU_ARCH*/"UNKNOWN-${systemInfo.wProcessorArchitecture.toInt()}"
                     }
                 }
             } catch (e: Exception) {
+                debug(e)
                 CPU_ARCH
             }
         }
