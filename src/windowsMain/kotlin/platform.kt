@@ -7,37 +7,21 @@ actual val TARGET_ARCH = detectNativeCpuArch()
 
 @OptIn(ExperimentalForeignApi::class)
 private fun detectNativeCpuArch(): String {
-    // Try environment variable first - Windows sets this reliably.
-    val processorArchitecture = getenv("PROCESSOR_ARCHITECTURE")
-    val processorArchiteW6432 = getenv("PROCESSOR_ARCHITEW6432")
+    try {
+        memScoped {
+            val systemInfo = alloc<SYSTEM_INFO>()
+            GetNativeSystemInfo(systemInfo.ptr)
 
-    // PROCESSOR_ARCHITEW6432 is set when running 32/64-bit processes
-    // on a different arch. It contains the actual host architecture.
-    val actualArch = processorArchiteW6432 ?: processorArchitecture
-
-    return when (actualArch?.uppercase()) {
-        "AMD64", "X64" -> "X64"
-        "ARM64" -> "ARM64"
-        "X86" -> "X86"
-        else -> {
-            // Fallback: try GetNativeSystemInfo API.
-            try {
-                memScoped {
-                    val systemInfo = alloc<SYSTEM_INFO>()
-                    GetNativeSystemInfo(systemInfo.ptr)
-
-                    when (systemInfo.wProcessorArchitecture.toInt()) {
-                        PROCESSOR_ARCHITECTURE_AMD64 -> "X64"
-                        PROCESSOR_ARCHITECTURE_ARM64 -> "ARM64"
-                        PROCESSOR_ARCHITECTURE_INTEL -> "X86"
-                        else -> /*CPU_ARCH*/"UNKNOWN-${systemInfo.wProcessorArchitecture.toInt()}"
-                    }
-                }
-            } catch (e: Exception) {
-                debug(e)
-                CPU_ARCH
+            return when (systemInfo.wProcessorArchitecture.toInt()) {
+                PROCESSOR_ARCHITECTURE_AMD64 -> "X64"
+                PROCESSOR_ARCHITECTURE_ARM64 -> "ARM64"
+                PROCESSOR_ARCHITECTURE_INTEL -> "X86"
+                else -> /*CPU_ARCH*/"UNKNOWN-${systemInfo.wProcessorArchitecture.toInt()}"
             }
         }
+    } catch (e: Exception) {
+        debug(e)
+        return CPU_ARCH
     }
 }
 
