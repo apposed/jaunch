@@ -159,9 +159,9 @@ but only certain cross-compilations are possible:
 </table>
 
 <br><sup>1</sup> Requires <a href="https://packages.debian.org/sid/gcc-aarch64-linux-gnu">aarch64-linux-gnu-gcc</a>.
-<br><sup>2</sup> Might be possible with <a href="https://formulae.brew.sh/formula/aarch64-elf-gcc">aarch64-elf-gcc</a> Homebrew package, but build script would need adjustment.
+<br><sup>2</sup> Homebrew gets partway there with <a href="https://formulae.brew.sh/formula/aarch64-elf-gcc">aarch64-elf-gcc</a>, but no `aarch64-linux-gnu-gcc` toolchain.
 <br><sup>3</sup> Requires <a href="https://packages.debian.org/sid/gcc-x86-64-linux-gnu">x86_64-linux-gnu-gcc</a>.
-<br><sup>4</sup> Might be possible with <a href="https://formulae.brew.sh/formula/x86_64-elf-gcc">x86_64-elf-gcc</a> Homebrew package, but build script would need adjustment.
+<br><sup>4</sup> Homebrew gets partway there with <a href="https://formulae.brew.sh/formula/x86_64-linux-gnu-binutils">x86_64-linux-gnu-binutils</a>, but no `x86_64-linux-gnu-gcc` toolchain.
 <br><sup>5</sup> Only macOS tooling can target macOS.
 <br><sup>6</sup> Using <a href="https://github.com/mstorsjo/llvm-mingw">llvm-mingw</a>.
 <br><sup>7</sup> No Kotlin Native support for linux-arm64 host (<a href="https://youtrack.jetbrains.com/issue/KT-36871">KT-36871</a>).
