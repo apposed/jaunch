@@ -220,7 +220,7 @@ int main(const int argc, const char *argv[]) {
             // 1. Exit code to use after issuing the error message.
             // 2. The error message, which may span multiple lines.
             // =======================================================================
-            exit_code = atoi(dir_argv[0]);
+            exit_code = dir_argc >= 1 ? atoi(dir_argv[0]) : 255;
             if (exit_code < 20) exit_code = 20;
             if (exit_code > 255) exit_code = 255;
 
