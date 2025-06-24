@@ -3,13 +3,20 @@
 STEP_PREFIX='[RELEASE] '
 . "${0%/*}/common.include"
 
-# For reasons of laziness, we restrict ourselves to Linux.
-test "$(uname)" = Linux || die 'Not a Linux system.'
+# For now, this script only works on Linux or macOS.
+case "$(uname)" in
+  Linux) SED=sed ;;
+  Darwin) SED=gsed ;;
+  *) die 'Not a supported system.' ;;
+esac
+
+command -v "$SED" >/dev/null 2>&1 ||
+  die "Required command not found: $SED"
 
 cd "$(dirname "$0")/.."
 
 release=$(grep '^version = ' build.gradle.kts |
-  sed 's/version = "\([^"]*\)-SNAPSHOT".*/\1/')
+  $SED 's/version = "\([^"]*\)-SNAPSHOT".*/\1/')
 
 echo "This script will release Jaunch at version $release."
 echo 'Are you sure? Press ENTER to continue, or ^C to cancel.'
@@ -21,13 +28,13 @@ git diff-index --quiet HEAD -- ||
 
 # Set version to a release value.
 step 'Incrementing version' &&
-sed -i -e 's/-SNAPSHOT//' build.gradle.kts &&
+$SED -i -e 's/-SNAPSHOT//' build.gradle.kts &&
 version=$(grep '^version = ' build.gradle.kts |
-  sed 's/version = "\([^"]*\)".*/\1/') ||
+  $SED 's/version = "\([^"]*\)".*/\1/') ||
   die 'Version bump failed.'
 
 # Use this release version in the documentation.
-sed -i \
+$SED -i \
   -e "s/jaunch-[0-9][0-9.]*/jaunch-$version/g" \
   -e "s/Jaunch v[0-9][0-9.]*/Jaunch v$version/g" \
   doc/*.md
@@ -77,7 +84,7 @@ cp -rpv \
 
 # Remove the build-system-specific scripts, leaving only the utility scripts.
 rm -v "$distdir/bin/release.sh" \
-  $(grep -o 'bin/[^ ]*.sh' Makefile | sed "s;^;$distdir/;" ) ||
+  $(grep -o 'bin/[^ ]*.sh' Makefile | $SED "s;^;$distdir/;" ) ||
   die 'Failed to copy resources into the distribution.'
 
 # Generate RELEASE file.
@@ -139,7 +146,7 @@ step 'Bumping to the next development cycle' &&
 vprefix=${release%.*} &&
 vsuffix=${release##*.} &&
 nversion="$vprefix.$((vsuffix+1))-SNAPSHOT" &&
-sed -i -e 's/version = "[^"]*"/version = "'"$nversion"'"/' build.gradle.kts &&
+$SED -i -e 's/version = "[^"]*"/version = "'"$nversion"'"/' build.gradle.kts &&
 git commit -m "Bump to next development cycle" build.gradle.kts &&
 git push ||
   die 'Failed to bump version and commit.'
