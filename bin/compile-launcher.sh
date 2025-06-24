@@ -17,6 +17,8 @@ test -d "$jdkdir" || {
 
 mkdir -p build
 
+# -----===== FUNCTIONS =====-----
+
 find-llvm-mingw() {
   find .cache/llvm-mingw -maxdepth 1 -type d 2>/dev/null | sort -r | head -n1
 }
@@ -109,7 +111,10 @@ compile() {
   }
 }
 
+# -----===== MAIN PLATFORM COMPILATION =====-----
+
 case "$(uname -s)" in
+
   Linux)
     # Compile Linux targets.
     #
@@ -135,6 +140,7 @@ case "$(uname -s)" in
     compile "$gcc_arm64" -o build/launcher-linux-arm64 &&
     compile "$gcc_x64" -o build/launcher-linux-x64
     ;;
+
   Darwin)
     # Compile macOS targets.
     compile gcc -o build/launcher-macos-arm64 -framework CoreFoundation -framework AppKit -target arm64-apple-macos11 &&
@@ -148,6 +154,7 @@ case "$(uname -s)" in
     # Jaunch could potentially cross-compile for Linux targets
     # on macOS systems using these tools. But for now, nah.
     ;;
+
   MINGW*|MSYS*)
     # Compile Windows targets (current arch only).
     arch=$(uname -m)
@@ -161,6 +168,8 @@ case "$(uname -s)" in
     compile gcc -o build/launcher
     ;;
 esac
+
+# -----===== WINDOWS CROSS-COMPILATION =====-----
 
 # Cross-compile Windows targets (thanks, llvm-mingw!).
 cdir=$(configure-llvm-mingw)
