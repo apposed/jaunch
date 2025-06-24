@@ -66,25 +66,28 @@ compile() {
 case "$(uname -s)" in
   Linux)
     # Compile Linux targets.
-    compile aarch64-linux-gnu-gcc -o build/launcher-linux-arm64 &&
-    compile gcc -o build/launcher-linux-x64 &&
-    # Cross-compile Windows targets (thanks, llvm-mingw!).
-    cdir=$(configure-llvm-mingw)
-    if [ -d "$cdir" ]
-    then
-      # windows-arm64 (console and GUI builds)
-      compile "$cdir/bin/aarch64-w64-mingw32-clang" \
-        -o build/launcher-windows-arm64-console.exe -mconsole &&
-      compile "$cdir/bin/aarch64-w64-mingw32-clang" \
-        -o build/launcher-windows-arm64-gui.exe -mwindows &&
-      # windows-x64 (console and GUI builds)
-      compile "$cdir/bin/x86_64-w64-mingw32-clang" \
-        -o build/launcher-windows-x64-console.exe -mconsole &&
-      compile "$cdir/bin/x86_64-w64-mingw32-clang" \
-        -o build/launcher-windows-x64-gui.exe -mwindows
-    else
-      echo '[WARNING] Failed to set up llvm-mingw; skipping Windows cross-compilation'
-    fi
+    #
+    # Note: Ubuntu 25.04 has these gcc-<target>-linux-gcc packages:
+    #
+    #   aarch64, alpha, arc, arm (eabi), arm (eabihf), hppa, i686,
+    #   loongarch64, m68k, mips, mipsel, mipsisa32r6, mipsisa32r6el,
+    #   multilib-i686, multilib-mips, multilib-mipsel,
+    #   multilib-mipsisa32r6, multilib-mipsisa32r6el,
+    #   multilib-powerpc, multilib-sparc64, multilib-x86-64,
+    #   powerpc, powerpc64le, riscv64, s390x, sh4, sparc64, x86-64
+    #
+    # In particular, Jaunch could compile its native launcher
+    # for 32-bit x86 and arm platforms using these tools.
+    # But for now, we compile only for 64-bit platforms.
+    gcc_arm64=aarch64-linux-gnu-gcc
+    gcc_x64=x86_64-linux-gnu-gcc
+    gcc_other=
+    case "$(uname -m)" in
+      aarch64|arm64) gcc_arm64=gcc ;;
+      x86_64|amd64) gcc_x64=gcc ;;
+    esac
+    compile "$gcc_arm64" -o build/launcher-linux-arm64 &&
+    compile "$gcc_x64" -o build/launcher-linux-x64
     ;;
   Darwin)
     # Compile macOS targets.
