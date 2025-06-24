@@ -1,11 +1,11 @@
 ## Using Jaunch as your application launcher
 
-1. Download and unpack the
+1. OPTION 1: Download and unpack the
    [latest Jaunch release](https://github.com/apposed/jaunch/releases).
    The rest of this guide will assume you unpacked the Jaunch v1.0.3
    release into your home directory at `~/jaunch-1.0.3`.
 
-2. Alternately, you can [build Jaunch from source](BUILD.md). But if you
+2. OPTION 2: You can [build Jaunch from source](BUILD.md). But if you
    want launchers for all supported platforms (Linux, macOS, and Windows),
    you will need to build Jaunch on all of them and combine the results.
    The release downloads include prebuilt binaries for all platforms.
@@ -64,7 +64,11 @@
    replacing `com.mycompany` with an appropriate reverse-domain-name
    prefix for your organization.
 
-   Note any `[WARNING]`s that appear in the appify output.
+   Notice any `[WARNING]`s that appear in the appify output.
+
+   *Note: Regardless of whether you built Jaunch from source, you will find
+   the app-generation script in the `bin` folder. All `bin` scripts should
+   work correctly from either a source working copy or a downloaded release.*
 
 8. Copy your application code (Python scripts, Java JAR files, etc.)
    into the `Fizzbuzz` directory structure into locations of your

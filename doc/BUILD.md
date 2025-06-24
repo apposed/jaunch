@@ -167,9 +167,12 @@ To cover all platforms, the [Jaunch CI](https://github.com/apposed/jaunch/action
 
 </details>
 
-### Running
+### Testing the result
 
-Run the appropriate `launcher` binary or script in the `dist` folder.
+You can verify that the build is functional by running the
+appropriate `launcher` binary or script in the `dist` folder.
+The default `launcher.toml` configuration is a simple REPL
+entry point, which can launch either Python or JShell.
 
 If it doesn't work, run again with the `--debug` flag,
 which will show what's happening under the hood.
