@@ -68,103 +68,105 @@ but only certain cross-compilations are possible:
 <tbody>
 <tr>
 <td>launcher-linux-arm64</td>
-<td><center>❔<sup>1</sup></center></td> <!-- Linux arm64 host -->
-<td><center>✅<sup>2</sup></center></td> <!-- Linux x64 host -->
-<td><center>➖</center></td> <!-- macOS host -->
+<td><center>✅</center></td> <!-- Linux arm64 host -->
+<td><center>✅<sup>1</sup></center></td> <!-- Linux x64 host -->
+<td><center>➖<sup>2</sup></center></td> <!-- macOS host -->
 <td><center>➖</center></td> <!-- Windows arm64 host -->
 <td><center>➖</center></td> <!-- Windows x64 host -->
 </tr>
 <tr>
 <td>launcher-linux-x64</td>
-<td><center>❔<sup>1</sup></center></td> <!-- Linux arm64 host -->
+<td><center>✅<sup>3</sup></center></td> <!-- Linux arm64 host -->
 <td><center>✅</center></td> <!-- Linux x64 host -->
-<td><center>➖</center></td> <!-- macOS host -->
+<td><center>➖<sup>4</sup></center></td> <!-- macOS host -->
 <td><center>➖</center></td> <!-- Windows arm64 host -->
 <td><center>➖</center></td> <!-- Windows x64 host -->
 </td>
 </tr>
 <tr>
 <td>launcher-macos-arm64</td>
-<td rowspan=2><center>➖<sup>3</sup></center></td> <!-- Linux arm64 host -->
-<td rowspan=2><center>➖<sup>3</sup></center></td> <!-- Linux x64 host -->
+<td rowspan=2><center>✅<sup>5</sup></center></td> <!-- Linux arm64 host -->
+<td rowspan=2><center>✅<sup>5</sup></center></td> <!-- Linux x64 host -->
 <td rowspan=2><center>✅</center></td> <!-- macOS host -->
-<td rowspan=2><center>➖<sup>3</sup></center></td> <!-- Windows arm64 host -->
-<td rowspan=2><center>➖<sup>3</sup></center></td> <!-- Windows x64 host -->
+<td rowspan=2><center>➖<sup>5</sup></center></td> <!-- Windows arm64 host -->
+<td rowspan=2><center>➖<sup>5</sup></center></td> <!-- Windows x64 host -->
 </tr>
 <tr>
 <td>launcher-macos-x64</td>
 </tr>
 <tr>
 <td>launcher-windows-arm64</td>
-<td><center>❔<sup>1</sup></center></td> <!-- Linux arm64 host -->
-<td><center>✅<sup>4</sup></center></td> <!-- Linux x64 host -->
-<td><center>➖</center></td> <!-- macOS host -->
-<td><center>❔<sup>1</sup></center></td> <!-- Windows arm64 host -->
-<td><center>➖</center></td> <!-- Windows x64 host -->
+<td><center>✅<sup>6</sup></center></td> <!-- Linux arm64 host -->
+<td><center>✅<sup>6</sup></center></td> <!-- Linux x64 host -->
+<td><center>✅<sup>6</sup></center></td> <!-- macOS host -->
+<td><center>✅</center></td> <!-- Windows arm64 host -->
+<td><center>✅<sup>6</sup></center></td> <!-- Windows x64 host -->
 </tr>
 <tr>
 <td>launcher-windows-x64</td>
-<td><center>❔<sup>1</sup></center></td> <!-- Linux arm64 host -->
-<td><center>✅<sup>4</sup></center></td> <!-- Linux x64 host -->
-<td><center>➖</center></td> <!-- macOS host -->
-<td><center>➖</center></td> <!-- Windows arm64 host -->
+<td><center>✅<sup>6</sup></center></td> <!-- Linux arm64 host -->
+<td><center>✅<sup>6</sup></center></td> <!-- Linux x64 host -->
+<td><center>✅<sup>6</sup></center></td> <!-- macOS host -->
+<td><center>✅<sup>6</sup></center></td> <!-- Windows arm64 host -->
 <td><center>✅</center></td> <!-- Windows x64 host -->
 </tr>
 <tr>
 <td>jaunch-linux-arm64</td>
-<td><center>➖<sup>5</sup></center></td> <!-- Linux arm64 host -->
+<td><center>➖<sup>7</sup></center></td> <!-- Linux arm64 host -->
 <td><center>✅</center></td> <!-- Linux x64 host -->
 <td><center>➖</center></td> <!-- macOS host -->
-<td><center>➖<sup>6</sup></center></td> <!-- Windows arm64 host -->
+<td><center>➖<sup>8</sup></center></td> <!-- Windows arm64 host -->
 <td><center>➖</center></td> <!-- Windows x64 host -->
 </td>
 </tr>
 <tr>
 <td>jaunch-linux-x64</td>
-<td><center>➖<sup>5</sup></center></td> <!-- Linux arm64 host -->
+<td><center>➖<sup>7</sup></center></td> <!-- Linux arm64 host -->
 <td><center>✅</center></td> <!-- Linux x64 host -->
 <td><center>➖</center></td> <!-- macOS host -->
-<td><center>➖<sup>6</sup></center></td> <!-- Windows arm64 host -->
+<td><center>➖<sup>8</sup></center></td> <!-- Windows arm64 host -->
 <td><center>➖</center></td> <!-- Windows x64 host -->
 </td>
 </tr>
 <tr>
 <td>jaunch-macos-arm64</td>
-<td rowspan=2><center>➖<sup>3,5</sup></center></td> <!-- Linux arm64 host -->
-<td rowspan=2><center>➖<sup>3</sup></center></td> <!-- Linux x64 host -->
+<td rowspan=2><center>➖<sup>5,7</sup></center></td> <!-- Linux arm64 host -->
+<td rowspan=2><center>➖<sup>5</sup></center></td> <!-- Linux x64 host -->
 <td rowspan=2><center>✅</center></td> <!-- macOS host -->
-<td rowspan=2><center>➖<sup>3,6</sup></center></td> <!-- Windows arm64 host -->
-<td rowspan=2><center>➖<sup>3</sup></center></td> <!-- Windows x64 host -->
+<td rowspan=2><center>➖<sup>5,8</sup></center></td> <!-- Windows arm64 host -->
+<td rowspan=2><center>➖<sup>5</sup></center></td> <!-- Windows x64 host -->
 </tr>
 <tr>
 <td>jaunch-macos-x64</td>
 </tr>
 <tr>
 <td>jaunch-windows-arm64</td>
-<td><center>➖<sup>5,7</sup></center></td> <!-- Linux arm64 host -->
-<td><center>➖<sup>7</sup></center></td> <!-- Linux x64 host -->
-<td><center>➖<sup>7</sup></center></td> <!-- macOS host -->
-<td><center>➖<sup>6,7</sup></center></td> <!-- Windows arm64 host -->
-<td><center>➖<sup>7</sup></center></td> <!-- Windows x64 host -->
+<td><center>➖<sup>7,9</sup></center></td> <!-- Linux arm64 host -->
+<td><center>➖<sup>9</sup></center></td> <!-- Linux x64 host -->
+<td><center>➖<sup>9</sup></center></td> <!-- macOS host -->
+<td><center>➖<sup>6,9</sup></center></td> <!-- Windows arm64 host -->
+<td><center>➖<sup>9</sup></center></td> <!-- Windows x64 host -->
 </tr>
 <tr>
 <td>jaunch-windows-x64</td>
-<td><center>➖<sup>5</sup></center></td> <!-- Linux arm64 host -->
+<td><center>➖<sup>7</sup></center></td> <!-- Linux arm64 host -->
 <td><center>➖</center></td> <!-- Linux x64 host -->
 <td><center>➖</center></td> <!-- macOS host -->
-<td><center>➖<sup>6</sup></center></td> <!-- Windows arm64 host -->
+<td><center>➖<sup>8</sup></center></td> <!-- Windows arm64 host -->
 <td><center>✅</center></td> <!-- Windows x64 host -->
 </tr>
 </tbody>
 </table>
 
-<br><sup>1</sup> Untested; build system almost certainly needs adjustment.
-<br><sup>2</sup> Requires <a href="https://packages.debian.org/sid/gcc-aarch64-linux-gnu">aarch64-linux-gnu-gcc</a>.
-<br><sup>3</sup> Only macOS tooling can target macOS.
-<br><sup>4</sup> Using <a href="https://github.com/mstorsjo/llvm-mingw">llvm-mingw</a>.
-<br><sup>5</sup> No Kotlin Native support for linux-arm64 host (<a href="https://youtrack.jetbrains.com/issue/KT-36871">KT-36871</a>).
-<br><sup>6</sup> No Kotlin Native support for windows-arm64 host (<a href="https://youtrack.jetbrains.com/issue/KT-48420">KT-48420</a>).
-<br><sup>7</sup> No Kotlin Native support for windows-arm64 target (<a href="https://youtrack.jetbrains.com/issue/KT-68504">KT-68504</a>).
+<br><sup>1</sup> Requires <a href="https://packages.debian.org/sid/gcc-aarch64-linux-gnu">aarch64-linux-gnu-gcc</a>.
+<br><sup>2</sup> Might be possible with <a href="https://formulae.brew.sh/formula/aarch64-elf-gcc">aarch64-elf-gcc</a> Homebrew package, but build script would need adjustment.
+<br><sup>3</sup> Requires <a href="https://packages.debian.org/sid/gcc-x86-64-linux-gnu">x86_64-linux-gnu-gcc</a>.
+<br><sup>4</sup> Might be possible with <a href="https://formulae.brew.sh/formula/x86_64-elf-gcc">x86_64-elf-gcc</a> Homebrew package, but build script would need adjustment.
+<br><sup>5</sup> Only macOS tooling can target macOS.
+<br><sup>6</sup> Using <a href="https://github.com/mstorsjo/llvm-mingw">llvm-mingw</a>.
+<br><sup>7</sup> No Kotlin Native support for linux-arm64 host (<a href="https://youtrack.jetbrains.com/issue/KT-36871">KT-36871</a>).
+<br><sup>8</sup> No Kotlin Native support for windows-arm64 host (<a href="https://youtrack.jetbrains.com/issue/KT-48420">KT-48420</a>).
+<br><sup>9</sup> No Kotlin Native support for windows-arm64 target (<a href="https://youtrack.jetbrains.com/issue/KT-68504">KT-68504</a>).
 
 To cover all platforms, the [Jaunch CI](https://github.com/apposed/jaunch/actions) runs `make dist` on linux-x64, macos-x64, and windows-x64 host nodes, then aggregates all results into one unified `dist` folder. This covers all targets except `jaunch-windows-arm64`, which is not currently possible to build due to [lack of support in Kotlin Native](https://youtrack.jetbrains.com/issue/KT-68504").
 
