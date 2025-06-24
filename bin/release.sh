@@ -26,24 +26,33 @@ make clean &&
 git diff-index --quiet HEAD -- ||
   die 'Dirty working copy.'
 
-# Set version to a release value.
-step 'Incrementing version' &&
-$SED -i -e 's/-SNAPSHOT//' build.gradle.kts &&
+doVersionBump=1
 version=$(grep '^version = ' build.gradle.kts |
   $SED 's/version = "\([^"]*\)".*/\1/') ||
   die 'Version bump failed.'
+if [ "$version" = "${version%-SNAPSHOT}" ]; then
+  echo "Detected release version $version; skipping version bump."
+  doVersionBump=
+else
+  # Set version to a release value.
+  step 'Incrementing version' &&
+  $SED -i -e 's/-SNAPSHOT//' build.gradle.kts &&
+  version=$(grep '^version = ' build.gradle.kts |
+    $SED 's/version = "\([^"]*\)".*/\1/') ||
+    die 'Version bump failed.'
 
-# Use this release version in the documentation.
-$SED -i \
-  -e "s/jaunch-[0-9][0-9.]*/jaunch-$version/g" \
-  -e "s/Jaunch v[0-9][0-9.]*/Jaunch v$version/g" \
-  doc/*.md
+  # Use this release version in the documentation.
+  $SED -i \
+    -e "s/jaunch-[0-9][0-9.]*/jaunch-$version/g" \
+    -e "s/Jaunch v[0-9][0-9.]*/Jaunch v$version/g" \
+    doc/*.md
 
-# Commit and push.
-step 'Performing git operations' &&
-git commit -m "Release version $release" build.gradle.kts doc/*.md &&
-git push ||
-  die 'Git operations failed.'
+  # Commit and push.
+  step 'Performing git operations' &&
+  git commit -m "Release version $release" build.gradle.kts doc/*.md &&
+  git push ||
+    die 'Git operations failed.'
+fi
 
 # Wait for the CI build.
 step 'Waiting for the CI build to finish' &&
@@ -136,20 +145,22 @@ archive="jaunch-$release.zip" &&
 zip -r9 "$archive" "jaunch-$release" ||
   die 'Failed to ZIP up the distribution folder.'
 
-# Tag the successful release.
-git tag "$release" &&
-git push origin "$release" ||
-  die 'Failed to tag release.'
+if [ "$doVersionBump" ]; then
+  # Tag the successful release.
+  git tag "$release" &&
+  git push origin "$release" ||
+    die 'Failed to tag release.'
 
-# Bump to next development version.
-step 'Bumping to the next development cycle' &&
-vprefix=${release%.*} &&
-vsuffix=${release##*.} &&
-nversion="$vprefix.$((vsuffix+1))-SNAPSHOT" &&
-$SED -i -e 's/version = "[^"]*"/version = "'"$nversion"'"/' build.gradle.kts &&
-git commit -m "Bump to next development cycle" build.gradle.kts &&
-git push ||
-  die 'Failed to bump version and commit.'
+  # Bump to next development version.
+  step 'Bumping to the next development cycle' &&
+  vprefix=${release%.*} &&
+  vsuffix=${release##*.} &&
+  nversion="$vprefix.$((vsuffix+1))-SNAPSHOT" &&
+  $SED -i -e 's/version = "[^"]*"/version = "'"$nversion"'"/' build.gradle.kts &&
+  git commit -m "Bump to next development cycle" build.gradle.kts &&
+  git push ||
+    die 'Failed to bump version and commit.'
+fi
 
 step 'Complete! :-)'
 ls -la "$archive"
