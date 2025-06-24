@@ -111,10 +111,10 @@ construct_app_bundle() {
   plist_outfile="$out_dir/$app_contents/Info.plist"
   cp -v "$info_plist" "$plist_outfile"
   step 'Populating Info.plist'
-  revise_file "$plist_outfile" "s/{{APP_DIR}}/$out_dir/"
-  revise_file "$plist_outfile" "s/{{APP_EXE}}/$app_exe-macos/"
+  revise_file "$plist_outfile" "s:{{APP_DIR}}:$out_dir:"
+  revise_file "$plist_outfile" "s:{{APP_EXE}}:$app_exe-macos:"
   if [ "$app_icon" ]; then
-    revise_file "$plist_outfile" "s/{{APP_ICON}}/$app_title.icns/"
+    revise_file "$plist_outfile" "s:{{APP_ICON}}:$app_title.icns:"
   else
     revise_file "$plist_outfile" '/CFBundleIconFile\|{{APP_ICON}}/d'
   fi
