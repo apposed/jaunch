@@ -14,4 +14,4 @@ then
   exit 2
 fi
 
-prysk test
+prysk -v test
