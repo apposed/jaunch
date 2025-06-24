@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
     val appDir = discernAppDirectory(exeFile)
     val configDir = findConfigDirectory(appDir)
     val configFile = findConfigFile(configDir, exeFile)
-    if (logFilePath == null) logFilePath = "${configFile.base.name}.log"
+    if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
     val config = readConfig(configFile)
 
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
@@ -150,7 +150,9 @@ private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
 
     // Note: We need to let parseArguments set the debugMode
     // flag in response to the --debug argument being passed.
-    // So we wait until now to emit this initial debugging bookend message.
+    // If debug mode is enabled, we also need to know the appDir,
+    // so that we know where to write the log file. Therefore,
+    // we wait till now to emit this initial debugging bookend message.
     debugBanner("PROCEEDING WITH JAUNCH CONFIGURATION")
 
     debug("executable -> ", executable ?: "<null>")
@@ -161,15 +163,15 @@ private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
 }
 
 private fun discernAppDirectory(exeFile: File?): File {
-    // Check for native launcher in <AppName>.app/Contents/MacOS directory.
-    // If so, treat the app directory as three directories higher up.
-    // We do it this way, rather than OS_NAME == "MACOSX", so that the native
-    // launcher also works on macOS when located (or symlinked) outside the
-    // .app bundle directory structure -- like how it is for Linux and Windows.
-    val exeDir = exeFile?.dir ?: File(".")
-    val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir.dir else exeDir
-    debug("appDir -> ", appDir)
-    return appDir
+        // Check for native launcher in <AppName>.app/Contents/MacOS directory.
+        // If so, treat the app directory as three directories higher up.
+        // We do it this way, rather than OS_NAME == "MACOSX", so that the native
+        // launcher also works on macOS when located (or symlinked) outside the
+        // .app bundle directory structure -- like how it is for Linux and Windows.
+        val exeDir = exeFile?.dir ?: File(".")
+        val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir.dir else exeDir
+        debug("appDir -> ", appDir)
+        return appDir
 }
 
 private fun findConfigDirectory(appDir: File): File {

@@ -60,15 +60,16 @@ private fun report(prefix: String, vararg args: Any) {
         args.forEach { append(it) }
     }
     printlnErr(s)
-    if (debugMode) {
-        // Also log the line to the appropriate log file.
-        val path = logFilePath
-        var file = logFile
-        if (path == null) {
-            // Log file path is not yet known; save line to buffer.
-            logLines += s
-        }
-        else {
+
+    // Also log the line to the appropriate log file.
+    val path = logFilePath
+    var file = logFile
+    if (path == null) {
+        // Log file path is not yet known; save line to buffer.
+        logLines += s
+    }
+    else {
+        try {
             if (file == null) {
                 file = File(path)
                 logFile = file
@@ -82,6 +83,13 @@ private fun report(prefix: String, vararg args: Any) {
             }
             // Write out the new line.
             file.write("$s$NL")
+        }
+        catch (exc: RuntimeException) {
+            // Something went wrong; disable file logging.
+            printlnErr("Failed to write to log file: $logFile")
+            if (debugMode) printlnErr(exc.stackTraceToString())
+            logFilePath = null
+            logFile = null
         }
     }
 }
