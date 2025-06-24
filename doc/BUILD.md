@@ -10,6 +10,9 @@
 
 * **macOS:**
   - [Install XCode](https://kotlinlang.org/docs/native-overview.html#target-platforms).
+    - Yes, the [whole XCode](https://developer.apple.com/xcode/)
+      ([1](https://discuss.kotlinlang.org/t/kotlin-native-without-xcode/19312)),
+      not merely the XCode command line tools.
 
 * **Windows:**
   - Install [Scoop](https://scoop.sh/).
