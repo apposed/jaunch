@@ -27,17 +27,63 @@ configure-llvm-mingw() {
   then
     echo "$cdir"
   else
-    v=20241217
-    n=llvm-mingw-$v-msvcrt-ubuntu-20.04-x86_64
+    v=20250613
+    platform="$(uname -s):$(uname -m)"
+    case "$platform" in
+      Linux:aarch64|Linux:arm64)
+        archive=llvm-mingw-$v-ucrt-ubuntu-22.04-aarch64.tar.xz
+        sha=60c6135aeb90e115f9b9e58d61375fff51a4b8d4a2b66352fef0ce47bcc24dc3
+        ;;
+      Linux:x86_64|Linux:amd64)
+        archive=llvm-mingw-$v-ucrt-ubuntu-22.04-x86_64.tar.xz
+        sha=936f82221fa4ad4ff1829f28f1cdf4c1e304cfd589323212e2b7ef8be428784a
+        ;;
+      Darwin:*)
+        archive=llvm-mingw-$v-ucrt-macos-universal.tar.xz
+        sha=25f93d2ab2d75903a282cf2ec620caa175afbfc19f705767224d124892fecc76
+        ;;
+      MINGW*:aarch64|MSYS*:aarch64|MINGW*:arm64|MSYS*:arm64)
+        archive=llvm-mingw-$v-ucrt-aarch64.zip
+        sha=b1dcfe18854bdf5e719064df35417bf4e485e1973996c0acc4e1ec193d09de53
+        ;;
+      MINGW*:x86_64|MSYS*:x86_64|MINGW*:amd64|MSYS*:amd64)
+        archive=llvm-mingw-$v-ucrt-x86_64.zip
+        sha=45145c035d9246e1de16f1873aa9afa863d93909f4a8f363e2eb38a04031d3c3
+        ;;
+      MINGW*:armv7|MSYS*:armv7)
+        archive=llvm-mingw-$v-ucrt-armv7.zip
+        sha=sha256:7ed9b24d4b3304752370ff76fec8e3ff51a57b4788bd82fb32fcbf9f9aab256b
+        ;;
+      MINGW*:i686|MSYS*:i686)
+        archive=llvm-mingw-$v-ucrt-i686.zip
+        sha=4ab5fb78880f3321c801162da91f1c3cb894b0537735db342b9d38ade1a370d0
+        ;;
+      *)
+        echo "[WARNING] No cross-compilation to Windows for platform $platform"
+        return
+        ;;
+    esac
+
     mkdir -p .cache/llvm-mingw &&
     (
       cd .cache/llvm-mingw &&
       set -x &&
-      curl -fLO https://github.com/mstorsjo/llvm-mingw/releases/download/$v/$n.tar.xz &&
-      tar xf $n.tar.xz
+      curl -fLO "https://github.com/mstorsjo/llvm-mingw/releases/download/$v/$archive" &&
+      verify-checksum "$archive" "$sha" &&
+      case "$archive" in
+        *.tar|*.tar.*) tar xf "$archive" ;;
+        *.zip) unzip "$archive" ;;
+      esac
     ) &&
     echo "$(find-llvm-mingw)"
   fi
+}
+
+verify-checksum() {
+  file=$1
+  sha=$2
+  test "$(sha256sum "$file" | sed 's/ .*//')" = "$sha" ||
+    echo "[WARNING] Mismatched checksum: $file"
 }
 
 compile() {
@@ -109,8 +155,27 @@ case "$(uname -s)" in
     compile gcc -o "build/launcher-windows-$arch-console.exe" -mconsole
     compile gcc -o "build/launcher-windows-$arch-gui.exe" -mwindows
     ;;
+
   *)
     # Unknown architecture; just try it.
     compile gcc -o build/launcher
     ;;
 esac
+
+# Cross-compile Windows targets (thanks, llvm-mingw!).
+cdir=$(configure-llvm-mingw)
+if [ -d "$cdir" ]
+then
+  # windows-arm64 (console and GUI builds)
+  compile "$cdir/bin/aarch64-w64-mingw32-clang" \
+    -o build/launcher-windows-arm64-console.exe -mconsole &&
+  compile "$cdir/bin/aarch64-w64-mingw32-clang" \
+    -o build/launcher-windows-arm64-gui.exe -mwindows &&
+  # windows-x64 (console and GUI builds)
+  compile "$cdir/bin/x86_64-w64-mingw32-clang" \
+    -o build/launcher-windows-x64-console.exe -mconsole &&
+  compile "$cdir/bin/x86_64-w64-mingw32-clang" \
+    -o build/launcher-windows-x64-gui.exe -mwindows
+else
+  echo '[WARNING] Failed to set up llvm-mingw; skipping Windows cross-compilation'
+fi
