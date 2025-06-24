@@ -210,6 +210,10 @@ int main(const int argc, const char *argv[]) {
             exit_code = launch(launch_python, dir_argc, dir_argv);
             if (exit_code != SUCCESS) break;
         }
+        else if (strcmp(directive, "SETCWD") == 0) {
+            if (dir_argc >= 1) chdir(dir_argv[0]);
+            else error("Ignoring invalid SETCWD directive with no argument.");
+        }
         else if (strcmp(directive, "INIT_THREADS") == 0) {
             init_threads();
         }
