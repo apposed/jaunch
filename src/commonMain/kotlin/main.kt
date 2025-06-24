@@ -150,9 +150,7 @@ private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
 
     // Note: We need to let parseArguments set the debugMode
     // flag in response to the --debug argument being passed.
-    // If debug mode is enabled, we also need to know the appDir,
-    // so that we know where to write the log file. Therefore,
-    // we wait till now to emit this initial debugging bookend message.
+    // So we wait until now to emit this initial debugging bookend message.
     debugBanner("PROCEEDING WITH JAUNCH CONFIGURATION")
 
     debug("executable -> ", executable ?: "<null>")
