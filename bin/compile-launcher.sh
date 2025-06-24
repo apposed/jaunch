@@ -94,6 +94,13 @@ case "$(uname -s)" in
     compile gcc -o build/launcher-macos-arm64 -framework CoreFoundation -framework AppKit -target arm64-apple-macos11 &&
     compile gcc -o build/launcher-macos-x64 -framework CoreFoundation -framework AppKit -target x86_64-apple-macos10.12 &&
     (set -x; lipo -create -output build/launcher-macos build/launcher-macos-x64 build/launcher-macos-arm64)
+
+    # Note: Homebrew has these <target>-elf-gcc packages:
+    #
+    #   aarch64, i686, m68k, riscv64, x86_64
+    #
+    # Jaunch could potentially cross-compile for Linux targets
+    # on macOS systems using these tools. But for now, nah.
     ;;
   MINGW*|MSYS*)
     # Compile Windows targets (current arch only).
