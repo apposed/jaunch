@@ -26,8 +26,14 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         vars: Vars
     ) {
         // Calculate all the places to search for Python.
+        val appDir = vars["app-dir"] as String
         val pythonRootPaths = vars.calculate(config.pythonRootPaths, hints)
                 .flatMap { glob(it) }
+                .map {
+                    // Relativize beneath app-dir as appropriate.
+                    if (File(it).isDirectory) it
+                    else (File(appDir) / it).path
+                }
                 .filter { File(it).isDirectory }
                 .toSet()
 

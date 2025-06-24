@@ -38,6 +38,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         val jvmRootPaths = vars.calculate(config.jvmRootPaths, hints)
                 .flatMap { glob(it) }
                 .map {
+                    // Relativize beneath app-dir as appropriate.
                     if (File(it).isDirectory) it
                     else (File(appDir) / it).path
                 }
