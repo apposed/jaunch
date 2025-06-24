@@ -27,6 +27,8 @@ To build Jaunch's demo apps from source, see [EXAMPLES.md](doc/EXAMPLES.md).
 
 **CPU architecture:** arm64 or x86-64
 
+See [Limitations](doc/LIMITS.md) for more details.
+
 ## Documentation
 
 * [Example apps](doc/EXAMPLES.md)
