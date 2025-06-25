@@ -65,6 +65,7 @@ The next section offers step-by-step instructions for the second path: signing a
    * Create a new certificate, selecting "Developer ID Application" under the "Software" section.
    * Follow the prompts to generate and download the certificate. You will need to [create a certificate signing request](https://developer.apple.com/help/account/create-certificates/create-a-certificate-signing-request) using the Keychain Access tool.
    * After downloading the certificate, double-click the .cer file to install it into your Keychain. Be sure to choose the ***login*** keychain, rather than *System*.
+   * IMPORTANT NOTE: This .cer file is only the *public key*. If you later want to migrate this certificate key pair to new machine, you will need to select the certificate and private key in Keychain Access on the old machine, right-click, and "Export 2 items" to a .p12 file, which you will then need to transfer to the new machine and import again. Or else start fresh with a new application certificate.
 
 4. Create an app-specific password:
    - Navigate to your [Apple Account security settings](https://account.apple.com/account/manage/section/security).
