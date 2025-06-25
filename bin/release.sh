@@ -114,7 +114,7 @@ cp -v bin/common.include bin/sign.sh jaunch-bin-macos/bin/ &&
 mkdir -pv jaunch-bin-macos/configs &&
 cp -v configs/entitlements.plist jaunch-bin-macos/configs/ &&
 cp -rpv "$distdir/Jaunch.app" jaunch-bin-macos/ &&
-zip -r9 jaunch-bin-macos.zip jaunch-bin-macos ||
+zip -r9y jaunch-bin-macos.zip jaunch-bin-macos ||
   die 'Failed to zip up code-signable macOS files.'
 
 # Bundle up files needing Windows code signing.
@@ -124,7 +124,7 @@ mkdir -pv jaunch-bin-windows/bin &&
 cp -v "$distdir/RELEASE" jaunch-bin-windows/ &&
 cp -v bin/common.include bin/sign.sh jaunch-bin-windows/bin/ &&
 cp -pv $(find "$distdir" -name '*.exe') jaunch-bin-windows/ &&
-zip -r9 jaunch-bin-windows.zip jaunch-bin-windows ||
+zip -r9y jaunch-bin-windows.zip jaunch-bin-windows ||
   die 'Failed to zip up code-signable Windows files.'
 
 # Wait for macOS and Windows code signing.
@@ -142,7 +142,7 @@ read answer ||
 step 'Constructing Jaunch distribution archive' &&
 mv "$distdir" "jaunch-$release" &&
 archive="jaunch-$release.zip" &&
-zip -r9 "$archive" "jaunch-$release" ||
+zip -r9y "$archive" "jaunch-$release" ||
   die 'Failed to ZIP up the distribution folder.'
 
 if [ "$doVersionBump" ]; then
