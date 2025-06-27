@@ -1,6 +1,6 @@
 *Jaunch: Launch Programs **Your** Way!™*
 
-[![](https://github.com/scijava/jaunch/actions/workflows/build.yml/badge.svg)](https://github.com/scijava/jaunch/actions/workflows/build.yml)
+[![](https://github.com/apposed/jaunch/actions/workflows/build.yml/badge.svg)](https://github.com/apposed/jaunch/actions/workflows/build.yml)
 
 Jaunch is a native launcher for applications that run inside non-native runtimes,
 including the **Java Virtual Machine (JVM)**, the **Python interpreter**, or both.
