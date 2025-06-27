@@ -283,7 +283,11 @@ E.g., via shell scripts such as `Contents/MacOS/JavaApplicationStub`.
 
 #### Lean on command-line tools
 
-E.g. [**SDKMAN!**](https://sdkman.io/), [cjdk](https://github.com/cachedjdk/cjdk), [install-jdk](https://github.com/jyksnw/install-jdk), [jgo](https://github.com/scijava/jgo).
+E.g.
+[**SDKMAN!**](https://sdkman.io/),
+[cjdk](https://github.com/cachedjdk/cjdk),
+[install-jdk](https://github.com/jyksnw/install-jdk),
+[jgo](https://github.com/scijava/jgo).
 
 * Pros:
   * Leave it to dedicated external code to install and manage your JDKs.
