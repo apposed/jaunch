@@ -280,13 +280,15 @@ private fun classifyArguments(
         if (argKey == "--") {
             if (argVal != null) fail("Divider symbol (--) does not accept a parameter")
             if (i - 1 != divider) fail("Divider symbol (--) may only be given once")
-        } else if ((divider < 0 || i <= divider) && argKey in supportedOptions) {
+        }
+        else if ((divider < 0 || i <= divider) && argKey in supportedOptions) {
             // The argument is declared in Jaunch's configuration. Deal with it appropriately.
             val option: JaunchOption = supportedOptions[argKey]!!
             if (option.assignment == null) {
                 // standalone option
                 if (argVal != null) fail("Option $argKey does not accept a parameter")
-            } else {
+            }
+            else {
                 // option with value assignment
                 val v = argVal ?: if (i < inputArgs.size) inputArgs[i++] else
                     fail("No parameter value given for argument $argKey")
@@ -303,15 +305,18 @@ private fun classifyArguments(
             }
             // Record hint matching the primary form of the option, not an alias.
             hints += option.flags.first()
-        } else {
+        }
+        else {
             // The argument is not a Jaunch one. Save it for later.
             if (divider < 0) {
                 // No dash-dash divider was given, so we will need to guess later: runtime arg or main arg?
                 userArgs.ambiguous += arg
-            } else if (i <= divider) {
+            }
+            else if (i <= divider) {
                 // This argument is before the dash-dash divider, so must be treated as a runtime arg.
                 userArgs.runtime += arg
-            } else {
+            }
+            else {
                 // This argument is after the dash-dash divider, so we treat it as a main arg.
                 userArgs.main += arg
             }
@@ -338,7 +343,8 @@ private fun applyModeHints(
         if (mode.startsWith("!")) {
             // Negated mode expression: remove the mode hint.
             hints -= mode.substring(1)
-        } else hints += mode
+        }
+        else hints += mode
     }
     debug()
     debug("Modes applied:")
@@ -659,7 +665,8 @@ private fun applyUpdate(appDir: File, updateSubDir: File) {
                 if (!dryRunMode) dest.rm() || fail("Couldn't remove $dest")
                 emit("+ rm '$file'")
                 if (!dryRunMode) file.rm() || fail("Couldn't remove $file")
-            } else {
+            }
+            else {
                 emit("+ mv '$file' '$dest'")
                 if (!dryRunMode) file.mv(dest) || fail("Couldn't replace $dest")
             }

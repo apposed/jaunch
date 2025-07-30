@@ -27,7 +27,8 @@ actual class File actual constructor(rawPath: String) {
         val fileHandle = openFile(path) ?: return -1
         try {
             return fileSize(fileHandle) ?: -1
-        } finally {
+        }
+        finally {
             CloseHandle(fileHandle)
         }
     }
@@ -50,8 +51,10 @@ actual class File actual constructor(rawPath: String) {
                     if (fileName != "." && fileName != "..") {
                         files.add(File("$path$SLASH$fileName"))
                     }
-                } while (FindNextFileW(hFindFile, findFileData.ptr) != 0)
-            } finally {
+                }
+                while (FindNextFileW(hFindFile, findFileData.ptr) != 0)
+            }
+            finally {
                 FindClose(hFindFile)
             }
         }
@@ -82,13 +85,16 @@ actual class File actual constructor(rawPath: String) {
                             if (readCount > 0) {
                                 content.append(buffer.decodeToString(0, readCount))
                             }
-                        } else {
+                        }
+                        else {
                             printlnErr("Error reading file '$this': ${lastError()}")
                         }
                     }
-                } while (bytesRead.value > 0U)
+                }
+                while (bytesRead.value > 0U)
                 lines = content.split(Regex("\\r\\n|\\n"))
-            } finally {
+            }
+            finally {
                 CloseHandle(fileHandle)
             }
         }

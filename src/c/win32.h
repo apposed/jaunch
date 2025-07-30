@@ -73,7 +73,8 @@ static ParentProcessType getParentProcessType() {
                 parentPID = entry.th32ParentProcessID;
                 break;
             }
-        } while (Process32NextW(snapshot, &entry));
+        }
+        while (Process32NextW(snapshot, &entry));
     }
 
     if (parentPID) {
@@ -101,7 +102,8 @@ static ParentProcessType getParentProcessType() {
                 }
                 break;
             }
-        } while (Process32NextW(snapshot, &entry));
+        }
+        while (Process32NextW(snapshot, &entry));
     }
 
     CloseHandle(snapshot);

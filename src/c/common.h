@@ -79,7 +79,8 @@ void print_at_level(int verbosity, const char *fmt, ...) {
         for (size_t a = 0; a < (argc); a++) { \
             debug_verbose("[%s] %s_argv[%zu] = %s", (prefix), (name), a, argv[a]); \
         } \
-    } while(0)
+    } \
+    while(0)
 
 /* Splits an output buffer into lines. */
 int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {

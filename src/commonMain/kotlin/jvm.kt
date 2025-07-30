@@ -148,7 +148,8 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
                 // Append to existing `-Djava.class.path` argument.
                 args[cpIndex] += "$COLON$classpathString"
                 debug("Extended classpath arg: ${args[cpIndex]}")
-            } else {
+            }
+            else {
                 // No `-Djava.class.path` argument, so we add one.
                 args += "-Djava.class.path=$classpathString"
                 debug("Added classpath arg: ${args.last()}")

@@ -94,7 +94,8 @@ actual fun mkdir(path: String): Boolean {
             val errorCode = GetLastError()
             if (errorCode == ERROR_ALREADY_EXISTS.toUInt()) {
                 return true
-            } else {
+            }
+            else {
                 warn("Error creating directory '$path': $errorCode")
                 return false
             }
@@ -114,7 +115,8 @@ actual fun memInfo(): MemoryInfo {
         if (GlobalMemoryStatusEx(memoryStatus.ptr) != 0) {
             memInfo.total = memoryStatus.ullTotalPhys.toLong()
             memInfo.free = memoryStatus.ullAvailPhys.toLong()
-        } else {
+        }
+        else {
             printlnErr("Error getting memory status: ${GetLastError()}")
         }
     }

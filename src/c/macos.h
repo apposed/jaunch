@@ -178,7 +178,8 @@ int handle_translocation(const int argc, const char *argv[]) {
         debug("[JAUNCH-MACOS] Successfully relaunched, exiting translocated instance");
         free(args);
         exit(0); // Exit this translocated instance
-    } else {
+    }
+    else {
         debug("[JAUNCH-MACOS] Failed to relaunch: %s", strerror(status));
         free(args);
         return 0; // Continue with normal execution as fallback
