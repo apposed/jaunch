@@ -13,6 +13,11 @@ import kotlin.reflect.cast
 @Suppress("ArrayInDataClass")
 data class JaunchConfig (
 
+    // -- Internal configuration fields --
+
+    /** CPU architecture to target. */
+    var targetArch: String = CPU_ARCH,
+
     // -- General configuration fields --
 
     /** Jaunch configuration schema version. */

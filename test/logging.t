@@ -18,6 +18,7 @@ Test logging
   [DEBUG] | PROCEEDING WITH JAUNCH CONFIGURATION |
   [DEBUG] \--------------------------------------/
   [DEBUG] executable -> ./hi-* (glob)
+  [DEBUG] internalSettings -> {target-arch=*} (glob)
   [DEBUG] inputArgs -> [--debug]
   [DEBUG] appDir -> */demo (glob)
   [DEBUG] configDir -> */demo/jaunch (glob)
@@ -27,4 +28,3 @@ Test logging
   [DEBUG] Reading config file: */demo/jaunch/hi.toml (glob)
   [DEBUG] Reading config file: */demo/jaunch/jvm.toml (glob)
   [DEBUG] Reading config file: */demo/jaunch/common.toml (glob)
-  [DEBUG] programName -> Hi

@@ -164,10 +164,29 @@ int main(const int argc, const char *argv[]) {
     }
     debug("[JAUNCH] configurator command = %s", command);
 
+    // Prepend original arguments with needed internal arguments.
+    // For the moment, the only internal argument passed here is an
+    // override of the target architecture, so that macos-arm64 and
+    // windows-arm64 can launch in emulated x86-64 mode as appropriate.
+    const int internal_argc = 1;
+    const int extended_argc = internal_argc + argc;
+    const char **extended_argv = malloc(extended_argc * sizeof(char*));
+    if (extended_argv == NULL) {
+        error("Failed to allocate memory (extended argv)");
+        free(command);
+        return ERROR_MALLOC;
+    }
+    extended_argv[0] = argv[0]; // executable path
+    extended_argv[1] = "--jaunch-target-arch=" OS_ARCH;
+    for (int i = 1; i < argc; i++) {
+        extended_argv[internal_argc + i] = argv[i];
+    }
+
     // Run external command to process the command line arguments.
     char **out_argv;
     size_t out_argc;
-    int run_result = run_command((const char *)command, argc, argv, &out_argc, &out_argv);
+    int run_result = run_command((const char *)command, extended_argc, extended_argv, &out_argc, &out_argv);
+    free(extended_argv);
     free(command);
     if (run_result != SUCCESS) return run_result;
 

@@ -53,19 +53,25 @@ fun main(args: Array<String>) {
         exit(1)
     }
 
-    val (exeFile, inputArgs) = parseArguments(args)
+    val (exeFile, internalSettings, inputArgs) = parseArguments(args)
     val appDir = discernAppDirectory(exeFile)
     val configDir = findConfigDirectory(appDir)
     val configFile = findConfigFile(configDir, exeFile)
     if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
     val config = readConfig(configFile)
 
+    // Update target architecture from internal arguments.
+    internalSettings["target-arch"]?.let { rawArch ->
+        config.targetArch = resolveArchitecture(rawArch, config)
+        debug("Target architecture set from launcher: ${config.targetArch}")
+    }
+
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
 
     val supportedOptions: JaunchOptions = parseSupportedOptions(config.supportedOptions.asIterable())
 
-    val hints = createHints()
+    val hints = createHints(config)
 
     // Declare a set to store option parameter values.
     // It will be populated at argument parsing time.
@@ -133,17 +139,33 @@ fun main(args: Array<String>) {
     debugBanner("JAUNCH CONFIGURATION COMPLETE")
 }
 
+/**
+ * Resolve architecture name using arch-aliases from configuration.
+ */
+private fun resolveArchitecture(rawArch: String, config: JaunchConfig): String {
+    // Create alias map from arch-aliases configuration: canonical -> aliases.
+    val archAliasMap = linesToMapOfLists(config.archAliases.asIterable())
+
+    val matching = archAliasMap.entries.firstOrNull {
+      (archKey, aliases) -> rawArch == archKey || rawArch in aliases
+    }
+    val resolved = matching?.key ?: rawArch
+    debug("Resolved architecture '$rawArch' -> '$resolved'")
+    return resolved
+}
+
 // -- Program flow functions --
 
-private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
+private fun parseArguments(args: Array<String>): Triple<File?, Map<String, String?>, List<String>> {
     // If a sole `-` argument was given on the CLI, read the arguments from stdin.
     val theArgs = if (args.size == 1 && args[0] == "-") stdinLines() else args
 
     // The first argument is the path to the calling executable.
     val executable = theArgs.getOrNull(0)
 
-    // Subsequent arguments were specified by the user.
-    val inputArgs = theArgs.slice(1..<theArgs.size)
+    // Separate internal Jaunch arguments from user arguments.
+    val (internalArgs, inputArgs) = theArgs.slice(1..<theArgs.size).partition { arg -> arg.startsWith("--jaunch-") }
+    val internalSettings: Map<String, String?> = internalArgs.map { it.substring(9) }.associate { it bisect '=' }
 
     // Enable debug mode when --debug flag is present.
     debugMode = inputArgs.contains("--debug")
@@ -154,10 +176,11 @@ private fun parseArguments(args: Array<String>): Pair<File?, List<String>> {
     debugBanner("PROCEEDING WITH JAUNCH CONFIGURATION")
 
     debug("executable -> ", executable ?: "<null>")
+    debug("internalSettings -> ", internalSettings)
     debug("inputArgs -> ", inputArgs)
 
     val exeFile = executable?.let(::File) // The native launcher program.
-    return Pair(exeFile, inputArgs)
+    return Triple(exeFile, internalSettings, inputArgs)
 }
 
 private fun discernAppDirectory(exeFile: File?): File {
@@ -233,14 +256,20 @@ private fun parseSupportedOptions(supportedOptions: Iterable<String>): JaunchOpt
  * Initially populated with hints for the current operating system and CPU architecture,
  * but it will grow over the course of the configuration process below.
  */
-private fun createHints(): MutableSet<String> {
+private fun createHints(config: JaunchConfig): MutableSet<String> {
     val hints = mutableSetOf(
         // Kotlin knows these operating systems:
         //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
         "OS:$OS_NAME",
+
         // Kotlin knows these CPU architectures:
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
-        "ARCH:$TARGET_ARCH"
+        //
+        // We use the configured target architecture (which is OS_ARCH by default).
+        // This is useful for platforms like macos-arm64 and windows-arm64 that
+        // support running multiple architectures, so that the configurator
+        // targets the architecture matching that of the native launcher used.
+        "ARCH:${config.targetArch}"
     )
     return hints
 }
