@@ -21,6 +21,9 @@ kotlin {
     val macosX64 = macosX64()
     // Note: Kotlin Native doesn't support Windows arm64 yet:
     //   https://youtrack.jetbrains.com/issue/KT-68504
+    // However, Windows ARM64 is still supported via a hybrid approach:
+    // the C launcher targets windows-arm64, but invokes the windows-x64
+    // configurator, which detects the actual architecture at runtime.
     //val windowsArm64 = mingwArm64("windowsArm64")
     val windowsX64 = mingwX64("windowsX64")
 

@@ -168,7 +168,15 @@ but only certain cross-compilations are possible:
 <br><sup>8</sup> No Kotlin Native support for windows-arm64 host (<a href="https://youtrack.jetbrains.com/issue/KT-48420">KT-48420</a>).
 <br><sup>9</sup> No Kotlin Native support for windows-arm64 target (<a href="https://youtrack.jetbrains.com/issue/KT-68504">KT-68504</a>).
 
-To cover all platforms, the [Jaunch CI](https://github.com/apposed/jaunch/actions) runs `make dist` on linux-x64, macos-x64, and windows-x64 host nodes, then aggregates all results into one unified `dist` folder. This covers all targets except `jaunch-windows-arm64`, which is not currently possible to build due to [lack of support in Kotlin Native](https://youtrack.jetbrains.com/issue/KT-68504").
+To cover all platforms, the [Jaunch CI](https://github.com/apposed/jaunch/actions)
+runs `make dist` on linux-x64, macos-x64, and windows-x64 host nodes, then
+aggregates all results into one unified `dist` folder. This covers all targets
+except `jaunch-windows-arm64`, which is not currently possible to build due to
+[lack of support in Kotlin Native](https://youtrack.jetbrains.com/issue/KT-68504").
+Jaunch supports Windows ARM64 via a hybrid approach: the windows-arm64 C launcher
+invokes the windows-x64 configurator via Windows's x86 emulation layer, which
+detects that it's running on arm64 and recommends the correct runtime
+configuration accordingly.
 
 </details>
 
