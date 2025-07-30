@@ -16,3 +16,8 @@ fun linesToMapOfLists(lines: Iterable<String>): Map<String, List<String>> {
 fun extractMatches(pattern: String, s: String): List<String> {
     return Regex(pattern).findAll(s).map { it.value }.toList()
 }
+
+infix fun String.bisect(delimiter: Char): Pair<String, String?> {
+    val index = indexOf(delimiter)
+    return if (index < 0) this to null else substring(0, index) to substring(index + 1)
+}

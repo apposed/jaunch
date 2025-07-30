@@ -617,13 +617,6 @@ private fun executeDirectives(
     if (abort) println("ABORT")
 }
 
-// -- Helper functions --
-
-private infix fun String.bisect(delimiter: Char): Pair<String, String?> {
-    val index = indexOf(delimiter)
-    return if (index < 0) Pair(this, null) else Pair(substring(0, index), substring(index + 1))
-}
-
 // -- Directive handlers --
 
 private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOptions) {
