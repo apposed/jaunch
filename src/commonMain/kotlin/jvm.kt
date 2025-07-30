@@ -330,7 +330,7 @@ class JavaInstallation(
 
     private fun guessDistribution(): String? {
         return guess("Java distribution") {
-            val distroMap = aliasMap(constraints.distrosAllowed + constraints.distrosBlocked)
+            val distroMap = linesToMapOfLists(constraints.distrosAllowed + constraints.distrosBlocked)
             guessDistro(distroMap, File(rootPath).name) ?:
             guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR_VERSION")) ?:
             guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR")) ?:
@@ -341,13 +341,13 @@ class JavaInstallation(
 
     private fun guessOperatingSystemName(): String? {
         return guess("OS name") {
-            guessField(constraints.osAliases, "OS_NAME", "os.name")
+            guessAlias(constraints.osAliases, "OS_NAME", "os.name")
         }
     }
 
     private fun guessCpuArchitecture(): String? {
         return guess("CPU architecture") {
-            guessField(constraints.archAliases, "OS_ARCH", "os.arch")
+            guessAlias(constraints.archAliases, "OS_ARCH", "os.arch")
         }
     }
 
@@ -438,9 +438,9 @@ class JavaInstallation(
         return distroMap.entries.firstOrNull { (_, aliases) -> aliases.any { slow.contains(it) } }?.key
     }
 
-    private fun guessField(aliasLines: Iterable<String>, releaseField: String, propsField: String): String? {
+    private fun guessAlias(aliasLines: Iterable<String>, releaseField: String, propsField: String): String? {
         val jvmDirName = File(rootPath).name.lowercase()
-        val aliasMap = aliasMap(aliasLines)
+        val aliasMap = linesToMapOfLists(aliasLines)
 
         val alias =
             // Look for an alias embedded in the JVM directory name.
@@ -454,9 +454,6 @@ class JavaInstallation(
         return aliasMap.entries.firstOrNull { (_, aliases) -> aliases.contains(alias) }?.key ?: alias
     }
 
-    private fun aliasMap(aliasLines: Iterable<String>): Map<String, List<String>> {
-        return linesToMap(aliasLines, ":").map { (k, v) -> Pair(k, v.split(",")) }.toMap()
-    }
 
     private fun fail(vararg args: Any): Boolean { debug(*args); return false }
 }

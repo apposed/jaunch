@@ -9,7 +9,10 @@ fun linesToMap(lines: Iterable<String>, delimiter: String, stripQuotes: Boolean 
     }
 }
 
+fun linesToMapOfLists(lines: Iterable<String>): Map<String, List<String>> {
+    return linesToMap(lines, ":").map { (k, v) -> Pair(k, v.split(",")) }.toMap()
+}
+
 fun extractMatches(pattern: String, s: String): List<String> {
     return Regex(pattern).findAll(s).map { it.value }.toList()
 }
-
