@@ -58,13 +58,7 @@ fun main(args: Array<String>) {
     val configDir = findConfigDirectory(appDir)
     val configFile = findConfigFile(configDir, exeFile)
     if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
-    val config = readConfig(configFile)
-
-    // Update target architecture from internal arguments.
-    internalSettings["target-arch"]?.let { rawArch ->
-        config.targetArch = resolveArchitecture(rawArch, config)
-        debug("Target architecture set from launcher: ${config.targetArch}")
-    }
+    val config = readConfig(configFile, internalSettings)
 
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
@@ -137,21 +131,6 @@ fun main(args: Array<String>) {
     executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, argsInContext)
 
     debugBanner("JAUNCH CONFIGURATION COMPLETE")
-}
-
-/**
- * Resolve architecture name using arch-aliases from configuration.
- */
-private fun resolveArchitecture(rawArch: String, config: JaunchConfig): String {
-    // Create alias map from arch-aliases configuration: canonical -> aliases.
-    val archAliasMap = linesToMapOfLists(config.archAliases.asIterable())
-
-    val matching = archAliasMap.entries.firstOrNull {
-      (archKey, aliases) -> rawArch == archKey || rawArch in aliases
-    }
-    val resolved = matching?.key ?: rawArch
-    debug("Resolved architecture '$rawArch' -> '$resolved'")
-    return resolved
 }
 
 // -- Program flow functions --

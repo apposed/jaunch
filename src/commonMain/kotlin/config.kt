@@ -16,7 +16,7 @@ data class JaunchConfig (
     // -- Internal configuration fields --
 
     /** CPU architecture to target. */
-    var targetArch: String = CPU_ARCH,
+    val targetArch: String = CPU_ARCH,
 
     // -- General configuration fields --
 
@@ -209,6 +209,7 @@ data class JaunchConfig (
 
 fun readConfig(
     tomlFile: File,
+    internalSettings: Map<String, String?> = emptyMap(),
     config: JaunchConfig? = null,
     visited: MutableSet<String>? = null
 ): JaunchConfig {
@@ -329,16 +330,20 @@ fun readConfig(
         val includeFile = tomlFile.dir / include
         if (include.contains("*")) {
             for (p in glob(includeFile.path)) {
-                theConfig = readConfig(File(p), theConfig, theVisited)
+                theConfig = readConfig(File(p), config = theConfig, visited = theVisited)
             }
         }
         else {
-            theConfig = readConfig(includeFile, theConfig, theVisited)
+            theConfig = readConfig(includeFile, config = theConfig, visited = theVisited)
         }
     }
 
+    // Populate the internal config fields.
+    val targetArch: String = canonicalize(internalSettings.get("target-arch") ?: CPU_ARCH, archAliases)
+
     // Return the final result.
     return theConfig + JaunchConfig(
+        targetArch = targetArch,
         jaunchVersion = jaunchVersion,
         programName = programName,
         includes = asArray(includes),
@@ -490,4 +495,14 @@ private fun <T> List<T>.indexOf(element: T, startIndex: Int): Int {
     val subList = subList(startIndex, size)
     val elementIndex = subList.indexOf(element)
     return if (elementIndex < 0) -1 else startIndex + elementIndex
+}
+
+// -- Other helper functions --
+
+private fun canonicalize(value: String, aliases: List<String>?): String {
+    val aliasMap = linesToMapOfLists(aliases?.asIterable() ?: emptyList())
+    val canonicalized = aliasMap.entries.firstOrNull {
+        (canonical, aliases) -> value == canonical || value in aliases
+    }
+    return canonicalized?.key ?: value
 }
