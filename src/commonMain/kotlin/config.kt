@@ -129,6 +129,9 @@ data class JaunchConfig (
 
     // -- Internal configuration fields --
 
+    /** Operating system to target. */
+    val targetOS: String = OS_NAME,
+
     /** CPU architecture to target. */
     val targetArch: String = CPU_ARCH,
 ) {
@@ -322,6 +325,7 @@ fun readConfig(
     }
 
     // Populate the internal config fields.
+    val targetOS: String = canonicalize(internalSettings.get("target-os") ?: OS_NAME, osAliases)
     val targetArch: String = canonicalize(internalSettings.get("target-arch") ?: CPU_ARCH, archAliases)
 
     // Return the final result.
@@ -360,6 +364,7 @@ fun readConfig(
         jvmRuntimeArgs = asArray(jvmRuntimeArgs),
         jvmMainClass = asArray(jvmMainClass),
         jvmMainArgs = asArray(jvmMainArgs),
+        targetOS = targetOS,
         targetArch = targetArch,
     )
 }

@@ -237,10 +237,6 @@ private fun parseSupportedOptions(supportedOptions: Iterable<String>): JaunchOpt
  */
 private fun createHints(config: JaunchConfig): MutableSet<String> {
     val hints = mutableSetOf(
-        // Kotlin knows these operating systems:
-        //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
-        "OS:$OS_NAME",
-
         // Kotlin knows these CPU architectures:
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
         //
@@ -248,7 +244,19 @@ private fun createHints(config: JaunchConfig): MutableSet<String> {
         // This is useful for platforms like macos-arm64 and windows-arm64 that
         // support running multiple architectures, so that the configurator
         // targets the architecture matching that of the native launcher used.
-        "ARCH:${config.targetArch}"
+        "ARCH:${config.targetArch}",
+
+        // Kotlin knows these operating systems:
+        //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
+        //
+        // We use the configured target architecture (which is OS_NAME by default).
+        // This is not at all useful in practice yet! But it's included anyway for
+        // pleasing symmetry with the targetArch logic above. In principle, one
+        // could invoke the Jaunch configurator directly to search for runtimes of
+        // non-native operating systems, although probes of the runtime for
+        // compatibility will fail. But who knows, maybe someday there'll be a
+        // multi-OS platform out there that can benefit from this flexibility.
+        "OS:${config.targetOS}",
     )
     return hints
 }
