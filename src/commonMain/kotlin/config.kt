@@ -132,23 +132,6 @@ data class JaunchConfig (
     /** CPU architecture to target. */
     val targetArch: String = CPU_ARCH,
 ) {
-    /** Return true iff the given argument is on the specified list of recognized args. */
-    fun recognizes(arg: String, recognizedArgs: Array<String>): Boolean {
-        for (okArg in recognizedArgs) {
-            if (okArg.endsWith('*')) {
-                val prefix = okArg.substring(0, okArg.length - 1)
-                if (arg.startsWith(prefix)) return true else continue
-            }
-            var trimmed = arg
-            for (symbol in listOf(':', '=')) {
-                val index = trimmed.indexOf(symbol)
-                if (index >= 0) trimmed = trimmed.substring(0, index)
-            }
-            if (trimmed == okArg) return true
-        }
-        return false
-    }
-
     /** Union another Jaunch configuration with this one. */
     operator fun plus(config: JaunchConfig): JaunchConfig {
         if (config.jaunchVersion != null && jaunchVersion != null &&
