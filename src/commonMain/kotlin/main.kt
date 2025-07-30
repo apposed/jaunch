@@ -168,7 +168,7 @@ private fun parseArguments(args: Array<String>): Triple<File?, Map<String, Strin
     val internalSettings: Map<String, String?> = internalArgs.map { it.substring(9) }.associate { it bisect '=' }
 
     // Enable debug mode when --debug flag is present.
-    debugMode = inputArgs.contains("--debug")
+    debugMode = inputArgs.contains("--debug") || internalSettings.containsKey("debug")
 
     // Note: We need to let parseArguments set the debugMode
     // flag in response to the --debug argument being passed.
