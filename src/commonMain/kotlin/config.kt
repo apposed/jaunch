@@ -13,11 +13,6 @@ import kotlin.reflect.cast
 @Suppress("ArrayInDataClass")
 data class JaunchConfig (
 
-    // -- Internal configuration fields --
-
-    /** CPU architecture to target. */
-    val targetArch: String = CPU_ARCH,
-
     // -- General configuration fields --
 
     /** Jaunch configuration schema version. */
@@ -131,6 +126,11 @@ data class JaunchConfig (
 
     /** The list of options overridable by .cfg files understood by Jaunch. */
     val cfgVars: Map<String, Any> = emptyMap(),
+
+    // -- Internal configuration fields --
+
+    /** CPU architecture to target. */
+    val targetArch: String = CPU_ARCH,
 ) {
     /** Return true iff the given argument is on the specified list of recognized args. */
     fun recognizes(arg: String, recognizedArgs: Array<String>): Boolean {
@@ -343,7 +343,6 @@ fun readConfig(
 
     // Return the final result.
     return theConfig + JaunchConfig(
-        targetArch = targetArch,
         jaunchVersion = jaunchVersion,
         programName = programName,
         includes = asArray(includes),
@@ -378,6 +377,7 @@ fun readConfig(
         jvmRuntimeArgs = asArray(jvmRuntimeArgs),
         jvmMainClass = asArray(jvmMainClass),
         jvmMainArgs = asArray(jvmMainArgs),
+        targetArch = targetArch,
     )
 }
 
