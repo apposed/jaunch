@@ -104,7 +104,7 @@ int run_command(const char *command,
         char *outputBuffer = malloc(bufferSize);
 
         if (outputBuffer == NULL) {
-          error("Memory allocation failed (initial buffer)");
+          error("Failed to allocate memory (initial buffer)");
           return ERROR_MALLOC;
         }
 
@@ -113,7 +113,7 @@ int run_command(const char *command,
                 bufferSize *= 2;
                 outputBuffer = realloc(outputBuffer, bufferSize);
                 if (outputBuffer == NULL) {
-                  error("Memory reallocation failed (run_command)");
+                  error("Failed to reallocate memory (run_command)");
                   return ERROR_REALLOC;
                 }
             }

@@ -88,12 +88,12 @@ int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     while (token != NULL) {
         *output = realloc(*output, (lineCount + 1) * sizeof(char *));
         if (*output == NULL) {
-          error("Memory reallocation failed");
+          error("Failed to reallocate memory (split lines)");
           return ERROR_REALLOC;
         }
         (*output)[lineCount] = strdup(token);
         if ((*output)[lineCount] == NULL) {
-          error("String duplication failed");
+          error("Failed to duplicate string");
           return ERROR_STRDUP;
         }
         lineCount++;
