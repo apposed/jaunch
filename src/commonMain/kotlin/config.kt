@@ -375,7 +375,7 @@ fun readConfig(
 
 // -- I/O helper functions --
 
-private fun <T : Any> castOrWarn(value: Any?, c: KClass<T>): T? {
+private fun <T: Any> castOrWarn(value: Any?, c: KClass<T>): T? {
     if (value == null) return null
     if (c.isInstance(value)) return c.cast(value)
     warn("[TOML] Expected ${c.simpleName} value but got ${value::class.simpleName}: $value")
@@ -408,7 +408,7 @@ private data class TablePrefix(val prefix: String)
 private data class VarAssign(val name: String)
 
 /** A string with mutable start position. */
-private class Pos(val base: String, var start: Int) : CharSequence {
+private class Pos(val base: String, var start: Int): CharSequence {
 
     override val length: Int get() { return base.length - start }
 
