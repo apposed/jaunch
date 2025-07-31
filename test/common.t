@@ -135,5 +135,11 @@ Test: print-config-dir
   -Djava.class.path=/*/demo (glob)
   HelloSwing
 
+Test: Internal configuration overrides: --jaunch-target-os and --jaunch-target-arch
+  $ ./jaunch/jaunch-$os-$arch hello --jaunch-target-arch=x86 --jaunch-target-os=android --debug --dry-run 2>&1 | grep -i '\(OS\|ARCH\)[=:]'
+  [DEBUG] internalFlags -> {target-arch=x86, target-os=android}
+  [DEBUG] * hints -> [ARCH:x86, OS:android, --debug, --dry-run]
+  [DEBUG] * hints -> [ARCH:x86, OS:android, --debug, --dry-run, LAUNCH:JVM]
+
 Cleanup:
   $ rm *.log
