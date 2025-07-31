@@ -66,13 +66,17 @@ construct_app_bundle() {
       # Convert non-ICNS-non-PNG image to a temporary PNG.
       magick=$(magick_command)
       if [ "$magick" ]; then
-        app_icon_png="$out_dir/temp.png"
-        png_is_temp_file=1
-        (
-          set -x
-          "$magick" -background none -density 384 "$app_icon" \
-            -define png:format=png32 -resize 1024x1024 "$app_icon_png"
-        )
+        if [ "$JAUNCH_APPIFY_FASTER" ]; then
+          warn 'Skipping macOS icon conversion to PNG due to fast appify mode.'
+        else
+          app_icon_png="$out_dir/temp.png"
+          png_is_temp_file=1
+          (
+            set -x
+            "$magick" -background none -density 384 "$app_icon" \
+              -define png:format=png32 -resize 1024x1024 "$app_icon_png"
+          )
+        fi
       else
         warn 'Cannot convert icon to PNG temp file; please install ImageMagick.'
         magick_install_help

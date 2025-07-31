@@ -34,9 +34,16 @@ if [ "$app_icon" ]; then
     # Convert non-ICO image to ICO format.
     magick=$(magick_command)
     if [ "$magick" ]; then
-      # Convert icon to Windows ICO format using ImageMagick.
-      "$magick" -background none -density 384 "$app_icon" \
-        -define icon:auto-resize=256,48,32,16 "$icon_outpath"
+      if [ "$JAUNCH_APPIFY_FASTER" ]; then
+        warn 'Skipping Windows icon conversion to ICO due to fast appify mode.'
+      else
+        # Convert icon to Windows ICO format using ImageMagick.
+        (
+          set -x
+          "$magick" -background none -density 384 "$app_icon" \
+            -define icon:auto-resize=256,48,32,16 "$icon_outpath"
+        )
+      fi
     else
       warn 'Cannot convert icon to Windows ICO format; please install ImageMagick.'
       magick_install_help

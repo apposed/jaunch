@@ -90,8 +90,12 @@ if [ "$isWindows" ]; then
 else
   # Non-Windows OS must use wine.
   if command -v wine >/dev/null; then
-    (set -x; wine "$rcedit" "$exe" --set-icon "$icon") 2>&1 |
-      grep -v ':fixme:'
+    if [ "$JAUNCH_APPIFY_FASTER" ]; then
+      warn 'Skipping wine-based icon embed due to fast appify mode.'
+    else
+      (set -x; wine "$rcedit" "$exe" --set-icon "$icon") 2>&1 |
+        grep -v ':fixme:'
+    fi
   else
     warn "Cannot embed icon into '$exe'; please install wine."
   fi
