@@ -2,8 +2,6 @@ import kotlinx.cinterop.*
 import platform.posix.*
 import platform.posix.getenv as pGetEnv
 
-actual val TARGET_ARCH = CPU_ARCH
-
 @OptIn(ExperimentalForeignApi::class)
 actual fun execute(command: String): List<String>? {
     val stdout = mutableListOf<String>()

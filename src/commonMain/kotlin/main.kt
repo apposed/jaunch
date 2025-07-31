@@ -165,7 +165,7 @@ private fun parseArguments(args: Array<String>): Triple<File?, Map<String, Strin
 private fun discernAppDirectory(exeFile: File?): File {
         // Check for native launcher in <AppName>.app/Contents/MacOS directory.
         // If so, treat the app directory as three directories higher up.
-        // We do it this way, rather than OS_NAME == "MACOSX", so that the native
+        // We do it this way, rather than targetOS == "MACOSX", so that the native
         // launcher also works on macOS when located (or symlinked) outside the
         // .app bundle directory structure -- like how it is for Linux and Windows.
         val exeDir = exeFile?.dir ?: File(".")
@@ -240,7 +240,7 @@ private fun createHints(config: JaunchConfig): MutableSet<String> {
         // Kotlin knows these CPU architectures:
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
         //
-        // We use the configured target architecture (which is OS_ARCH by default).
+        // We use the configured target architecture (which is CPU_ARCH by default).
         // This is useful for platforms like macos-arm64 and windows-arm64 that
         // support running multiple architectures, so that the configurator
         // targets the architecture matching that of the native launcher used.

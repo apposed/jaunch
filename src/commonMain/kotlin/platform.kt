@@ -4,8 +4,6 @@ import kotlin.experimental.ExperimentalNativeApi
 
 expect val BUILD_TARGET: String
 
-expect val TARGET_ARCH: String
-
 expect fun execute(command: String): List<String>?
 
 expect fun getcwd(): String

@@ -12,6 +12,8 @@ data class JvmConstraints(
     val distrosBlocked: List<String>,
     val osAliases: List<String>,
     val archAliases: List<String>,
+    val targetOS: String,
+    val targetArch: String,
 )
 
 class JvmRuntimeConfig(recognizedArgs: Array<String>) :
@@ -65,7 +67,8 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         val constraints = JvmConstraints(
             configDir, libjvmSuffixes,
             allowWeirdJvms, config.jvmVersionMin, config.jvmVersionMax,
-            distrosAllowed, distrosBlocked, osAliases, archAliases
+            distrosAllowed, distrosBlocked, osAliases, archAliases,
+            config.targetOS, config.targetArch,
         )
 
         // Discover Java.
@@ -261,7 +264,7 @@ class JavaInstallation(
     val constraints: JvmConstraints,
 ) {
     val libjvmPath: String? by lazy { findLibjvm() }
-    val binJava: String? by lazy { findBinJava() }
+    val binJava: String? by lazy { findBinJava(constraints.targetOS) }
     val version: String? by lazy { guessJavaVersion() }
     val distro: String? by lazy { guessDistribution() }
     val osName: String? by lazy { guessOperatingSystemName() }
@@ -312,8 +315,8 @@ class JavaInstallation(
         return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
     }
 
-    private fun findBinJava(): String? {
-        val extension = if (OS_NAME == "WINDOWS") ".exe" else ""
+    private fun findBinJava(targetOS: String): String? {
+        val extension = if (targetOS == "WINDOWS") ".exe" else ""
         for (candidate in arrayOf("bin", "jre${SLASH}bin")) {
             val javaFile = File("$rootPath$SLASH$candidate${SLASH}java$extension")
             if (javaFile.exists) return javaFile.path
@@ -395,12 +398,12 @@ class JavaInstallation(
         // Check OS name and CPU architecture constraints.
         if (osName == null && strict)
             return fail("Unknown operating system, and weird JVMs are disallowed.")
-        if (osName != null && osName != OS_NAME)
-            return fail("Operating system '$osName' does not match current platform $OS_NAME")
+        if (osName != null && osName != constraints.targetOS)
+            return fail("Operating system '$osName' does not match current platform ${constraints.targetOS}")
         if (cpuArch == null && strict)
             return fail("Unknown CPU architecture, and weird JVMs are disallowed.")
-        if (cpuArch != null && cpuArch != TARGET_ARCH)
-            return fail("CPU architecture '$cpuArch' does not match target architecture $TARGET_ARCH")
+        if (cpuArch != null && cpuArch != constraints.targetArch)
+            return fail("CPU architecture '$cpuArch' does not match target architecture ${constraints.targetArch}")
 
         // Check Java version constraints.
         if (constraints.versionMin != null || constraints.versionMax != null) {

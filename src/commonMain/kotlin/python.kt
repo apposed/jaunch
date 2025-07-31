@@ -7,6 +7,8 @@ data class PythonConstraints(
     val libSuffixes: List<String>,
     val versionMin: String?,
     val versionMax: String?,
+    val targetOS: String,
+    val targetArch: String,
 )
 
 class PythonRuntimeConfig(recognizedArgs: Array<String>) :
@@ -52,7 +54,8 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         val constraints = PythonConstraints(
             configDir,
             libPythonSuffixes,
-            config.pythonVersionMin, config.pythonVersionMax
+            config.pythonVersionMin, config.pythonVersionMax,
+            config.targetOS, config.targetArch,
         )
 
         // Discover Python.
@@ -158,7 +161,7 @@ class PythonInstallation(
     val constraints: PythonConstraints,
 ) {
     val libPythonPath: String? by lazy { findLibPython() }
-    val binPython: String? by lazy { findBinPython() }
+    val binPython: String? by lazy { findBinPython(constraints.targetOS) }
     val version: String? by lazy { guessPythonVersion() }
     val packages: Map<String, String> by lazy { guessInstalledPackages() }
     val conforms: Boolean by lazy { checkConstraints() }
@@ -185,8 +188,8 @@ class PythonInstallation(
         return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
     }
 
-    private fun findBinPython(): String? {
-        val extension = if (OS_NAME == "WINDOWS") ".exe" else ""
+    private fun findBinPython(targetOS: String): String? {
+        val extension = if (targetOS == "WINDOWS") ".exe" else ""
 
         // Note: The order below matters! In particular, on macOS,
         // Homebrew Python will be installed somewhere like:
@@ -295,6 +298,8 @@ class PythonInstallation(
                             "[${constraints.versionMin}, ${constraints.versionMax}].")
             }
         }
+
+        // TODO: Verify installation matches targetOS and targetArch.
 
         // Check installed package constraints.
         // TODO: Actually check packages. ;-)
