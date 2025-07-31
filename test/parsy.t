@@ -41,6 +41,8 @@ Test command line argument combinations.
                       start Java in a mode so an IDE/debugger can attach to it
   --help, -h
                       show this help
+  --version
+                      print the version of the software
   --dry-run
                       show the command line, but do not run anything
   --debug

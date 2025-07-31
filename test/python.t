@@ -26,6 +26,8 @@ Tests:
                       print information about the selected Python
   --help, -h
                       show this help
+  --version
+                      print the version of the software
   --dry-run
                       show the command line, but do not run anything
   --debug
