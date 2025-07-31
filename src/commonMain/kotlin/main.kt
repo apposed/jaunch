@@ -84,6 +84,7 @@ fun main(args: Array<String>) {
         "apply-update" to { _ -> applyUpdate(appDir, appDir / "update") },
         "dry-run" to { _ -> dryRunMode = true },
         "help" to { _ -> help(exeFile, programName, supportedOptions) },
+        "version" to { _ -> version() },
         "print-app-dir" to { _ -> printDir(appDir, "Application") },
         "print-config-dir" to { _ -> printDir(configDir, "Configuration") },
     )
@@ -639,13 +640,17 @@ private fun help(exeFile: File?, programName: String, supportedOptions: JaunchOp
     val exeName = exeFile?.name ?: "jaunch"
     printlnErr("Usage: $exeName [<Runtime options>.. --] [<main arguments>..]")
     printlnErr()
-    printlnErr("$programName launcher (Jaunch v$JAUNCH_VERSION / $JAUNCH_BUILD / $BUILD_TARGET)")
+    printlnErr("$programName launcher (${versionString()})")
     printlnErr("Runtime options are passed to the runtime platform (JVM or Python),")
     printlnErr("main arguments to the launched program ($programName).")
     printlnErr()
     printlnErr("In addition, the following options are supported:")
     val optionsUnique = linkedSetOf(*supportedOptions.values.toTypedArray())
     optionsUnique.forEach { printlnErr(it.help()) }
+}
+
+private fun version() {
+    printlnErr(versionString())
 }
 
 private fun printDir(dir: File, dirName: String) {
@@ -683,4 +688,10 @@ private fun applyUpdate(appDir: File, updateSubDir: File) {
     }
 
     updateSubDir.rmdir()
+}
+
+// -- Helper functions --
+
+private fun versionString(): String {
+    return "Jaunch v$JAUNCH_VERSION / $JAUNCH_BUILD / $BUILD_TARGET"
 }

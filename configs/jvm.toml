@@ -152,7 +152,7 @@ jvm.recognized-args = [
     '--enable-native-access <>', #        17, 21
     '--enable-native-access=*',  #        17, 21
     '--enable-preview',          #    11, 17, 21
-    '--help',                    #    11, 17, 21
+    '--help',                    #    11, 17, 21; Jaunch option
     '--help-extra',              #    11, 17, 21
     '--illegal-access <>',       #    11
     '--illegal-access=*',        #    11
@@ -172,7 +172,7 @@ jvm.recognized-args = [
     '--upgrade-module-path <>',  #    11, 17, 21
     '--upgrade-module-path=*',   #    11, 17, 21
     '--validate-modules',        #    11, 17, 21
-    '--version',                 #    11, 17, 21
+    '--version',                 #    11, 17, 21; Jaunch option
     '@*',                        #    11, 17, 21
 ]
 

@@ -27,7 +27,7 @@ supported-options = [
 modes = [
     '--python|LAUNCH:PYTHON',
     '--jshell|LAUNCH:JVM',
-    '!--python|!--jshell|--help',
+    '!--python|!--jshell|!--version|!--print-java-home|!--print-python-home|!--dry-run|--help',
 ]
 
 python.runtime-args = ['-i']

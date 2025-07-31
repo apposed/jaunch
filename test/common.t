@@ -33,6 +33,8 @@ Test: Help text with --help
                       start Java in a mode so an IDE/debugger can attach to it
   --help, -h
                       show this help
+  --version
+                      print the version of the software
   --dry-run
                       show the command line, but do not run anything
   --debug
@@ -75,6 +77,8 @@ Test: Help text with -h
                       start Java in a mode so an IDE/debugger can attach to it
   --help, -h
                       show this help
+  --version
+                      print the version of the software
   --dry-run
                       show the command line, but do not run anything
   --debug
@@ -96,6 +100,11 @@ Test: Debug output
 
   $ ls hello.log
   hello.log
+
+Test: version
+  $ ./jaunch/jaunch-$os-$arch hello --version
+  Jaunch v[0-9]+\.[0-9]+\.[0-9]+[^ ]* / [0-9a-f]{4}[0-9a-f]* / [^ ]* (re)
+  ABORT
 
 Test: dry-run
   $ ./jaunch/jaunch-$os-$arch hello --dry-run
