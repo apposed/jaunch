@@ -3,7 +3,7 @@ plugins {
     kotlin("multiplatform") version kotlinVersion
 }
 
-group = "org.scijava"
+group = "org.apposed"
 version = "1.0.5-SNAPSHOT"
 
 repositories {
