@@ -18,7 +18,7 @@ Test logging
   [DEBUG] | PROCEEDING WITH JAUNCH CONFIGURATION |
   [DEBUG] \--------------------------------------/
   [DEBUG] executable -> ./hi-* (glob)
-  [DEBUG] internalSettings -> {target-arch=*} (glob)
+  [DEBUG] internalFlags -> {target-arch=*} (glob)
   [DEBUG] inputArgs -> [--debug]
   [DEBUG] appDir -> */demo (glob)
   [DEBUG] configDir -> */demo/jaunch (glob)

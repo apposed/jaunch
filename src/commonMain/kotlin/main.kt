@@ -53,12 +53,12 @@ fun main(args: Array<String>) {
         exit(1)
     }
 
-    val (exeFile, internalSettings, inputArgs) = parseArguments(args)
+    val (exeFile, internalFlags, inputArgs) = parseArguments(args)
     val appDir = discernAppDirectory(exeFile)
     val configDir = findConfigDirectory(appDir)
     val configFile = findConfigFile(configDir, exeFile)
     if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
-    val config = readConfig(configFile, internalSettings)
+    val config = readConfig(configFile, internalFlags)
 
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
@@ -144,10 +144,10 @@ private fun parseArguments(args: Array<String>): Triple<File?, Map<String, Strin
 
     // Separate internal Jaunch arguments from user arguments.
     val (internalArgs, inputArgs) = theArgs.slice(1..<theArgs.size).partition { arg -> arg.startsWith("--jaunch-") }
-    val internalSettings: Map<String, String?> = internalArgs.map { it.substring(9) }.associate { it bisect '=' }
+    val internalFlags: Map<String, String?> = internalArgs.map { it.substring(9) }.associate { it bisect '=' }
 
     // Enable debug mode when --debug flag is present.
-    debugMode = inputArgs.contains("--debug") || internalSettings.containsKey("debug")
+    debugMode = inputArgs.contains("--debug") || internalFlags.containsKey("debug")
 
     // Note: We need to let parseArguments set the debugMode
     // flag in response to the --debug argument being passed.
@@ -155,11 +155,11 @@ private fun parseArguments(args: Array<String>): Triple<File?, Map<String, Strin
     debugBanner("PROCEEDING WITH JAUNCH CONFIGURATION")
 
     debug("executable -> ", executable ?: "<null>")
-    debug("internalSettings -> ", internalSettings)
+    debug("internalFlags -> ", internalFlags)
     debug("inputArgs -> ", inputArgs)
 
     val exeFile = executable?.let(::File) // The native launcher program.
-    return Triple(exeFile, internalSettings, inputArgs)
+    return Triple(exeFile, internalFlags, inputArgs)
 }
 
 private fun discernAppDirectory(exeFile: File?): File {

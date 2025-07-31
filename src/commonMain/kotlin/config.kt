@@ -181,7 +181,7 @@ data class JaunchConfig (
             jvmMainClass = merge(config.jvmMainClass, jvmMainClass),
             jvmMainArgs = config.jvmMainArgs + jvmMainArgs,
 
-            // Preserve internal settings from the base config.
+            // Preserve internal configuration from the base config.
             targetOS = targetOS,
             targetArch = targetArch,
         )
@@ -199,7 +199,7 @@ data class JaunchConfig (
 
 fun readConfig(
     tomlFile: File,
-    internalSettings: Map<String, String?> = emptyMap(),
+    internalFlags: Map<String, String?> = emptyMap(),
     config: JaunchConfig? = null,
     visited: MutableSet<String>? = null
 ): JaunchConfig {
@@ -329,8 +329,8 @@ fun readConfig(
     }
 
     // Populate the internal config fields.
-    val targetOS: String = canonicalize(internalSettings.get("target-os") ?: OS_NAME, osAliases)
-    val targetArch: String = canonicalize(internalSettings.get("target-arch") ?: CPU_ARCH, archAliases)
+    val targetOS: String = canonicalize(internalFlags.get("target-os") ?: OS_NAME, osAliases)
+    val targetArch: String = canonicalize(internalFlags.get("target-arch") ?: CPU_ARCH, archAliases)
 
     // Return the final result.
     return theConfig + JaunchConfig(
