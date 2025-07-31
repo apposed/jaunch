@@ -181,9 +181,8 @@ data class JaunchConfig (
             jvmMainClass = merge(config.jvmMainClass, jvmMainClass),
             jvmMainArgs = config.jvmMainArgs + jvmMainArgs,
 
-            // Preserve internal configuration from the base config.
-            targetOS = targetOS,
-            targetArch = targetArch,
+            targetOS = config.targetOS,
+            targetArch = config.targetArch,
         )
     }
 
