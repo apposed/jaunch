@@ -241,7 +241,7 @@ private fun createHints(config: JaunchConfig): MutableSet<String> {
         // Kotlin knows these CPU architectures:
         //   UNKNOWN, ARM32, ARM64, X86, X64, MIPS32, MIPSEL32, WASM32
         //
-        // We use the configured target architecture (which is CPU_ARCH by default).
+        // We use the configured target architecture (CPU_ARCH by default).
         // This is useful for platforms like macos-arm64 and windows-arm64 that
         // support running multiple architectures, so that the configurator
         // targets the architecture matching that of the native launcher used.
@@ -250,7 +250,7 @@ private fun createHints(config: JaunchConfig): MutableSet<String> {
         // Kotlin knows these operating systems:
         //   UNKNOWN, MACOSX, IOS, LINUX, WINDOWS, ANDROID, WASM, TVOS, WATCHOS
         //
-        // We use the configured target architecture (which is OS_NAME by default).
+        // We use the configured target architecture (OS_NAME by default).
         // This is not at all useful in practice yet! But it's included anyway for
         // pleasing symmetry with the targetArch logic above. In principle, one
         // could invoke the Jaunch configurator directly to search for runtimes of

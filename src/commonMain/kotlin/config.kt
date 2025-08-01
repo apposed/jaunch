@@ -124,17 +124,21 @@ data class JaunchConfig (
     /** Arguments to pass to the main class on the Java side. */
     val jvmMainArgs: Array<String> = emptyArray(),
 
+    // -- Variables and flags --
+
     /** The list of options overridable by .cfg files understood by Jaunch. */
     val cfgVars: Map<String, Any> = emptyMap(),
 
-    // -- Internal configuration fields --
-
-    /** Operating system to target. */
-    val targetOS: String = OS_NAME,
-
-    /** CPU architecture to target. */
-    val targetArch: String = CPU_ARCH,
+    val internalFlags: Map<String, String?> = emptyMap(),
 ) {
+    val targetOS: String get() {
+        return canonicalize("OS name", internalFlags["target-os"], osAliases) ?: OS_NAME
+    }
+
+    val targetArch: String get() {
+        return canonicalize("CPU arch", internalFlags["target-arch"], archAliases) ?: CPU_ARCH
+    }
+
     /** Union another Jaunch configuration with this one. */
     operator fun plus(config: JaunchConfig): JaunchConfig {
         if (config.jaunchVersion != null && jaunchVersion != null &&
@@ -148,7 +152,6 @@ data class JaunchConfig (
             programName = config.programName ?: programName,
             includes = merge(config.includes, includes),
             supportedOptions = merge(config.supportedOptions, supportedOptions),
-            cfgVars = cfgVars + config.cfgVars,
             osAliases = merge(config.osAliases, osAliases),
             archAliases = merge(config.archAliases, archAliases),
             modes = merge(config.modes, modes),
@@ -181,14 +184,9 @@ data class JaunchConfig (
             jvmMainClass = merge(config.jvmMainClass, jvmMainClass),
             jvmMainArgs = config.jvmMainArgs + jvmMainArgs,
 
-            targetOS = config.targetOS,
-            targetArch = config.targetArch,
+            cfgVars = cfgVars + config.cfgVars, // !!!
+            internalFlags = config.internalFlags + internalFlags,
         )
-    }
-
-    /** Helper method to combine arrays without duplication */
-    private fun merge(base: Array<String>, toMerge: Array<String>): Array<String> {
-        return (base + toMerge).distinct().toTypedArray()
     }
 }
 
@@ -327,17 +325,12 @@ fun readConfig(
         }
     }
 
-    // Populate the internal config fields.
-    val targetOS: String = canonicalize(internalFlags.get("target-os") ?: OS_NAME, osAliases)
-    val targetArch: String = canonicalize(internalFlags.get("target-arch") ?: CPU_ARCH, archAliases)
-
     // Return the final result.
     return theConfig + JaunchConfig(
         jaunchVersion = jaunchVersion,
         programName = programName,
         includes = asArray(includes),
         supportedOptions = asArray(supportedOptions),
-        cfgVars = cfgVars,
         osAliases = asArray(osAliases),
         archAliases = asArray(archAliases),
         modes = asArray(modes),
@@ -367,8 +360,8 @@ fun readConfig(
         jvmRuntimeArgs = asArray(jvmRuntimeArgs),
         jvmMainClass = asArray(jvmMainClass),
         jvmMainArgs = asArray(jvmMainArgs),
-        targetOS = targetOS,
-        targetArch = targetArch,
+        cfgVars = cfgVars,
+        internalFlags = internalFlags,
     )
 }
 
@@ -490,10 +483,17 @@ private fun <T> List<T>.indexOf(element: T, startIndex: Int): Int {
 
 // -- Other helper functions --
 
-private fun canonicalize(value: String, aliases: List<String>?): String {
-    val aliasMap = linesToMapOfLists(aliases?.asIterable() ?: emptyList())
+/** Combines arrays without duplication. */
+private fun merge(base: Array<String>, toMerge: Array<String>): Array<String> {
+    return (base + toMerge).distinct().toTypedArray()
+}
+
+private fun canonicalize(name: String, value: String?, aliases: Array<String>): String? {
+    if (value == null) return null
+    val aliasMap = linesToMapOfLists(aliases.asIterable())
     val canonicalized = aliasMap.entries.firstOrNull {
         (canonical, aliases) -> value == canonical || value in aliases
     }
+    if (canonicalized == null) warn("Unknown $name: $value")
     return canonicalized?.key ?: value
 }
