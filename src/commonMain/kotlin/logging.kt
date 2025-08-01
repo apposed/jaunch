@@ -45,10 +45,16 @@ fun fail(message: String): Nothing {
         report("ERROR", *lines.toTypedArray())
     }
     // Pass the error back to the Jaunch native launcher via stdout.
-    println("ERROR")
-    println(lines.size + 1)
-    println(EXIT_CODE_ON_FAIL)
-    lines.forEach { println(it) }
+    // Or if in dry-run mode, emit what we would have passed, then exit nicely.
+    val doOutput = { s: Any -> if (dryRunMode) dryRun(s) else println(s) }
+    doOutput("ERROR")
+    doOutput(lines.size + 1)
+    doOutput(EXIT_CODE_ON_FAIL)
+    lines.forEach { doOutput(it) }
+    if (dryRunMode) {
+        println("ABORT")
+        exit(0)
+    }
     exit(EXIT_CODE_ON_FAIL)
     // Unreachable code, but satisfies the Kotlin compiler.
     throw IllegalStateException(message)
