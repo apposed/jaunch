@@ -22,18 +22,20 @@ struct LaunchConfiguration {
     LaunchFunc launch_runtime;
     size_t argc;
     const char **argv;
+    int exit_code;
 };
 
 static struct LaunchConfiguration config = {
     .launch_runtime = NULL,
     .argc = 0,
-    .argv = NULL
+    .argv = NULL,
+    .exit_code = 0
 };
 
 static void dummy_call_back(void *info) { }
 
 static void *launch_on_macos(void *dummy) {
-    exit(config.launch_runtime(config.argc, config.argv));
+    config.exit_code = config.launch_runtime(config.argc, config.argv);
 }
 
 int handle_translocation(const int argc, const char *argv[]) {
@@ -279,5 +281,5 @@ int launch(const LaunchFunc launch_runtime, const size_t argc, const char **argv
     CFRunLoopAddSource (CFRunLoopGetCurrent(), ref, kCFRunLoopCommonModes);
     CFRunLoopRun();
 
-    return 0;
+    return config.exit_code;
 }
