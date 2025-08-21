@@ -41,10 +41,10 @@ int run_command(const char *command,
 // Implementations in linux.h, win32.h, macos.h
 void setup(const int argc, const char *argv[]);
 void teardown();
-void init_threads();
-void show_alert(const char *title, const char *message);
+void init_threads();                                     // INIT_THREADS
+void show_alert(const char *title, const char *message); // ERROR
 typedef int (*LaunchFunc)(const size_t, const char **);
-int launch(const LaunchFunc launch_func,
+int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
     const size_t argc, const char **argv);
 
 // =================
