@@ -218,17 +218,29 @@ modes = []
 #
 # What sorts of other things? you might ask. And how can we possibly define
 # such open-ended behavior in a mere TOML configuration file? Well, the short
-# answer is: we can't. The configurator program that ships with Jaunch has some
-# built-in directives, and that's it. As of this writing, those are:
+# answer is: we can't. Jaunch has some built-in directives, and that's it.
+# As of this writing, those are:
 #
 # * ABORT              - Cancel the launch without displaying an error message.
+#
 # * ERROR              - Cancel the launch and display an error message to the user.
 #
+# * SETCWD             - Change the current working directory (CWD) of the process.
+#                        Useful e.g. to ensure the application starts in ${app-dir}
+#                        regardless of the platform -- e.g. macOS apps launched via
+#                        Finder start in the root directory (/) by default.
+#
+# * INIT_THREADS       - Call X11's XInitThreads() function to enable multithreading.
+#                        Has no effect on non-Linux platforms. See also doc/LINUX.md.
+#
 # * help               - Display the usage text, built from the supported-options above.
+#
 # * dry-run            - Display the final launch command with runtime args + main args.
 #                        Useful to see what would happen, without it actually happening.
+#
 # * print-app-dir      - Print out the path to the application. Typically, this will be
 #                        the folder containing the launcher.
+#
 # * print-config-dir   - Print out the path to the configuration directory.
 #
 # Directives in UPPER CASE are native launch modes handled on the C/native side,
