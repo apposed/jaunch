@@ -233,7 +233,25 @@ void teardown() {
     // corresponding FreeConsole() here to dispose of it.
 }
 
-void *lib_open(const char *path) { return LoadLibrary(path); }
+void *lib_open(const char *path) {
+    // On Windows, add the DLL's directory to the DLL search path.
+    // This ensures that dependent DLLs (like vcruntime140.dll) can be found
+    // without requiring the DLL's directory to be in the system PATH.
+    char *dll_dir = strdup(path);
+    char *last_slash = strrchr(dll_dir, '\\');
+    if (last_slash != NULL) {
+        *last_slash = '\0';  // Truncate to get directory path
+        debug("[JAUNCH-WIN32] Adding directory to DLL search path: %s", dll_dir);
+
+        // Use SetDllDirectory to add the Python directory to the search path
+        if (!SetDllDirectoryA(dll_dir)) {
+            debug("[JAUNCH-WIN32] Warning: Failed to set DLL directory: %s", lib_error());
+            // Continue anyway - this is not fatal, just falls back to PATH dependency
+        }
+    }
+    free(dll_dir);
+    return LoadLibrary(path);
+}
 void *lib_sym(void *library, const char *symbol) { return GetProcAddress(library, symbol); }
 void lib_close(void *library) { FreeLibrary(library); }
 char *lib_error() {
