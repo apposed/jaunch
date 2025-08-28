@@ -36,6 +36,7 @@ static void dummy_call_back(void *info) { }
 
 static void *launch_on_macos(void *dummy) {
     config.exit_code = config.launch_runtime(config.argc, config.argv);
+    return NULL;
 }
 
 int handle_translocation(const int argc, const char *argv[]) {
