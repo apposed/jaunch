@@ -36,6 +36,7 @@ static void dummy_call_back(void *info) { }
 
 static void *launch_on_macos(void *dummy) {
     config.exit_code = config.launch_runtime(config.argc, config.argv);
+    CFRunLoopStop(CFRunLoopGetMain());
     return NULL;
 }
 
@@ -281,6 +282,8 @@ int launch(const LaunchFunc launch_runtime, const size_t argc, const char **argv
     CFRunLoopSourceRef ref = CFRunLoopSourceCreate(NULL, 0, &context);
     CFRunLoopAddSource (CFRunLoopGetCurrent(), ref, kCFRunLoopCommonModes);
     CFRunLoopRun();
+
+    pthread_join(thread, NULL);
 
     return config.exit_code;
 }
