@@ -38,7 +38,7 @@ int run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output);
 
-// Implementations in linux.h, win32.h, macos.h
+// Implementations in linux.h, macos.h, win32.h
 void setup(const int argc, const char *argv[]);
 void teardown();
 void init_threads();                                     // INIT_THREADS
