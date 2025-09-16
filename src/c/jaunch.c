@@ -203,7 +203,7 @@ int main(const int argc, const char *argv[]) {
     size_t index = 0;
     while (index < out_argc) {
         // Prepare the (argc, argv) for the next directive.
-        const char *directive = (const char *)(out_argv[index]);
+        directive = out_argv[index];
 
         // Honor the special ABORT directive immediately (no further parsing).
         if (strcmp(directive, "ABORT") == 0) {
