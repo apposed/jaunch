@@ -52,6 +52,7 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
 // ============
 int debug_mode = 0;
 int headless_mode = 0;
+char *runloop_mode = "auto";
 
 // =================
 // UTILITY FUNCTIONS

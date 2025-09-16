@@ -236,6 +236,10 @@ int main(const int argc, const char *argv[]) {
         else if (strcmp(directive, "INIT_THREADS") == 0) {
             init_threads();
         }
+        else if (strcmp(directive, "RUNLOOP") == 0) {
+            if (dir_argc >= 1) runloop_mode = (char *)dir_argv[0];
+            else error("Ignoring invalid RUNLOOP directive with no argument.");
+        }
         else if (strcmp(directive, "ERROR") == 0) {
             // =======================================================================
             // Parse the arguments, which must conform to the following structure:
