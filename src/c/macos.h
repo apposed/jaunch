@@ -41,6 +41,44 @@ static void *launch_call_back(void *dummy) {
 }
 
 /*
+ * Launch runtime on main thread (like OpenJDK's -XstartOnFirstThread), using a
+ * simplified but functional equivalent of OpenJDK's NSBlockOperation approach.
+ * GUI frameworks like SWT need the runtime to run on the main thread.
+ */
+int launch_on_main_thread(const LaunchFunc launch_runtime,
+    const size_t argc, const char **argv)
+{
+    debug("[JAUNCH-MACOS] Launching runtime on main thread "
+        "after NSApplicationLoad (-XstartOnFirstThread style)");
+
+    // Ensure we're actually on the main thread.
+    if (!CFEqual(CFRunLoopGetCurrent(), CFRunLoopGetMain())) {
+        error("[JAUNCH-MACOS] launch_on_main_thread called from non-main thread!");
+        return ERROR_WRONG_THREAD;
+    }
+
+    // Initialize NSApplication if needed (like OpenJDK does).
+    // This ensures AppKit is properly set up for GUI applications.
+    // It does *not* start the event loop, though; that will be the
+    // responsibility of the launched program within the runtime.
+    NSApplicationLoad();
+
+    // Use NSAutoreleasePool for proper Objective-C memory management.
+    Class NSAutoreleasePool = objc_getClass("NSAutoreleasePool");
+    id pool = ((id (*)(id, SEL))objc_msgSend)((id)NSAutoreleasePool, sel_registerName("alloc"));
+    pool = ((id (*)(id, SEL))objc_msgSend)(pool, sel_registerName("init"));
+
+    debug("[JAUNCH-MACOS] Launching runtime directly on main thread");
+    int runtime_result = launch_runtime(argc, argv);
+    debug("[JAUNCH-MACOS] Runtime finished with exit code: %d", runtime_result);
+
+    // Clean up autorelease pool
+    ((void (*)(id, SEL))objc_msgSend)(pool, sel_registerName("drain"));
+
+    return runtime_result;
+}
+
+/*
  * Launch runtime on a new thread, parking the main thread in the event loop.
  */
 int launch_on_pthread(const LaunchFunc launch_runtime,
@@ -320,10 +358,26 @@ void show_alert(const char *title, const char *message) {
 /*
  * The macOS way of launching a runtime.
  *
- * It starts a new thread using pthread_create, which calls the launch function.
- * Meanwhile, on this thread (main), the CoreFoundation event loop is run.
- * All so that Java's AWT subsystem can work without freezing up the process.
+ * The behavior depends on the runloop mode:
+ * - "main": Launch on main thread with event loop (like Java's -XstartOnFirstThread flag)
+ * - "park": Launch on pthread, park main thread in event loop (like OpenJDK's default behavior)
+ * - "none": Launch on main thread, no event loop (e.g. Python Qt apps)
  */
-int launch(const LaunchFunc launch_runtime, const size_t argc, const char **argv) {
-    return launch_on_pthread(launch_runtime, argc, argv);
+int launch(const LaunchFunc launch_runtime,
+    const size_t argc, const char **argv)
+{
+    const int mode = effective_runloop_mode();
+
+    if (mode == RUNLOOP_MAIN) {
+        debug("[JAUNCH-MACOS] Launching on main thread with NSApplicationLoad");
+        return launch_on_main_thread(launch_runtime, argc, argv);
+    }
+    if (mode == RUNLOOP_PARK) {
+        debug("[JAUNCH-MACOS] Launching on pthread, parking main thread in event loop");
+        return launch_on_pthread(launch_runtime, argc, argv);
+    }
+
+    // mode == RUNLOOP_NONE
+    debug("[JAUNCH-MACOS] Launching directly on main thread, no event loop");
+    return launch_runtime(argc, argv);
 }

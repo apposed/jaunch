@@ -23,6 +23,11 @@
 #define ERROR_OUTPUT 14
 #define ERROR_ARGC_OUT_OF_BOUNDS 15
 #define ERROR_UNKNOWN_DIRECTIVE 16
+#define ERROR_WRONG_THREAD 17
+
+#define RUNLOOP_NONE 0
+#define RUNLOOP_MAIN 1
+#define RUNLOOP_PARK 2
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -132,6 +137,23 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
     }
 
     return result;
+}
+
+/*
+ * Determine the effective runloop mode based on the current directive and runloop_mode.
+ * If runloop_mode is "auto", use smart defaults based on the runtime type.
+ */
+const int effective_runloop_mode() {
+    if (strcmp(runloop_mode, "none") == 0) return RUNLOOP_NONE;
+    if (strcmp(runloop_mode, "main") == 0) return RUNLOOP_MAIN;
+    if (strcmp(runloop_mode, "park") == 0) return RUNLOOP_PARK;
+
+    if (strcmp(runloop_mode, "auto") != 0) {
+        error("WARNING: Unknown runloop mode '%s' will behave as 'auto'", runloop_mode);
+    }
+    return directive && strcmp(directive, "JVM") == 0
+        ? RUNLOOP_PARK   // JVM default: park main thread in event loop.
+        : RUNLOOP_NONE;  // Non-JVM runtime: don't handle the event loop.
 }
 
 #endif
