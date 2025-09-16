@@ -47,12 +47,15 @@ typedef int (*LaunchFunc)(const size_t, const char **);
 int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
     const size_t argc, const char **argv);
 
+// ============
+// GLOBAL STATE
+// ============
+int debug_mode = 0;
+int headless_mode = 0;
+
 // =================
 // UTILITY FUNCTIONS
 // =================
-
-int debug_mode = 0;
-int headless_mode = 0;
 
 void print_at_level(int verbosity, const char *fmt, ...) {
     if (debug_mode < verbosity) return;
