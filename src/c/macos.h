@@ -41,7 +41,7 @@ static void *launch_call_back(void *dummy) {
 }
 
 /*
- * Launch runtime on a new thread.
+ * Launch runtime on a new thread, parking the main thread in the event loop.
  */
 int launch_on_pthread(const LaunchFunc launch_runtime,
     const size_t argc, const char **argv)
@@ -60,15 +60,46 @@ int launch_on_pthread(const LaunchFunc launch_runtime,
     pthread_create(&thread, &attr, launch_call_back, NULL);
     pthread_attr_destroy(&attr);
 
-    // Run the AppKit event loop here on the main thread.
-    CFRunLoopSourceContext context;
-    memset(&context, 0, sizeof(context));
-    context.perform = &dummy_call_back;
+    // Run the CoreFoundation event loop here on the main thread.
 
-    CFRunLoopSourceRef ref = CFRunLoopSourceCreate(NULL, 0, &context);
-    CFRunLoopAddSource (CFRunLoopGetCurrent(), ref, kCFRunLoopCommonModes);
-    CFRunLoopRun();
+    debug("[JAUNCH-MACOS] Parking main thread in event loop (OpenJDK style)");
 
+    // Create a far-future timer to keep the run loop active.
+    CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault,
+        1.0e20, 0.0, 0, 0, (CFRunLoopTimerCallBack)dummy_call_back, NULL);
+    CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, kCFRunLoopDefaultMode);
+    CFRelease(timer);
+
+    // Park this thread in the main run loop.
+    int32_t result;
+    do {
+        result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0e20, false);
+        debug("[JAUNCH-MACOS] CFRunLoopRunInMode result: %d", result);
+
+        if (result == kCFRunLoopRunFinished) {
+            debug("[JAUNCH-MACOS] Run loop finished - no sources or timers");
+            break;
+        }
+        else if (result == kCFRunLoopRunStopped) {
+            debug("[JAUNCH-MACOS] Run loop stopped via CFRunLoopStop()");
+            break;
+        }
+        else if (result == kCFRunLoopRunTimedOut) {
+            debug("[JAUNCH-MACOS] Run loop timed out");
+            break;
+        }
+        else if (result == kCFRunLoopRunHandledSource) {
+            debug("[JAUNCH-MACOS] Run loop handled a source, continuing");
+            // Continue running - this is normal operation.
+        }
+        else {
+            debug("[JAUNCH-MACOS] Run loop "
+                "returned unexpected result %d, continuing", result);
+            // Continue for unknown results - be conservative.
+        }
+    } while (true);
+
+    // Wait for application thread to terminate.
     pthread_join(thread, NULL);
 
     return config.exit_code;
