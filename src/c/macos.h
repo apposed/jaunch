@@ -34,7 +34,7 @@ static struct LaunchConfiguration config = {
 
 static void dummy_call_back(void *info) { }
 
-static void *launch_on_macos(void *dummy) {
+static void *launch_call_back(void *dummy) {
     config.exit_code = config.launch_runtime(config.argc, config.argv);
     CFRunLoopStop(CFRunLoopGetMain());
     return NULL;
@@ -57,7 +57,7 @@ int launch_on_pthread(const LaunchFunc launch_runtime,
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&thread, &attr, launch_on_macos, NULL);
+    pthread_create(&thread, &attr, launch_call_back, NULL);
     pthread_attr_destroy(&attr);
 
     // Run the AppKit event loop here on the main thread.
