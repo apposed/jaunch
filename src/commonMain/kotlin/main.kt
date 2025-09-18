@@ -623,12 +623,26 @@ private fun executeDirectives(
 
     for (directive in launchDirectives) {
         debug("Processing directive: $directive")
-        val runtime = runtimes.firstOrNull { it.directive == directive }
-        val lines = runtime?.launch(argsInContext[runtime.prefix]!!) ?: emptyList()
-        if (go) {
-            println(directive)
-            println(lines.size)
-            lines.forEach { println(it) }
+
+        // Parse directive and argument ("SETCWD:/somewhere" -> "SETCWD", "/somewhere").
+        val colon = directive.indexOf(':')
+        val directiveName = if (colon >= 0) directive.substring(0, colon) else directive
+        val directiveArg = if (colon >= 0) directive.substring(colon + 1) else null
+
+        // Try to match the directive to a runtime.
+        val runtime = runtimes.firstOrNull { it.directive == directiveName }
+        if (runtime == null) {
+            // No associated runtime; just emit the directive directly.
+            if (go) {
+                if (directiveArg == null) emit(directiveName, "0")
+                else emit(directiveName, "1", directiveArg)
+            }
+        }
+        else {
+            // Ask the runtime exactly what should be emitted.
+            val (dryRun, emissions) = runtime.launch(argsInContext[runtime.prefix]!!, directiveArg)
+            dryRun(dryRun)
+            if (go) emit(*emissions.toTypedArray())
         }
     }
     if (abort) println("ABORT")

@@ -121,22 +121,27 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         // No-op
     }
 
-    override fun launch(args: ProgramArgs): List<String> {
+    override fun launch(args: ProgramArgs, directiveArg: String?): Pair<String, List<String>> {
+        if (directiveArg != null) error("Ignoring invalid $directive directive argument $directiveArg")
+
         val libPythonPath = python?.libPythonPath ?: fail("No matching Python installations found.")
 
-        dryRun(buildString {
+        val dryRun = buildString {
             append(python?.binPython ?: "python")
             args.runtime.forEach { append(" $it") }
             if (mainProgram != null) append(" $mainProgram")
             args.main.forEach { append(" $it") }
-        })
+        }
 
-        return buildList {
+        val lines = buildList {
             add(libPythonPath)
             addAll(args.runtime)
             if (mainProgram != null) add(mainProgram!!)
             addAll(args.main)
         }
+        val emissions = listOf(directive, lines.size.toString()) + lines
+
+        return Pair(dryRun, emissions)
     }
 
     // -- Directive handlers --

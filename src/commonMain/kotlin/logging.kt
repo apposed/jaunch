@@ -60,6 +60,10 @@ fun fail(message: String): Nothing {
     throw IllegalStateException(message)
 }
 
+fun emit(vararg lines: String) {
+    lines.forEach { println(it) }
+}
+
 private fun report(prefix: String, vararg args: Any) {
     val s = buildString {
         append("[$prefix] ")

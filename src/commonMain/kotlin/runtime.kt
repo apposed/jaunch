@@ -44,7 +44,7 @@ abstract class RuntimeConfig(
     abstract fun tweakArgs(args: MutableList<String>)
 
     /** Get the launch directive block for this runtime configuration. */
-    abstract fun launch(args: ProgramArgs): List<String>
+    abstract fun launch(args: ProgramArgs, directiveArg: String?): Pair<String, List<String>>
 
     /**
      * Check whether the given argument matches one of the [recognizedArgs].

@@ -190,24 +190,28 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         }
     }
 
-    override fun launch(args: ProgramArgs): List<String> {
+    override fun launch(args: ProgramArgs, directiveArg: String?): Pair<String, List<String>> {
+        if (directiveArg != null) error("Ignoring invalid $directive directive argument $directiveArg")
+
         val libjvmPath = java?.libjvmPath ?: fail("No matching Java installations found.")
         val mainClass = mainProgram ?: fail("No Java main program specified.")
 
-        dryRun(buildString {
+        val dryRun = buildString {
             append(java?.binJava ?: "java")
             args.runtime.forEach { append(" $it") }
             append(" $mainProgram")
             args.main.forEach { append(" $it") }
-        })
-
-        return buildList {
+        }
+        val lines = buildList {
             add(libjvmPath)
             add(args.runtime.size.toString())
             addAll(args.runtime)
             add(mainClass.replace(".", "/"))
             addAll(args.main)
         }
+        val emissions = listOf(directive, lines.size.toString()) + lines
+
+        return Pair(dryRun, emissions)
     }
 
     // -- Directive handlers --
