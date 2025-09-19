@@ -76,3 +76,19 @@ Test 4: RUNLOOP directive with --jaunch-runloop argument
   -Djava.class.path=* (glob)
   HelloWorld
 --End of Test 4 expected output--
+
+Test 5: RUNLOOP directive for -XstartOnFirstThread flag
+
+  $ ./jaunch/jaunch-$os-$arch hi -XstartOnFirstThread "Don't leave me hanging"
+  RUNLOOP
+  1
+  main
+  JVM
+  6
+  .*/(libjvm.so|libjli.dylib|jvm.dll) (re)
+  2
+  -XstartOnFirstThread
+  -Djava.class.path=* (glob)
+  HelloWorld
+  Don't leave me hanging
+--End of Test 5 expected output--

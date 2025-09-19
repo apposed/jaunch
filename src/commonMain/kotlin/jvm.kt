@@ -22,6 +22,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
     private var java: JavaInstallation? = null
     private var defaultClasspath: List<String> = emptyList()
     private var defaultMaxHeap: String? = null
+    private var skipRunLoop = false
 
     override val supportedDirectives: DirectivesMap = mutableMapOf(
         "print-class-path" to { args -> printlnErr(classpath(args) ?: "<none>") },
@@ -127,6 +128,11 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         debugList("Main arguments calculated:", mainArgs)
 
         this.java = java
+
+        // If -XstartOnFirstThread is given, we'd like to issue a RUNLOOP:main directive.
+        // But we should only do this if --jaunch-runloop wasn't also given, since that
+        // is the more direct and runtime-agnostic way of setting the RUNLOOP mode.
+        skipRunLoop = "runloop" in config.internalFlags
     }
 
     override fun injectInto(vars: Vars) {
@@ -196,6 +202,18 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         val libjvmPath = java?.libjvmPath ?: fail("No matching Java installations found.")
         val mainClass = mainProgram ?: fail("No Java main program specified.")
 
+        // Handle -XstartOnFirstThread JVM argument.
+        val runLoopEmissions = mutableListOf<String>()
+        if ("-XstartOnFirstThread" in args.runtime) {
+            if (skipRunLoop) {
+                warn("Ignoring -XstartOnFirstThread flag in favor of --jaunch-runloop")
+            }
+            else {
+                debug("Using main mode run loop due to -XstartOnFirstThread flag")
+                runLoopEmissions += listOf("RUNLOOP", "1", "main")
+            }
+        }
+
         val dryRun = buildString {
             append(java?.binJava ?: "java")
             args.runtime.forEach { append(" $it") }
@@ -209,9 +227,9 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
             add(mainClass.replace(".", "/"))
             addAll(args.main)
         }
-        val emissions = listOf(directive, lines.size.toString()) + lines
+        val jvmEmissions = listOf(directive, lines.size.toString()) + lines
 
-        return Pair(dryRun, emissions)
+        return Pair(dryRun, runLoopEmissions + jvmEmissions)
     }
 
     // -- Directive handlers --
