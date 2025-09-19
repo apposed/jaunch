@@ -129,7 +129,7 @@ fun main(args: Array<String>) {
     }
 
     // Finally, execute all the remaining directives! \^_^/
-    executeDirectives(nonGlobalDirectives, launchDirectives, runtimes, argsInContext)
+    executeDirectives(config, nonGlobalDirectives, launchDirectives, runtimes, argsInContext)
 
     debugBanner("JAUNCH CONFIGURATION COMPLETE")
 }
@@ -578,6 +578,7 @@ private fun executeGlobalDirectives(
 }
 
 private fun executeDirectives(
+    config: JaunchConfig,
     configDirectives: List<String>,
     launchDirectives: List<String>,
     runtimes: List<RuntimeConfig>,
@@ -620,6 +621,13 @@ private fun executeDirectives(
     // Should we actually proceed with the launch?
     val abort = dryRunMode || launchDirectives.isEmpty() || "ABORT" in launchDirectives
     val go = !abort
+
+    // Emit RUNLOOP directive as appropriate.
+    if ("runloop" in config.internalFlags) {
+        val runLoopMode = config.internalFlags["runloop"] ?: "auto"
+        debug("Configuring RUNLOOP mode $runLoopMode")
+        if (go) emit("RUNLOOP", "1", runLoopMode)
+    }
 
     for (directive in launchDirectives) {
         debug("Processing directive: $directive")

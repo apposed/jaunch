@@ -62,3 +62,17 @@ Test 3: use jaunch configurator manually
   b
   c
 --End of Test 3 expected output--
+
+Test 4: RUNLOOP directive with --jaunch-runloop argument
+
+  $ ./jaunch/jaunch-$os-$arch hi --jaunch-runloop=none
+  RUNLOOP
+  1
+  none
+  JVM
+  4
+  .*/(libjvm.so|libjli.dylib|jvm.dll) (re)
+  1
+  -Djava.class.path=* (glob)
+  HelloWorld
+--End of Test 4 expected output--
