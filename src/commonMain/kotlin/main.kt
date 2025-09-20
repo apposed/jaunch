@@ -653,7 +653,7 @@ private fun executeDirectives(
             if (go) emit(*emissions.toTypedArray())
         }
     }
-    if (abort) println("ABORT")
+    if (abort) emit("ABORT")
 }
 
 // -- Directive handlers --

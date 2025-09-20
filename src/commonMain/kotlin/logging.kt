@@ -46,13 +46,13 @@ fun fail(message: String): Nothing {
     }
     // Pass the error back to the Jaunch native launcher via stdout.
     // Or if in dry-run mode, emit what we would have passed, then exit nicely.
-    val doOutput = { s: Any -> if (dryRunMode) dryRun(s) else println(s) }
+    val doOutput = { s: Any -> if (dryRunMode) dryRun(s) else emit(s) }
     doOutput("ERROR")
     doOutput(lines.size + 1)
     doOutput(EXIT_CODE_ON_FAIL)
     lines.forEach { doOutput(it) }
     if (dryRunMode) {
-        println("ABORT")
+        emit("ABORT")
         exit(0)
     }
     exit(EXIT_CODE_ON_FAIL)
@@ -60,7 +60,7 @@ fun fail(message: String): Nothing {
     throw IllegalStateException(message)
 }
 
-fun emit(vararg lines: String) {
+fun emit(vararg lines: Any) {
     lines.forEach { println(it) }
 }
 
