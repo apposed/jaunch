@@ -233,6 +233,10 @@ modes = []
 # * INIT_THREADS       - Call X11's XInitThreads() function to enable multithreading.
 #                        Has no effect on non-Linux platforms. See also doc/LINUX.md.
 #
+# * RUNLOOP            - Set the runloop mode for macOS event handling. Values:
+#                        main (run on main thread), park (park main thread),
+#                        none (no special handling), auto (automatic selection).
+#
 # * help               - Display the usage text, built from the supported-options above.
 #
 # * dry-run            - Display the final launch command with runtime args + main args.

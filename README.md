@@ -136,6 +136,9 @@ Each directive block is a sequence of lines, structured as follows:
 1. The directive for the native launcher to perform:
    - `JVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
    - `PYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
+   - `SETCWD` to change the current working directory.
+   - `INIT_THREADS` to enable X11 multithreading on [Linux].
+   - `RUNLOOP` to set the runloop mode for [macOS] event handling (main, park, none, auto).
    - `ERROR` to display an error message.
    - `ABORT` to immediately terminate without parsing any further directives.
 
@@ -153,6 +156,14 @@ Each directive block is a sequence of lines, structured as follows:
    - For `PYTHON`:
      1. Path to the python native library;
      2. Arguments to Python, one per line, including Python runtime arguments if any, main script if any, and main script arguments if any. The number of arguments is calculated from the total number of directive block lines minus the number of already-parsed lines (which is always only 1: the python native library path).
+
+   - For `SETCWD`:
+     1. The path to set as the new current working directory.
+
+   - For `INIT_THREADS`: no further lines; this directive has no parameters.
+
+   - For `RUNLOOP`:
+     1. The runloop mode: `main` (run on main thread with `NSApplication` initialization to support toolkits like SWT), `park` (event loop on main thread, launch on separate thread, to support toolkits like AWT/Swing), `none` (run on main thread with no event loop handling, to avoid clashing with toolkits like Qt), or `auto` (automatic selection based on the runtime being launched: `park` for JVM, `none` otherwise).
 
    - For `ERROR`:
      1. The exit code to use when the launcher terminates.

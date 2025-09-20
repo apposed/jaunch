@@ -4,13 +4,89 @@ Like [Linux](LINUX.md) and [Windows](WINDOWS.md), macOS has some specific concer
 
 ### The main thread's CoreFoundation event loop
 
-Many GUI paradigms have some kind of [event loop](https://en.wikipedia.org/wiki/Event_loop) to organize all of the operations happening in the interface. Java has its AWT Event Dispatch Thread (EDT), Qt has `QEventLoop`, the X Window System has the Xlib event loop (see also the [XInitThreads discussion in LINUX.md](LINUX.md#xinitthreads))... but none of them have challenged this developer nearly so much as macOS's requirement that a [Core Foundation event loop](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/RunLoopManagement/RunLoopManagement.html#//apple_ref/doc/uid/10000057i-CH16) be running on the process's main thread. Apple tries to make this requirement as invisible as possible... if you are writing an Objective-C program with XCode. But Jaunch is a cross-platform launcher written in pure C, so it must spin up this event loop itself, then launch the actual main program on a separate pthread.
+Many GUI paradigms have some kind of [event loop](https://en.wikipedia.org/wiki/Event_loop) to organize all of the operations happening in the interface. Java has its AWT Event Dispatch Thread (EDT), Qt has `QEventLoop`, the X Window System has the Xlib event loop (see also the [XInitThreads discussion in LINUX.md](LINUX.md#xinitthreads))... but none of them have challenged this developer nearly so much as macOS's requirement that a [Core Foundation event loop](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/RunLoopManagement/RunLoopManagement.html#//apple_ref/doc/uid/10000057i-CH16) be running on the process's main thread. Apple tries to make this requirement as invisible as possible... if you are writing an Objective-C program with XCode. But Jaunch is a cross-platform launcher written in pure C, so it must handle this event loop management itself.
 
-The main reason for this need is that starting Java directly on the process's main thread results in deadlocks when subsequently initializing Java's graphical AWT subsystem. If your Java program does not do anything with AWT, you might be fine, but if you want to display any GUI elements, your app will freeze.
+#### The RUNLOOP directive
 
-The same problem occurs when attempting to use Java in-process from Python via a library like [JPype](https://www.jpype.org/): as soon as you invoke any Java AWT code from your Python script, it hangs. To overcome this limitation, JPype provides a `setupGuiEnvironment` function that uses `AppHelper.runConsoleEventLoop()` of `PyObjCTools` to start the Core Foundation event loop on the main thread... but then your Python program is subsequently blocked forever; you must pass the code you want executed as a callback function to the `setupGuiEnvironment` function, for it to be executed while the main thread event loop is running. Not only is PyObjC a hassle to install into a Python environment, this limitation also creates [serious obstacles](https://github.com/imagej/pyimagej/issues?q=label%3Amacos-gui) to unleashing the full power of Python+Java combined, e.g. operating on Java GUI elements interactively in a Python REPL as can be done on Linux or Windows.
+Jaunch provides the `RUNLOOP` directive to control how the macOS main thread event loop is handled. This directive accepts four modes:
 
-Fortunately, because Jaunch on macOS explicitly starts the main thread's event loop, then runs the main program on a separate pthread, Java AWT works, and can be freely used from Python scripts. That said, we are still working out some use cases around combination with other tools, such as combining Java GUI usage with Qt-based projects (e.g. [napari](https://napari.org/)).
+- **`main`**: Calls `NSApplicationLoad` to initialize the NSApplication, then launches the runtime on the main thread. This mode approximates Java's `-XstartOnFirstThread` behavior and is intended for use with non-AWT toolkits like SWT that do their own event loop management.
+
+- **`park`**: Runs the CoreFoundation event loop on the main thread using `CFRunLoopRunInMode` in a loop, while launching the runtime on a separate pthread. This mode approximates Java's default launch behavior and is what's needed for AWT applications and other frameworks that require the main thread event loop.
+
+- **`none`**: No special main thread handling; launches the runtime directly on the main thread with no event loop initialization. This mode behaves the same as direct launch mechanisms like `python`.
+
+- **`auto`**: Automatically selects the appropriate mode based on the runtime configuration and detected frameworks. This setting, which is Jaunch's default, attempts to behave as closely as possible to the runtime's standard launcher:
+  - For JVM runtime launches, **`park`** mode will be used, because its what the `java` launcher does.
+  - For other runtime launches, **`none`** mode is used; e.g., `python` performs no special handling of the main thread.
+
+#### Combining Java AWT and Python Qt
+
+The `RUNLOOP` directive enables powerful combinations of Java and Python GUI frameworks that can be otherwise problematic. For example, Java AWT and Python Qt can be successfully combined by using PyQt's `QApplication.exec()` function on the main thread while launching Java on a separate thread:
+
+```python
+import sys
+import threading
+
+import jpype
+
+from pathlib import Path
+
+from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import Qt
+
+
+def launch_app(libjvm_path, jvm_args, main_class, main_args):
+    """Launch application in a background thread."""
+
+    # Pass the JVM path to JPype.
+    jvmpath = str(Path(libjvm_path).absolute())
+    jpype.startJVM(*jvm_args, jvmpath=jvmpath)
+
+    MainClass = jpype.JClass(main_class)
+    MainClass.main(main_args)
+
+    # Block this thread until app is disposed.
+    from time import sleep
+    while not app_disposed():
+        sleep(0.1)
+
+    # Signal main thread to quit Qt when Fiji closes.
+    app.quit()
+
+
+# CRITICAL: Qt must run on main thread on macOS.
+
+# Configure Qt for macOS before any QApplication creation
+QApplication.setAttribute(Qt.AA_MacPluginApplication, True)
+QApplication.setAttribute(Qt.AA_PluginApplication, True)
+QApplication.setAttribute(Qt.AA_DisableSessionManager, True)
+
+# Create QApplication on main thread.
+app = QApplication(sys.argv)
+
+# Prevent Qt from quitting when last Qt window closes; we want Fiji to stay running.
+app.setQuitOnLastWindowClosed(False)
+
+libjvm_path = ...
+jvm_args = ...
+main_class = ...
+main_args = ...
+app_thread = threading.Thread(
+    target=lambda: launch_app(libjvm_path, jvm_args, main_class, main_args),
+    daemon=False
+)
+app_thread.start()
+
+# Run Qt event loop on main thread.
+app.exec()
+
+# Wait for app cleanup.
+if app_thread.is_alive():
+    app_thread.join()
+```
+
+This approach allows Qt to maintain its required main thread event loop while Java AWT operates safely on its own thread.
 
 ### Code signing
 
