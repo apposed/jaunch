@@ -23,10 +23,10 @@ This builds both the C launcher and Kotlin configurator for all supported platfo
 ```bash
 make compile-launcher     # Build C launcher only
 make compile-configurator # Build Kotlin configurator only
-make compile-all         # Build both components
-make demo                # Create demo applications (requires dist)
-make test                # Run tests using prysk (requires demo)
-make clean               # Clean build artifacts
+make compile-all          # Build both components
+make demo                 # Create demo applications (requires dist)
+make test                 # Run tests using prysk (requires demo)
+make clean                # Clean build artifacts
 ```
 
 **Testing:**
