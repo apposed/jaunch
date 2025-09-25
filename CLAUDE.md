@@ -44,7 +44,9 @@ make test                 # Run integration tests (requires demo)
 **Integration tests:**
 - Located in the `test/` directory and use the [prysk](https://prysk.readthedocs.io/) testing framework
 - Install prysk with: `uv tool install prysk`
-- Tests require the demo to be built first (`make demo`)
+- Tests require demo apps to be built first (`make demo`)
+  - Some demo assembly steps (e.g. icon injection) are not needed for tests
+  - Set `JAUNCH_APPIFY_FASTER=1` to assemble demo faster by skipping those steps
 
 ## Architecture
 
