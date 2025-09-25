@@ -6,7 +6,8 @@ This document describes how maintainers *make a release of Jaunch*.
 
 ## Steps to release
 
-On a Linux x64 system with push rights to Jaunch, clone the repository and jump in:
+On a Linux or macOS system with push rights to Jaunch,
+clone the repository and run the release script:
 ```shell
 git clone git@github.com:apposed/jaunch
 cd jaunch
