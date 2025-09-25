@@ -1,5 +1,5 @@
 plugins {
-    val kotlinVersion = "1.9.25"
+    val kotlinVersion = "2.2.20"
     kotlin("multiplatform") version kotlinVersion
 }
 
