@@ -51,7 +51,7 @@ def launch_app(libjvm_path, jvm_args, main_class, main_args):
     while not app_disposed():
         sleep(0.1)
 
-    # Signal main thread to quit Qt when Fiji closes.
+    # Signal main thread to quit Qt when the application closes.
     app.quit()
 
 
@@ -65,7 +65,7 @@ QApplication.setAttribute(Qt.AA_DisableSessionManager, True)
 # Create QApplication on main thread.
 app = QApplication(sys.argv)
 
-# Prevent Qt from quitting when last Qt window closes; we want Fiji to stay running.
+# Prevent Qt from quitting when last Qt window closes; we want the application to stay running.
 app.setQuitOnLastWindowClosed(False)
 
 libjvm_path = ...
