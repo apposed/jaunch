@@ -6,15 +6,15 @@ class Vars(
     exeFile: File?,
     cfgVars: Map<String, Any>
 ) {
-    private val vars = mutableMapOf<String, Any>()
+    private val varMap = mutableMapOf<String, Any>()
 
     init {
-        vars["app-dir"] = appDir.path
-        vars["config-dir"] = configDir.path
-        if (exeFile?.exists == true) vars["executable"] = exeFile.path
+        varMap["app-dir"] = appDir.path
+        varMap["config-dir"] = configDir.path
+        if (exeFile?.exists == true) varMap["executable"] = exeFile.path
 
         // Parse any Vars that were previously defined in toml.
-        vars.putAll(cfgVars)
+        varMap.putAll(cfgVars)
 
         // Build the list of config files
         val cfgFiles = mutableListOf<File>()
@@ -28,7 +28,7 @@ class Vars(
 
         // Read matching .cfg files, containing key=value pairs.
         for (cfgFile in cfgFiles.reversed()) {
-            vars += cfgFile.lines()
+            varMap += cfgFile.lines()
                 .filter { it.indexOf("=") >= 0 }
                 .associate {
                     val eq = it.indexOf("=")
@@ -61,7 +61,7 @@ class Vars(
             if (arg.startsWith("@{") && arg.endsWith("}")) {
                 // interpolate list
                 val name = arg.substring(2, arg.length - 1)
-                val list = vars[name]
+                val list = varMap[name]
                 if (list is Iterable<*>) {
                     noo += list.map { it.toString() }
                     continue
@@ -73,9 +73,9 @@ class Vars(
         args += noo
     }
 
-    operator fun get(key: String): Any? { return vars[key] }
-    operator fun set(varName: String, value: Any) { vars[varName] = value }
-    operator fun plusAssign(items: Map<String, Any>) { vars += items }
+    operator fun get(key: String): Any? { return varMap[key] }
+    operator fun set(varName: String, value: Any) { varMap[varName] = value }
+    operator fun plusAssign(items: Map<String, Any>) { varMap += items }
 
     private fun String.evaluate(hints: Set<String>): String? {
         val tokens = split('|')
@@ -113,7 +113,7 @@ class Vars(
             // If the variable name is missing from the map, check for an environment variable.
             // If no environment variable either, then just leave the expression alone.
             val name = s.substring(start + 2, end)
-            append(vars[name] ?: getenv(name) ?: s.substring(start, end + 1))
+            append(varMap[name] ?: getenv(name) ?: s.substring(start, end + 1))
 
             // Advance the position beyond the variable expression.
             pos = end + 1
@@ -121,6 +121,6 @@ class Vars(
     }
 
     override fun toString(): String {
-        return vars.toString()
+        return varMap.toString()
     }
 }
