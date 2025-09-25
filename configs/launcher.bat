@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableDelayedExpansion
 
 rem # This batch file is a shortcut for launching the application
 rem # without regard for the underlying architecture (x86-64 or arm64).
@@ -23,10 +24,27 @@ rem #
 rem # Where `launcher-windows-x64.exe` is the GUI executable to run.
 
 if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
-    @"%~dp0%~n0-windows-x64.exe" %*
+    set "arch=x64"
 ) else if "%PROCESSOR_ARCHITECTURE%" == "ARM64" (
-    @"%~dp0%~n0-windows-arm64.exe" %*
+    set "arch=arm64"
 ) else (
     echo Unsupported CPU architecture: %PROCESSOR_ARCHITECTURE%
     exit /b 1
 )
+
+set "launcher=%~dp0%~n0-windows-!arch!.exe"
+
+rem # Verify presence of executable, looking harder if missing.
+if not exist "%launcher%" (
+    rem # Executable not present; look for console or gui suffix.
+    set "candidate=%~dp0%~n0-windows-!arch!-console.exe"
+    if not exist "!candidate!" set "candidate=%~dp0%~n0-windows-!arch!-gui.exe"
+    if exist "!candidate!" set "launcher=!candidate!"
+    if not exist "%launcher%" (
+        echo Launcher not available: %launcher%
+        exit /b 1
+    )
+)
+
+rem # Launch with the discovered executable.
+@"%launcher%" %*

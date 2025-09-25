@@ -23,16 +23,16 @@ os=$(uname -s 2>/dev/null)
 case "$os" in
   Linux) launcher="$dir/$name-linux-$arch" ;;
   Darwin) launcher="$dir/$name-macos-$arch" ;;
-  MINGW*|MSYS*) launcher="$dir/$name-windows-$arch" ;;
+  MINGW*|MSYS*) launcher="$dir/$name-windows-$arch.exe" ;;
   *) die "Unsupported operating system: $os" ;;
 esac
 
-# Launch with the appropriate executable.
+# Verify presence of executable, looking harder if missing.
 test -e "$launcher" || {
-  # On macOS, try harder to locate the appropriate executable.
+  # Executable not present; look in more platform-specific places.
   case "$os" in
     Darwin)
-      # Toplevel launcher or symlink not present; look in .app bundles.
+      # macOS: Look within app bundles.
       for macAppDir in "$dir"/*.app; do
         candidate="$macAppDir"/Contents/MacOS/"$name-macos-$arch"
         if [ -e "$candidate" ]; then
@@ -41,7 +41,15 @@ test -e "$launcher" || {
         fi
       done
       ;;
+    MINGW*|MSYS*)
+      # Windows: Look for console or gui suffix.
+      candidate="$name-windows-$arch-console.exe"
+      test -e "$candidate" || candidate="$name-windows-$arch-gui.exe"
+      if [ -e "$candidate" ]; then launcher="$candidate"; fi
+      ;;
   esac
   test -e "$launcher" || die "Launcher not available: $launcher"
 }
+
+# Launch with the discovered executable.
 "$launcher" "$@"
