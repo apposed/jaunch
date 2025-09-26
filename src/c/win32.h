@@ -403,7 +403,11 @@ int run_command(const char *command,
     return split_result;
 }
 
-void init_threads() {}
+void runloop_config(const char *directive) {}
+void runloop_run(const char *mode) {}
+void runloop_stop(ThreadContext *ctx) {}
+
+int init_threads() { return SUCCESS; }
 
 /*
  * The Windows way of displaying a graphical error message.

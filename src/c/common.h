@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #define SUCCESS 0
 #define ERROR_DLOPEN 1
@@ -23,11 +24,44 @@
 #define ERROR_OUTPUT 14
 #define ERROR_ARGC_OUT_OF_BOUNDS 15
 #define ERROR_UNKNOWN_DIRECTIVE 16
-#define ERROR_WRONG_THREAD 17
+#define ERROR_BAD_DIRECTIVE_SYNTAX 17
+#define ERROR_MISSING_FUNCTION 18
 
 #define RUNLOOP_NONE 0
 #define RUNLOOP_MAIN 1
 #define RUNLOOP_PARK 2
+
+// ===============
+// DATA STRUCTURES
+// ===============
+
+// Thread communication states.
+typedef enum {
+    STATE_WAITING,     // Main thread is available for directive execution
+    STATE_EXECUTING,   // Main thread is executing a directive
+    STATE_RUNLOOP,     // Main thread is blocked in platform runloop
+    STATE_COMPLETE     // All directive processing is complete
+} ThreadState;
+
+// Structure for thread communication and directive processing.
+typedef struct {
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    ThreadState state;
+
+    // Original directive data.
+    size_t out_argc;
+    char **out_argv;
+
+    // Directive to execute on main thread.
+    const char *pending_directive;
+    size_t pending_argc;
+    const char **pending_argv;
+    int directive_result;
+
+    // Exit code to use at process conclusion.
+    int exit_code;
+} ThreadContext;
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -46,7 +80,10 @@ int run_command(const char *command,
 // Implementations in linux.h, macos.h, win32.h
 void setup(const int argc, const char *argv[]);
 void teardown();
-void init_threads();                                     // INIT_THREADS
+void runloop_config(const char *directive);
+void runloop_run(const char *mode);
+void runloop_stop(ThreadContext *ctx);
+int init_threads();                                      // INIT_THREADS
 void show_alert(const char *title, const char *message); // ERROR
 typedef int (*LaunchFunc)(const size_t, const char **);
 int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
@@ -57,8 +94,7 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
 // ============
 int debug_mode = 0;
 int headless_mode = 0;
-char *runloop_mode = "auto";
-char *directive = NULL;
+char *runloop_mode = NULL;
 
 // =================
 // UTILITY FUNCTIONS
@@ -139,21 +175,57 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
     return result;
 }
 
-/*
- * Determine the effective runloop mode based on the current directive and runloop_mode.
- * If runloop_mode is "auto", use smart defaults based on the runtime type.
- */
-const int effective_runloop_mode() {
-    if (strcmp(runloop_mode, "none") == 0) return RUNLOOP_NONE;
-    if (strcmp(runloop_mode, "main") == 0) return RUNLOOP_MAIN;
-    if (strcmp(runloop_mode, "park") == 0) return RUNLOOP_PARK;
+// =============================
+// THREAD SYNCHRONIZATION HELPERS
+// =============================
 
-    if (strcmp(runloop_mode, "auto") != 0) {
-        error("WARNING: Unknown runloop mode '%s' will behave as 'auto'", runloop_mode);
+/*
+ * Transition the thread context to a new state while holding the mutex.
+ * This ensures atomic state transitions with proper synchronization.
+ */
+static inline void ctx_set_state(ThreadContext *ctx, ThreadState new_state) {
+    ctx->state = new_state;
+}
+
+/*
+ * Signal the main thread to wake up and check for work.
+ */
+static inline void ctx_signal_main(ThreadContext *ctx) {
+    pthread_cond_signal(&ctx->cond);
+}
+
+/*
+ * Wait for the state to change from the current state.
+ * Must be called with mutex locked; returns with mutex still locked.
+ */
+static inline void ctx_wait_for_state_change(ThreadContext *ctx, ThreadState expected_state) {
+    while (ctx->state == expected_state) {
+        pthread_cond_wait(&ctx->cond, &ctx->mutex);
     }
-    return directive && strcmp(directive, "JVM") == 0
-        ? RUNLOOP_PARK   // JVM default: park main thread in event loop.
-        : RUNLOOP_NONE;  // Non-JVM runtime: don't handle the event loop.
+}
+
+/*
+ * Request that the main thread execute a directive.
+ * Blocks until the directive completes (or signals early completion).
+ * Returns the directive result code.
+ */
+int ctx_request_main_execution(ThreadContext *ctx, const char *directive,
+                                 size_t dir_argc, const char **dir_argv);
+
+/*
+ * Signal that the current directive has completed early and will continue
+ * running asynchronously (e.g., blocking in a runloop).
+ * This releases the directive thread to continue processing.
+ * Must be called from main thread while executing a directive.
+ */
+void ctx_signal_early_completion(ThreadContext *ctx, ThreadState new_state);
+
+/*
+ * Check if the current thread is the main thread by examining the context state.
+ * Returns 1 if main thread is available for directive execution, 0 otherwise.
+ */
+static inline int ctx_main_thread_available(ThreadContext *ctx) {
+    return ctx->state == STATE_WAITING;
 }
 
 #endif
