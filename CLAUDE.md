@@ -68,11 +68,14 @@ Jaunch uses TOML files for configuration:
 ### Platform Support
 
 The build system supports the following platforms:
-- Linux (arm64, x64)
-- macOS (arm64, x64)
-- Windows (arm64, x64)
+- Linux: arm64 (partial), x64
+- macOS arm64, x64
+- Windows arm64 (partial), x64
 
-Platform-specific code is organized using Kotlin Multiplatform source sets with intermediate `posixMain` for Unix-like systems.
+For platform-specific code:
+* C platform code is strictly partitioned into platform-specific header files, which the main `jaunch.c` includes once at the top.
+  * **IMPORTANT** Do not add `#ifdef` platform cases! Use existing platform-specific header files, and `common.h` for shared function definitions.
+* Kotlin platform code is organized using Kotlin Multiplatform source sets with intermediate `posixMain` for Unix-like systems.
 
 ### Key Concepts
 
@@ -85,8 +88,10 @@ Platform-specific code is organized using Kotlin Multiplatform source sets with 
 
 1. Make changes to C code (`src/c/`) or Kotlin code (`src/commonMain/kotlin/`)
 2. Run `make dist` to build complete distribution
-3. Test with demo applications: `make demo && make test`
+3. Use `make test` to run integration tests
 4. For debugging, use the `--debug` flag with any launcher to see verbose output
+
+When working on the C code, test more quickly by running `make compile-launcher && cp dist/launcher-linux-x64 demo/hi-linux-x64 && demo/hi-linux-x64`, replacing `linux-x64` with current platform suffix and `hi` with demo app to be tested.
 
 ## Testing Strategy
 
