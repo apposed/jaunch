@@ -34,10 +34,14 @@ static struct LaunchConfiguration config = {
 
 static void dummy_call_back(void *info) { }
 
+
 static void *launch_call_back(void *dummy) {
     config.exit_code = config.launch_runtime(config.argc, config.argv);
-    CFRunLoopStop(CFRunLoopGetMain());
-    return NULL;
+    debug("[JAUNCH-MACOS] Runtime completed with exit code: %d", config.exit_code);
+
+    // Just like OpenJDK does, exit the entire process when the runtime finishes
+    debug("[JAUNCH-MACOS] Exiting process");
+    exit(config.exit_code);
 }
 
 /*
@@ -109,37 +113,15 @@ int launch_on_pthread(const LaunchFunc launch_runtime,
     CFRelease(timer);
 
     // Park this thread in the main run loop.
+    // Like OpenJDK, only exit when the run loop finishes naturally.
     int32_t result;
     do {
         result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0e20, false);
         debug("[JAUNCH-MACOS] CFRunLoopRunInMode result: %d", result);
+    } while (result != kCFRunLoopRunFinished);
 
-        if (result == kCFRunLoopRunFinished) {
-            debug("[JAUNCH-MACOS] Run loop finished - no sources or timers");
-            break;
-        }
-        else if (result == kCFRunLoopRunStopped) {
-            debug("[JAUNCH-MACOS] Run loop stopped via CFRunLoopStop()");
-            break;
-        }
-        else if (result == kCFRunLoopRunTimedOut) {
-            debug("[JAUNCH-MACOS] Run loop timed out");
-            break;
-        }
-        else if (result == kCFRunLoopRunHandledSource) {
-            debug("[JAUNCH-MACOS] Run loop handled a source, continuing");
-            // Continue running - this is normal operation.
-        }
-        else {
-            debug("[JAUNCH-MACOS] Run loop "
-                "returned unexpected result %d, continuing", result);
-            // Continue for unknown results - be conservative.
-        }
-    } while (true);
-
-    // Wait for application thread to terminate.
-    pthread_join(thread, NULL);
-
+    // This should never be reached since the pthread calls exit() directly,
+    // but if it is, return the exit code.
     return config.exit_code;
 }
 
