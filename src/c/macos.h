@@ -58,34 +58,60 @@ static struct LaunchConfiguration config = {
     .should_stop = 0
 };
 
-
+static void dummy_call_back(void *info) { }
 
 static void debug_runloop_state(const char* when) {
-    CFRunLoopRef runloop = CFRunLoopGetMain();
+    CFRunLoopRef mainloop = CFRunLoopGetMain();
 
     debug("[JAUNCH-MACOS] === Runloop state %s ===", when);
-    debug("[JAUNCH-MACOS] Current runloop: %p", runloop);
-    debug("[JAUNCH-MACOS] Is main thread: %s",
-          CFEqual(CFRunLoopGetCurrent(), CFRunLoopGetMain()) ? "YES" : "NO");
+    debug("[JAUNCH-MACOS] Main runloop: %p", mainloop);
+    debug("[JAUNCH-MACOS] Is main thread: %s", pthread_main_np() ? "YES" : "NO");
 
-    // Check available runloop modes
-    CFArrayRef modes = CFRunLoopCopyAllModes(runloop);
+    // Check available runloop modes (only for main runloop)
+    CFArrayRef modes = CFRunLoopCopyAllModes(mainloop);
     if (modes) {
         CFIndex count = CFArrayGetCount(modes);
-        debug("[JAUNCH-MACOS] Runloop has %ld modes", (long)count);
+        debug("[JAUNCH-MACOS] Main runloop has %ld modes", (long)count);
         for (CFIndex i = 0; i < count; i++) {
             CFStringRef mode = CFArrayGetValueAtIndex(modes, i);
             char modeName[256];
             if (CFStringGetCString(mode, modeName, sizeof(modeName), kCFStringEncodingUTF8)) {
                 debug("[JAUNCH-MACOS] Mode %ld: %s", (long)i, modeName);
+
+                // Try to inspect sources/timers for this mode (these are private APIs)
+                // This is mainly for investigation purposes
+                //if (strcmp(modeName, "kCFRunLoopDefaultMode") == 0 ||
+                //    strcmp(modeName, "AWTRunLoopMode") == 0) {
+
+                    // Check if we can get activity info via private/undocumented methods
+                    // Note: These are internal APIs and may not work on all systems
+                    void *activity = dlsym(RTLD_DEFAULT, "_CFRunLoopGetCurrentActivity");
+                    //if (activity) {
+                    //    debug("[JAUNCH-MACOS] Found _CFRunLoopGetCurrentActivity function");
+                    //}
+
+                    // Try to get source count (also private API territory)
+                    // CFRunLoopCopyAllSources doesn't exist, but we can infer activity
+                    //debug("[JAUNCH-MACOS] Attempting to test runloop responsiveness for mode: %s", modeName);
+                    CFRunLoopRunResult testResult = CFRunLoopRunInMode((CFStringRef)mode, 0.001, true);
+                    const char* resultStr;
+                    switch (testResult) {
+                        case kCFRunLoopRunFinished: resultStr = "kCFRunLoopRunFinished"; break;
+                        case kCFRunLoopRunStopped: resultStr = "kCFRunLoopRunStopped"; break;
+                        case kCFRunLoopRunTimedOut: resultStr = "kCFRunLoopRunTimedOut"; break;
+                        case kCFRunLoopRunHandledSource: resultStr = "kCFRunLoopRunHandledSource"; break;
+                        default: resultStr = "unknown"; break;
+                    }
+                    debug("[JAUNCH-MACOS] Test run result for %s: %s (%d)", modeName, resultStr, testResult);
+                //}
             }
         }
         CFRelease(modes);
     }
 
-    // Check if runloop is running
-    debug("[JAUNCH-MACOS] Runloop is waiting: %s",
-          CFRunLoopIsWaiting(runloop) ? "YES" : "NO");
+    // Check main runloop state
+    debug("[JAUNCH-MACOS] Main runloop is waiting: %s",
+          CFRunLoopIsWaiting(mainloop) ? "YES" : "NO");
 }
 
 /*
@@ -127,12 +153,15 @@ static void debug_runloop_state(const char* when) {
  * 3. Short polling intervals with volatile flags:
  *    - Used CFRunLoopRunInMode() with 0.1s timeouts
  *    - Checked volatile sig_atomic_t flag between iterations
- *    - Flag changes not visible due to memory synchronization issues
- *    - AWT keeps runloop "waiting" state preventing timeout returns
+ *    - CRITICAL DISCOVERY: CFRunLoopRunInMode() NEVER RETURNS after AWT init
+ *    - Pre-AWT: returns normally with kCFRunLoopRunTimedOut every 0.1s
+ *    - Post-AWT: never returns, not even after minutes of waiting
+ *    - AWT installs sources/timers/observers that keep runloop perpetually busy
  *
- * 4. Combined CFRunLoopStop + custom source + flag approach:
- *    - Attempted all techniques simultaneously
- *    - Still hung due to AWT's complete runloop takeover
+ * 4. CFRunLoopWakeUp + CFRunLoopStop approach:
+ *    - Attempted to wake up the runloop before stopping it
+ *    - Still fails because CFRunLoopRunInMode never processes the signals
+ *    - Main thread polling loop remains stuck in the never-returning call
  *
  * THE SOLUTION:
  * Use a dual strategy based on runtime behavior analysis:
@@ -179,8 +208,71 @@ static void *launch_call_back(void *dummy) {
     // When GUI frameworks like AWT modify the runloop extensively,
     // the clean shutdown approach doesn't work reliably. Follow OpenJDK's
     // approach and exit directly from the pthread.
+    debug("[JAUNCH-MACOS] JVM shutdown complete, trying to stop main runloop");
+    CFRunLoopStop(CFRunLoopGetMain());
+
+    // AWT initialization prevents CFRunLoopRunInMode from ever returning, making
+    // clean shutdown impossible. Use OpenJDK's direct exit approach.
     debug("[JAUNCH-MACOS] JVM shutdown complete, exiting directly (OpenJDK style)");
     exit(config.exit_code);
+
+    /* ========================================================================
+    Hey Claude.ai! Is This a Bug in AWT/OpenJDK?
+
+    This is not a bug - it's intentional design. Here's why:
+  
+    AWT's Design Requirements
+  
+    1. GUI Event Processing: AWT needs to continuously process mouse clicks,
+       keyboard events, window redraws, etc. This requires active runloop sources that
+       are always ready to fire.
+    2. Integration with macOS: AWT integrates with native macOS frameworks (AppKit,
+       Core Graphics, etc.) that install their own runloop sources for:
+       - Window management (NSEventTrackingRunLoopMode)
+       - Modal dialogs (NSModalPanelRunLoopMode)
+       - Graphics operations (NSGraphicsRunLoopMode)
+       - Accessibility (com.apple.accessibilityServerIPC)
+       - And many others
+    3. Continuous Operation: GUI applications are designed to run continuously
+       until the user explicitly quits them, not to shut down cleanly when the main
+       program ends.
+  
+    Industry Standard Practice
+  
+    The direct exit() approach is industry standard for GUI applications on macOS:
+  
+    - OpenJDK itself uses this approach (as we discovered in their source)
+    - Native macOS applications often use similar patterns
+    - Other GUI frameworks (Qt, GTK, etc.) face the same challenges
+  
+    Why Clean Shutdown is Impractical
+  
+    When AWT initializes, it:
+    1. Creates persistent connections to system services
+    2. Installs continuous event sources for user input
+    3. Sets up graphics contexts that need constant monitoring
+    4. Registers with accessibility and other system frameworks
+  
+    These aren't "leaks" or "bugs" - they're necessary for GUI functionality.
+    Trying to cleanly tear them all down is:
+    - Complex: Requires coordinating shutdown across multiple system frameworks
+    - Error-prone: Missing any one piece can cause hangs or crashes
+    - Unnecessary: The OS will clean up everything when the process exits
+  
+    The Reality
+  
+    GUI applications fundamentally change the process lifecycle. Once AWT
+    initializes, the application transitions from a "batch program" model to a
+    "service/daemon" model where the runloop becomes the primary control structure.
+  
+    This is why OpenJDK, despite being a sophisticated runtime, chooses the direct
+    exit() approach - it's the most reliable solution for GUI applications on
+    macOS.
+  
+    Conclusion: This isn't a bug to be fixed upstream. It's a design reality of GUI
+    frameworks on macOS that we need to accommodate, which is exactly what our
+    implementation does by following OpenJDK's proven approach.
+    ======================================================================== */
 
     return NULL;
 }
@@ -197,10 +289,12 @@ int launch_on_main_thread(const LaunchFunc launch_runtime,
         "after NSApplicationLoad (-XstartOnFirstThread style)");
 
     // Ensure we're actually on the main thread.
+    /*
     if (!CFEqual(CFRunLoopGetCurrent(), CFRunLoopGetMain())) {
         error("[JAUNCH-MACOS] launch_on_main_thread called from non-main thread!");
         return ERROR_WRONG_THREAD;
     }
+    */
 
     // Initialize NSApplication if needed (like OpenJDK does).
     // This ensures AppKit is properly set up for GUI applications.
@@ -263,6 +357,12 @@ int launch_on_pthread(const LaunchFunc launch_runtime,
     // Run the CoreFoundation event loop here on the main thread.
 
     debug("[JAUNCH-MACOS] Parking main thread in event loop (OpenJDK style)");
+
+    // Create a far-future timer to keep the run loop active.
+    CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault,
+        1.0e20, 0.0, 0, 0, (CFRunLoopTimerCallBack)dummy_call_back, NULL);
+    CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopDefaultMode);
+    CFRelease(timer);
 
     // Park this thread in the main run loop.
     debug_runloop_state("before CFRunLoopRun");
