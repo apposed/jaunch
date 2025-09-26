@@ -1,5 +1,23 @@
 public class HelloWorld {
-  public static void main(String[] args) {
-	  System.out.println("Hello world");
-  }
+	public static void main(String[] args) {
+		// Parse arguments.
+		StringBuilder sb = new StringBuilder();
+		boolean edt = false;
+		for (String arg : args) {
+			if ("--edt".equals(arg)) edt = true;
+			else sb.append(" " + arg);
+		}
+		String greeting = sb.length() == 0 ?
+			"Hello from Java!" : "Hello," + sb + "!";
+
+		// Print the greeting.
+		if (edt) {
+			// Use the AWT Event Dispatch Thread (EDT).
+			java.awt.EventQueue.invokeLater(() -> System.out.println(greeting));
+		}
+		else {
+			// Emit the message directly.
+			System.out.println(greeting);
+		}
+	}
 }

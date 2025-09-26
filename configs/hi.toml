@@ -1,6 +1,6 @@
 # *** Welcome to the example Hi application's configuration file! ***
 #
-# The Hi application uses Java to print a "Hello world" greeting to the console.
+# The Hi application uses Java to print a simple greeting to the console.
 #
 # This launcher is built on Jaunch (https://github.com/scijava/jaunch).
 #

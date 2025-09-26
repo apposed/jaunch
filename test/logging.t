@@ -9,7 +9,7 @@ Setup:
 Test logging
 
   $ ./hi --debug 2>/dev/null
-  Hello world
+  Hello from Java!
   $ test "$(cat hi.log | wc -l)" -gt 100 && echo log-populated
   log-populated
   $ head -n15 hi.log

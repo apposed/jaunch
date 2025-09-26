@@ -53,4 +53,8 @@ Test 1: help text
 
 Verify basic functionality
   $ ./hi
-  Hello world
+  Hello from Java!
+
+Verify argument handling
+  $ ./hi Chuckles the Clown
+  Hello, Chuckles the Clown!

@@ -26,10 +26,10 @@ includes several demo applications powered by Jaunch:
   A simple GUI app displaying a "Hello World" dialog box using Java Swing.
 
 * Hi -
-  An even simpler Java app, which simply prints "Hello world" to the console.
+  An even simpler Java app, which prints a greeting to the console.
 
 * Hiss -
-  A simple Python app, which prints a custom greeting based on its arguments.
+  A simple Python app, which prints a greeting based on its arguments.
 
 To assemble the demo apps:
 

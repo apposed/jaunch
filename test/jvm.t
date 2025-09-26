@@ -51,13 +51,13 @@ Memory tests: Verify that all the aliases pass the heap size
 
 Memory tests: Try running the app using percents with each alias
   $ ./hi --mem 50%
-  Hello world
+  Hello from Java!
 
   $ ./hi --memory 25%
-  Hello world
+  Hello from Java!
 
   $ ./hi --heap 73%
-  Hello world
+  Hello from Java!
 
 Memory tests: Run the app to verify the invalid heap size
   $ ./hi --memory -2g
@@ -88,15 +88,15 @@ Classpath tests: move our .class file and verify we broke things
 
 Make sure each alias works now
   $ ./hi --class-path ..
-  Hello world
+  Hello from Java!
   $ ./hi --classpath ..
-  Hello world
+  Hello from Java!
   $ ./hi --cp ..
-  Hello world
+  Hello from Java!
   $ ./hi -classpath ..
-  Hello world
+  Hello from Java!
   $ ./hi -cp ..
-  Hello world
+  Hello from Java!
 
 Move the .class file back
   $ mv ../HelloWorld.class .
