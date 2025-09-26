@@ -44,6 +44,7 @@
  */
 
 #include <unistd.h>
+#include <pthread.h>
 
 #include "common.h"
 
@@ -84,6 +85,113 @@ const char *JAUNCH_SEARCH_PATHS[] = {
     "Contents"SLASH"MacOS"SLASH,
     NULL,
 };
+
+// Structure for passing directive processing context to thread
+typedef struct {
+    size_t out_argc;
+    char **out_argv;
+    int final_exit_code;
+} DirectiveContext;
+
+/*
+ * Process all directives in sequence. This function can be called
+ * from the main thread or from a separate thread for runloop management.
+ */
+int process_directives(DirectiveContext *ctx) {
+    int exit_code = SUCCESS;
+    int final_exit_code = SUCCESS; // Track final exit code across all directives
+
+    size_t index = 0;
+    while (index < ctx->out_argc) {
+        // Prepare the (argc, argv) for the next directive.
+        directive = ctx->out_argv[index];
+
+        // Honor the special ABORT directive immediately (no further parsing).
+        if (strcmp(directive, "ABORT") == 0) {
+            const size_t extra = ctx->out_argc - index - 1;
+            if (extra > 0) error("Ignoring %zu trailing output lines.", extra);
+            break;
+        }
+        if (index == ctx->out_argc - 1) {
+            error("Invalid trailing directive: %s", directive);
+            break;
+        }
+        const size_t dir_argc = atoi(ctx->out_argv[index + 1]);
+        const char **dir_argv = (const char **)(ctx->out_argv + index + 2);
+        CHECK_ARGS("JAUNCH", "dir", dir_argc, 0, ctx->out_argc - index, dir_argv);
+        index += 2 + dir_argc; // Advance index past this directive block.
+
+        // Call the directive's associated function.
+        if (strcmp(directive, "JVM") == 0) {
+            exit_code = launch(launch_jvm, dir_argc, dir_argv);
+            if (exit_code != SUCCESS) {
+                debug("[JAUNCH] JVM directive failed with exit code %d, continuing with remaining directives", exit_code);
+                final_exit_code = exit_code; // Remember first non-zero exit code
+            }
+        }
+        else if (strcmp(directive, "PYTHON") == 0) {
+            exit_code = launch(launch_python, dir_argc, dir_argv);
+            if (exit_code != SUCCESS) {
+                debug("[JAUNCH] PYTHON directive failed with exit code %d, continuing with remaining directives", exit_code);
+                final_exit_code = exit_code; // Remember first non-zero exit code
+            }
+        }
+        else if (strcmp(directive, "SETCWD") == 0) {
+            if (dir_argc >= 1) chdir(dir_argv[0]);
+            else error("Ignoring invalid SETCWD directive with no argument.");
+        }
+        else if (strcmp(directive, "INIT_THREADS") == 0) {
+            init_threads();
+        }
+        else if (strcmp(directive, "RUNLOOP") == 0) {
+            if (dir_argc >= 1) runloop_mode = (char *)dir_argv[0];
+            else error("Ignoring invalid RUNLOOP directive with no argument.");
+        }
+        else if (strcmp(directive, "ERROR") == 0) {
+            // =======================================================================
+            // Parse the arguments, which must conform to the following structure:
+            //
+            // 1. Exit code to use after issuing the error message.
+            // 2. The error message, which may span multiple lines.
+            // =======================================================================
+            exit_code = dir_argc >= 1 ? atoi(dir_argv[0]) : 255;
+            if (exit_code < 20) exit_code = 20;
+            if (exit_code > 255) exit_code = 255;
+            final_exit_code = exit_code; // ERROR directive sets final exit code
+
+            // Log all error lines first.
+            for (size_t i = 1; i < dir_argc; i++) error(dir_argv[i]);
+
+            // Now join the error lines and display in an alert box.
+            char *message = join_strings(dir_argv + 1, dir_argc - 1, "\n");
+            if (message != NULL) {
+                if (!headless_mode) show_alert("Error", message);
+                free(message);
+            }
+            else {
+                error("An unknown error occurred.");
+                if (!headless_mode) show_alert("Error", "An unknown error occurred.");
+            }
+        }
+        else {
+            // Mysterious directive! Fail fast.
+            error("Unknown directive: %s", directive);
+            final_exit_code = ERROR_UNKNOWN_DIRECTIVE;
+            break;
+        }
+    }
+
+    // =======================================================================
+    // Cleanup all runtime instances after processing all directives
+    // =======================================================================
+
+    debug("[JAUNCH] All directives processed, cleaning up runtime instances");
+    cleanup_jvm();
+    //cleanup_python(); // Note: No cleanup needed for python.
+
+    ctx->final_exit_code = final_exit_code;
+    return final_exit_code;
+}
 
 /* result=$(dirname "$argv0")/$subdir$command */
 char *path(const char *argv0, const char *subdir, const char *command) {
@@ -197,81 +305,26 @@ int main(const int argc, const char *argv[]) {
     // programming error in the configurator yields a much-too-large argc
     // value, and it is better to fail fast than to access invalid memory.
 
-    // Perform the indicated directive(s).
+    // Process all directives on a separate thread for consistent architecture across platforms
+    DirectiveContext ctx = {
+        .out_argc = out_argc,
+        .out_argv = out_argv,
+        .final_exit_code = SUCCESS
+    };
 
-    int exit_code = SUCCESS;
-    size_t index = 0;
-    while (index < out_argc) {
-        // Prepare the (argc, argv) for the next directive.
-        directive = out_argv[index];
+    pthread_t directive_thread;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-        // Honor the special ABORT directive immediately (no further parsing).
-        if (strcmp(directive, "ABORT") == 0) {
-            const size_t extra = out_argc - index - 1;
-            if (extra > 0) error("Ignoring %zu trailing output lines.", extra);
-            break;
-        }
-        if (index == out_argc - 1) {
-            error("Invalid trailing directive: %s", directive);
-            break;
-        }
-        const size_t dir_argc = atoi(out_argv[index + 1]);
-        const char **dir_argv = (const char **)(out_argv + index + 2);
-        CHECK_ARGS("JAUNCH", "dir", dir_argc, 0, out_argc - index, dir_argv);
-        index += 2 + dir_argc; // Advance index past this directive block.
+    debug("[JAUNCH] Starting directive processing on separate thread for consistent cross-platform architecture");
+    pthread_create(&directive_thread, &attr, (void*(*)(void*))process_directives, &ctx);
+    pthread_attr_destroy(&attr);
 
-        // Call the directive's associated function.
-        if (strcmp(directive, "JVM") == 0) {
-            exit_code = launch(launch_jvm, dir_argc, dir_argv);
-            if (exit_code != SUCCESS) break;
-        }
-        else if (strcmp(directive, "PYTHON") == 0) {
-            exit_code = launch(launch_python, dir_argc, dir_argv);
-            if (exit_code != SUCCESS) break;
-        }
-        else if (strcmp(directive, "SETCWD") == 0) {
-            if (dir_argc >= 1) chdir(dir_argv[0]);
-            else error("Ignoring invalid SETCWD directive with no argument.");
-        }
-        else if (strcmp(directive, "INIT_THREADS") == 0) {
-            init_threads();
-        }
-        else if (strcmp(directive, "RUNLOOP") == 0) {
-            if (dir_argc >= 1) runloop_mode = (char *)dir_argv[0];
-            else error("Ignoring invalid RUNLOOP directive with no argument.");
-        }
-        else if (strcmp(directive, "ERROR") == 0) {
-            // =======================================================================
-            // Parse the arguments, which must conform to the following structure:
-            //
-            // 1. Exit code to use after issuing the error message.
-            // 2. The error message, which may span multiple lines.
-            // =======================================================================
-            exit_code = dir_argc >= 1 ? atoi(dir_argv[0]) : 255;
-            if (exit_code < 20) exit_code = 20;
-            if (exit_code > 255) exit_code = 255;
-
-            // Log all error lines first.
-            for (size_t i = 1; i < dir_argc; i++) error(dir_argv[i]);
-
-            // Now join the error lines and display in an alert box.
-            char *message = join_strings(dir_argv + 1, dir_argc - 1, "\n");
-            if (message != NULL) {
-                if (!headless_mode) show_alert("Error", message);
-                free(message);
-            }
-            else {
-                error("An unknown error occurred.");
-                if (!headless_mode) show_alert("Error", "An unknown error occurred.");
-            }
-        }
-        else {
-            // Mysterious directive! Fail fast.
-            error("Unknown directive: %s", directive);
-            exit_code = ERROR_UNKNOWN_DIRECTIVE;
-            break;
-        }
-    }
+    // Wait for directive processing to complete
+    pthread_join(directive_thread, NULL);
+    int final_exit_code = ctx.final_exit_code;
 
     // Clean up.
     for (size_t i = 0; i < out_argc; i++) {
@@ -282,5 +335,5 @@ int main(const int argc, const char *argv[]) {
     // Do any final platform-specific cleanup.
     teardown();
 
-    return exit_code;
+    return final_exit_code;
 }

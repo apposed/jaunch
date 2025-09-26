@@ -159,8 +159,8 @@ case "$(uname -s)" in
     # Compile Windows targets (current arch only).
     arch=$(uname -m)
     if [ "$arch" = "x86_64" ]; then arch=x64; fi
-    compile gcc -o "build/launcher-windows-$arch-console.exe" -mconsole
-    compile gcc -o "build/launcher-windows-$arch-gui.exe" -mwindows
+    compile gcc -o "build/launcher-windows-$arch-console.exe" -lpthread -mconsole
+    compile gcc -o "build/launcher-windows-$arch-gui.exe" -lpthread -mwindows
     ;;
 
   *)
@@ -177,14 +177,14 @@ if [ -d "$cdir" ]
 then
   # windows-arm64 (console and GUI builds)
   compile "$cdir/bin/aarch64-w64-mingw32-clang" \
-    -o build/launcher-windows-arm64-console.exe -mconsole &&
+    -o build/launcher-windows-arm64-console.exe -lpthread -mconsole &&
   compile "$cdir/bin/aarch64-w64-mingw32-clang" \
-    -o build/launcher-windows-arm64-gui.exe -mwindows &&
+    -o build/launcher-windows-arm64-gui.exe -lpthread -mwindows &&
   # windows-x64 (console and GUI builds)
   compile "$cdir/bin/x86_64-w64-mingw32-clang" \
-    -o build/launcher-windows-x64-console.exe -mconsole &&
+    -o build/launcher-windows-x64-console.exe -lpthread -mconsole &&
   compile "$cdir/bin/x86_64-w64-mingw32-clang" \
-    -o build/launcher-windows-x64-gui.exe -mwindows
+    -o build/launcher-windows-x64-gui.exe -lpthread -mwindows
 else
   echo '[WARNING] Failed to set up llvm-mingw; skipping Windows cross-compilation'
 fi

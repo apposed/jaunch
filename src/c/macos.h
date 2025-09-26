@@ -206,15 +206,10 @@ static void *launch_call_back(void *dummy) {
     debug_runloop_state("after JVM shutdown");
 
     // When GUI frameworks like AWT modify the runloop extensively,
-    // the clean shutdown approach doesn't work reliably. Follow OpenJDK's
-    // approach and exit directly from the pthread.
+    // the clean shutdown approach doesn't work reliably. For multiple directive
+    // support, we avoid exit() and let the directive processing continue.
     debug("[JAUNCH-MACOS] JVM shutdown complete, trying to stop main runloop");
     CFRunLoopStop(CFRunLoopGetMain());
-
-    // AWT initialization prevents CFRunLoopRunInMode from ever returning, making
-    // clean shutdown impossible. Use OpenJDK's direct exit approach.
-    debug("[JAUNCH-MACOS] JVM shutdown complete, exiting directly (OpenJDK style)");
-    exit(config.exit_code);
 
     /* ========================================================================
     Hey Claude.ai! Is This a Bug in AWT/OpenJDK?
