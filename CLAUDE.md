@@ -72,7 +72,9 @@ The build system supports the following platforms:
 - macOS (arm64, x64)
 - Windows (arm64, x64)
 
-Platform-specific code is organized using Kotlin Multiplatform source sets with intermediate `posixMain` for Unix-like systems.
+For platform-specific code:
+* C platform code is strictly partitioned into platform-specific header files, which the main `jaunch.c` includes once at the top; do not use `#ifdef` platform branches otherwise.
+* Kotlin platform code is organized using Kotlin Multiplatform source sets with intermediate `posixMain` for Unix-like systems.
 
 ### Key Concepts
 
