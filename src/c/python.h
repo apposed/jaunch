@@ -56,4 +56,6 @@ static int launch_python(const size_t argc, const char **argv) {
     return SUCCESS;
 }
 
+static void cleanup_python() {}
+
 #endif

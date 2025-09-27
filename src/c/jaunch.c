@@ -86,25 +86,135 @@ const char *JAUNCH_SEARCH_PATHS[] = {
     NULL,
 };
 
-// Structure for passing directive processing context to thread
+// Thread communication states.
+typedef enum {
+    STATE_WAITING,
+    STATE_EXECUTING,
+    STATE_COMPLETE
+} ThreadState;
+
+// Structure for thread communication and directive processing.
 typedef struct {
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    ThreadState state;
+
+    // Original directive data.
     size_t out_argc;
     char **out_argv;
-    int final_exit_code;
-} DirectiveContext;
+
+    // Directive to execute on main thread.
+    const char *pending_directive;
+    size_t pending_argc;
+    const char **pending_argv;
+    int directive_result;
+
+    // Exit code to use at process conclusion.
+    int exit_code;
+} ThreadContext;
 
 /*
- * Process all directives in sequence. This function can be called
- * from the main thread or from a separate thread for runloop management.
+ * Execute a single directive and return its error code.
+ * This function handles the actual directive execution logic.
  */
-int process_directives(DirectiveContext *ctx) {
+int execute_directive(const char *directive, size_t dir_argc, const char **dir_argv) {
+    if (strcmp(directive, "JVM") == 0) {
+        return launch(launch_jvm, dir_argc, dir_argv);
+    }
+    if (strcmp(directive, "PYTHON") == 0) {
+        return launch(launch_python, dir_argc, dir_argv);
+    }
+    if (strcmp(directive, "SETCWD") == 0) {
+        if (dir_argc >= 1) {
+            const char *cwd = dir_argv[0];
+            debug("Changing working directory to: %s", cwd);
+            return chdir(cwd);
+        }
+        error("Ignoring invalid SETCWD directive with no argument.");
+        return ERROR_BAD_DIRECTIVE_SYNTAX;
+    }
+    if (strcmp(directive, "INIT_THREADS") == 0) {
+        return init_threads();
+    }
+    if (strcmp(directive, "RUNLOOP") == 0) {
+        const char *mode = dir_argc >= 1 ? dir_argv[0] : runloop_mode;
+        if (mode) {
+          debug("Invoking runloop with mode %s", mode);
+        }
+        else {
+            error("Ignoring invalid RUNLOOP directive with no mode.");
+            return ERROR_BAD_DIRECTIVE_SYNTAX;
+        }
+        runloop_run(mode);
+        return SUCCESS;
+    }
+    if (strcmp(directive, "ERROR") == 0) {
+        // Log all error lines first.
+        for (size_t i = 1; i < dir_argc; i++) error(dir_argv[i]);
+
+        // Now join the error lines and display in an alert box.
+        char *message = join_strings(dir_argv + 1, dir_argc - 1, "\n");
+        if (message != NULL) {
+            if (!headless_mode) show_alert("Error", message);
+            free(message);
+        }
+        else {
+            error("An unknown error occurred.");
+            if (!headless_mode) show_alert("Error", "An unknown error occurred.");
+        }
+
+        int error_code = dir_argc >= 1 ? atoi(dir_argv[0]) : 255;
+        if (error_code < 20) error_code = 20;
+        if (error_code > 255) error_code = 255;
+        return error_code;
+    }
+    error("Unknown directive: %s", directive);
+    return ERROR_UNKNOWN_DIRECTIVE;
+}
+
+/*
+ * Request execution of a directive on the main thread.
+ * Returns the error code from the directive execution.
+ */
+int request_main_thread_execution(ThreadContext *ctx, const char *directive, size_t dir_argc, const char **dir_argv, int async) {
+    pthread_mutex_lock(&ctx->mutex);
+
+    ctx->pending_directive = directive;
+    ctx->pending_argc = dir_argc;
+    ctx->pending_argv = dir_argv;
+    ctx->state = STATE_EXECUTING;
+
+    // Signal main thread.
+    pthread_cond_signal(&ctx->cond);
+
+    // Wait for completion unless asynchronous.
+    if (async) {
+        debug("NOT blocking directives thread for async %s directive.", directive);
+    }
+    else {
+        debug("Blocking directives thread until %s directive completes...", directive);
+        while (ctx->state == STATE_EXECUTING) {
+            pthread_cond_wait(&ctx->cond, &ctx->mutex);
+        }
+        debug("Resuming directives thread due to %s directive completion", directive);
+    }
+
+    int result = ctx->directive_result;
+    pthread_mutex_unlock(&ctx->mutex);
+    return result;
+}
+
+/*
+ * Process all directives in sequence. This function runs on a separate thread and
+ * coordinates with the main thread for runloop management and directive execution.
+ */
+int process_directives(ThreadContext *ctx) {
     int exit_code = SUCCESS;
-    int final_exit_code = SUCCESS; // Track final exit code across all directives
 
     size_t index = 0;
     while (index < ctx->out_argc) {
         // Prepare the (argc, argv) for the next directive.
-        directive = ctx->out_argv[index];
+        const char *directive = ctx->out_argv[index];
 
         // Honor the special ABORT directive immediately (no further parsing).
         if (strcmp(directive, "ABORT") == 0) {
@@ -121,76 +231,69 @@ int process_directives(DirectiveContext *ctx) {
         CHECK_ARGS("JAUNCH", "dir", dir_argc, 0, ctx->out_argc - index, dir_argv);
         index += 2 + dir_argc; // Advance index past this directive block.
 
-        // Call the directive's associated function.
-        if (strcmp(directive, "JVM") == 0) {
-            exit_code = launch(launch_jvm, dir_argc, dir_argv);
-            if (exit_code != SUCCESS) {
-                debug("[JAUNCH] JVM directive failed with exit code %d, continuing with remaining directives", exit_code);
-                final_exit_code = exit_code; // Remember first non-zero exit code
+        // If no runloop mode is set, give the platform a chance to set one.
+        if (!runloop_mode) {
+            runloop_config(directive);
+            if (runloop_mode) {
+                // The auto-configuration function has chosen a runloop mode.
+                // Now we invoke an extra RUNLOOP directive to lock it in.
+                int code = request_main_thread_execution(ctx, "RUNLOOP", 0, NULL, 1);
+                // CLAUDE: Any idea to make this code DRYer with the error code logic below?
+                if (code != SUCCESS) {
+                    debug("[JAUNCH] RUNLOOP auto-directive failed with code %d", code);
+                    exit_code |= code; // Remember non-zero error code bits.
+                }
             }
         }
-        else if (strcmp(directive, "PYTHON") == 0) {
-            exit_code = launch(launch_python, dir_argc, dir_argv);
-            if (exit_code != SUCCESS) {
-                debug("[JAUNCH] PYTHON directive failed with exit code %d, continuing with remaining directives", exit_code);
-                final_exit_code = exit_code; // Remember first non-zero exit code
-            }
-        }
-        else if (strcmp(directive, "SETCWD") == 0) {
-            if (dir_argc >= 1) chdir(dir_argv[0]);
-            else error("Ignoring invalid SETCWD directive with no argument.");
-        }
-        else if (strcmp(directive, "INIT_THREADS") == 0) {
-            init_threads();
-        }
-        else if (strcmp(directive, "RUNLOOP") == 0) {
-            if (dir_argc >= 1) runloop_mode = (char *)dir_argv[0];
-            else error("Ignoring invalid RUNLOOP directive with no argument.");
-        }
-        else if (strcmp(directive, "ERROR") == 0) {
-            // =======================================================================
-            // Parse the arguments, which must conform to the following structure:
-            //
-            // 1. Exit code to use after issuing the error message.
-            // 2. The error message, which may span multiple lines.
-            // =======================================================================
-            exit_code = dir_argc >= 1 ? atoi(dir_argv[0]) : 255;
-            if (exit_code < 20) exit_code = 20;
-            if (exit_code > 255) exit_code = 255;
-            final_exit_code = exit_code; // ERROR directive sets final exit code
 
-            // Log all error lines first.
-            for (size_t i = 1; i < dir_argc; i++) error(dir_argv[i]);
-
-            // Now join the error lines and display in an alert box.
-            char *message = join_strings(dir_argv + 1, dir_argc - 1, "\n");
-            if (message != NULL) {
-                if (!headless_mode) show_alert("Error", message);
-                free(message);
-            }
-            else {
-                error("An unknown error occurred.");
-                if (!headless_mode) show_alert("Error", "An unknown error occurred.");
-            }
+        int error_code = SUCCESS;
+        // CLAUDE: There is a race condition here: RUNLOOP is sent to the main thread
+        // above, and then still in the process of executing, when this point is reached,
+        // meaning the ctx->state is still STATE_EXECUTING. How can we address this?
+        // We really only want the RUNLOOP directive to return asynchronously if it's
+        // actually going to block the main thread due to subsequent CFRunLoopRun().
+        // But at this layer of the program we don't know whether it will do so...
+        // Maybe the runloop_run function implementation in src/c/macos.h could do
+        // something just prior to blocking that triggers a break of the
+        // `while (ctx->state == STATE_EXECUTING)` loop in `request_main_thread_execution`?
+        if (ctx->state == STATE_WAITING) {
+            // Main thread is available, waiting for a command.
+            // Therefore, we execute the directive on the main thread.
+            debug("[JAUNCH] Executing %s directive on main thread", directive);
+            int async = strcmp("RUNLOOP", directive) == 0; // RUNLOOP should not block this thread.
+            error_code = request_main_thread_execution(ctx, directive, dir_argc, dir_argv, async);
         }
         else {
-            // Mysterious directive! Fail fast.
-            error("Unknown directive: %s", directive);
-            final_exit_code = ERROR_UNKNOWN_DIRECTIVE;
-            break;
+            // The main thread is not available. Probably it's blocked by a runloop.
+            // Alternately, it's conceivable that it somehow terminated early.
+            // Regardless, we cannot request the main thread to execute this directive.
+            // Therefore, we execute the directive here on the current thread.
+            debug("[JAUNCH] Executing %s directive off the main thread due to it being unavailable", directive);
+            error_code = execute_directive(directive, dir_argc, dir_argv);
+        }
+
+        if (error_code != SUCCESS) {
+            debug("[JAUNCH] %s directive failed with code %d, continuing with remaining directives", directive, error_code);
+            exit_code |= error_code; // Remember non-zero error code bits.
         }
     }
 
-    // =======================================================================
-    // Cleanup all runtime instances after processing all directives
-    // =======================================================================
-
+    // Cleanup all runtime instances after processing all directives.
     debug("[JAUNCH] All directives processed, cleaning up runtime instances");
     cleanup_jvm();
-    //cleanup_python(); // Note: No cleanup needed for python.
+    cleanup_python();
 
-    ctx->final_exit_code = final_exit_code;
-    return final_exit_code;
+    // Stop any active runloop.
+    runloop_stop();
+
+    // Signal completion to main thread.
+    pthread_mutex_lock(&ctx->mutex);
+    ctx->exit_code = exit_code;
+    ctx->state = STATE_COMPLETE;
+    pthread_cond_signal(&ctx->cond);
+    pthread_mutex_unlock(&ctx->mutex);
+
+    return exit_code;
 }
 
 /* result=$(dirname "$argv0")/$subdir$command */
@@ -305,26 +408,67 @@ int main(const int argc, const char *argv[]) {
     // programming error in the configurator yields a much-too-large argc
     // value, and it is better to fail fast than to access invalid memory.
 
-    // Process all directives on a separate thread for consistent architecture across platforms
-    DirectiveContext ctx = {
+    // Initialize thread context for directive processing
+    ThreadContext ctx = {
+        .mutex = PTHREAD_MUTEX_INITIALIZER,
+        .cond = PTHREAD_COND_INITIALIZER,
+        .state = STATE_WAITING,
         .out_argc = out_argc,
         .out_argv = out_argv,
-        .final_exit_code = SUCCESS
+        .pending_directive = NULL,
+        .pending_argc = 0,
+        .pending_argv = NULL,
+        .directive_result = SUCCESS,
     };
 
+    debug("[JAUNCH] Starting directive processing on separate thread");
     pthread_t directive_thread;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    debug("[JAUNCH] Starting directive processing on separate thread for consistent cross-platform architecture");
     pthread_create(&directive_thread, &attr, (void*(*)(void*))process_directives, &ctx);
     pthread_attr_destroy(&attr);
 
-    // Wait for directive processing to complete
+    // Main thread event loop - handle signals from directive thread.
+    while (1) {
+        // Wait for a signal from the directive thread.
+        pthread_mutex_lock(&ctx.mutex);
+        while (ctx.state == STATE_WAITING) {
+            pthread_cond_wait(&ctx.cond, &ctx.mutex);
+        }
+
+        if (ctx.state == STATE_EXECUTING) {
+            debug("[JAUNCH-MAIN] Executing directive: %s", ctx.pending_directive);
+
+            // Execute the directive.
+            ctx.directive_result = execute_directive(
+                ctx.pending_directive,
+                ctx.pending_argc,
+                ctx.pending_argv
+            );
+
+            // Signal completion back to directive thread.
+            ctx.state = STATE_WAITING;
+            pthread_cond_signal(&ctx.cond);
+            pthread_mutex_unlock(&ctx.mutex);
+        }
+        else if (ctx.state == STATE_COMPLETE) {
+            pthread_mutex_unlock(&ctx.mutex);
+            debug("[JAUNCH-MAIN] Exiting directives loop");
+            break;
+        }
+        else {
+            pthread_mutex_unlock(&ctx.mutex);
+            error("[JAUNCH-MAIN] Unknown thread state encountered");
+            break;
+        }
+    }
+
+    // Wait for directive processing thread to complete.
     pthread_join(directive_thread, NULL);
-    int final_exit_code = ctx.final_exit_code;
+    int exit_code = ctx.exit_code;
+    debug("[JAUNCH] Directives processing complete");
 
     // Clean up.
     for (size_t i = 0; i < out_argc; i++) {
@@ -335,5 +479,5 @@ int main(const int argc, const char *argv[]) {
     // Do any final platform-specific cleanup.
     teardown();
 
-    return final_exit_code;
+    return exit_code;
 }
