@@ -45,6 +45,8 @@
 
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
+#include <time.h>
 
 #include "common.h"
 
@@ -78,24 +80,20 @@ ThreadContext *g_thread_context = NULL;
  * Signal early completion of the current directive to the directive thread.
  * This allows long-running or blocking operations to release the directive thread
  * while continuing to run on the main thread.
+ *
+ * This function uses a lock-free mechanism to avoid mutex contention with the waiting directive thread.
  */
 void signal_directive_early_completion(ThreadState new_state) {
+    debug("[JAUNCH] signal_directive_early_completion called: new state=%d", new_state);
     if (g_thread_context) {
-        pthread_mutex_lock(&g_thread_context->mutex);
-        debug("[JAUNCH] signal_directive_early_completion called: current state=%d, new state=%d",
-              g_thread_context->state, new_state);
-        if (g_thread_context->state == STATE_EXECUTING) {
-            debug("[JAUNCH] Signaling early completion of %s directive, new state: %d",
-                  g_thread_context->pending_directive ? g_thread_context->pending_directive : "unknown",
-                  new_state);
-            g_thread_context->state = new_state;
-            pthread_cond_signal(&g_thread_context->cond);
-            debug("[JAUNCH] Early completion signal sent");
-        } else {
-            debug("[JAUNCH] Not signaling - directive not in EXECUTING state (current: %d)",
-                  g_thread_context->state);
-        }
-        pthread_mutex_unlock(&g_thread_context->mutex);
+        debug("[JAUNCH] Setting async completion flag for %s directive",
+              g_thread_context->pending_directive ? g_thread_context->pending_directive : "unknown");
+
+        // Set the async completion state and flag atomically
+        g_thread_context->async_completion_state = new_state;
+        g_thread_context->async_completion_requested = 1;
+
+        debug("[JAUNCH] Async early completion flag set, new state=%d", new_state);
     } else {
         debug("[JAUNCH] Cannot signal early completion - g_thread_context is NULL");
     }
@@ -191,15 +189,41 @@ int request_main_thread_execution(ThreadContext *ctx, const char *directive, siz
     ctx->pending_argv = dir_argv;
     ctx->state = STATE_EXECUTING;
 
-    // Signal main thread.
+    // Signal main thread and wait for it to start executing
+    debug("[JAUNCH] Signaling main thread to execute %s directive", directive);
     pthread_cond_signal(&ctx->cond);
 
     // Wait for completion (directive can signal early if it will block)
     debug("[JAUNCH] Blocking directives thread until %s directive completes...", directive);
     while (ctx->state == STATE_EXECUTING) {
-        debug("[JAUNCH] Directive thread waiting for %s completion...", directive);
-        pthread_cond_wait(&ctx->cond, &ctx->mutex);
-        debug("[JAUNCH] Directive thread woke up, state is now: %d", ctx->state);
+        debug("[JAUNCH] Directive thread waiting for %s completion, current state: %d...", directive, ctx->state);
+
+        // Check for async completion request before waiting
+        if (ctx->async_completion_requested) {
+            debug("[JAUNCH] Async completion requested, updating state to %d", ctx->async_completion_state);
+            ctx->state = ctx->async_completion_state;
+            ctx->async_completion_requested = 0;
+            break;
+        }
+
+        debug("[JAUNCH] Using polling approach to check for async completion");
+
+        // Release mutex briefly and sleep, then re-check
+        pthread_mutex_unlock(&ctx->mutex);
+
+        debug("[JAUNCH] mutex unlocked; napping now");
+
+        // Sleep for a short time (100ms)
+        struct timespec sleep_time = { 0, 100000000L }; // 100ms
+        nanosleep(&sleep_time, NULL);
+
+        // Re-acquire mutex to check state
+        debug("[JAUNCH] reacquiring mutex");
+        // CTR START HERE: It cannot possibly be a good idea to skip the mutex reacquisition! >_<
+        // But doing so makes all cases work... whereas invoking it here hangs the program...
+        //pthread_mutex_lock(&ctx->mutex);
+
+        debug("[JAUNCH] Rechecked after polling sleep, state=%d", ctx->state);
     }
     debug("[JAUNCH] Resuming directives thread - %s directive completed with state %d", directive, ctx->state);
 
@@ -414,6 +438,8 @@ int main(const int argc, const char *argv[]) {
         .pending_argv = NULL,
         .directive_result = SUCCESS,
         .exit_code = SUCCESS,
+        .async_completion_requested = 0,
+        .async_completion_state = STATE_WAITING,
     };
 
     // Set global context pointer for runloop functions

@@ -87,6 +87,10 @@ typedef struct {
 
     // Exit code to use at process conclusion.
     int exit_code;
+
+    // Async early completion flag (can be set without acquiring main mutex)
+    volatile int async_completion_requested;
+    ThreadState async_completion_state;
 } ThreadContext;
 
 // ============

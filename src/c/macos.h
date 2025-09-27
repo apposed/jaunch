@@ -264,28 +264,37 @@ void runloop_run(const char *mode) {
 
     int park_mode = strcmp(mode, "park") == 0;
     if (park_mode) {
-        debug("[JAUNCH-MACOS] Entering macOS CoreFoundation runloop");
+        debug("[JAUNCH-MACOS] Park mode -- initializing macOS CoreFoundation runloop");
 
-        // Signal early completion and transition to runloop state
-        // This releases the directive thread while we block in the runloop
+        // Signal early completion, transitioning to runloop state. This
+        // releases the directive thread while we block the main thread with
+        // this runloop.
+        debug("[JAUNCH-MACOS] Invoking signal_directive_early_completion");
         signal_directive_early_completion(STATE_RUNLOOP);
+        debug("[JAUNCH-MACOS] signal_directive_early_completion invoked");
 
         // Create a far-future timer to keep the runloop active.
         // This timer is necessary to prevent the runloop from exiting immediately
         // when there are no other sources/timers scheduled.
+        debug("[JAUNCH-MACOS] Creating far-future timer");
         CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault,
             1.0e20, 0.0, 0, 0, (CFRunLoopTimerCallBack)dummy_call_back, NULL);
         CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopDefaultMode);
         CFRelease(timer);
+        debug("[JAUNCH-MACOS] Timer created");
 
         // Run the main runloop.
+        debug("[JAUNCH-MACOS] Invoking CFRunLoopRun");
         CFRunLoopRun();
+        debug("[JAUNCH-MACOS] CFRunLoopRun completed");
 
         // Clear the runloop state when the runloop exits
         if (g_thread_context) {
+            debug("[JAUNCH-MACOS] Clearing runloop state");
             pthread_mutex_lock(&g_thread_context->mutex);
             g_thread_context->state = STATE_WAITING;
             pthread_mutex_unlock(&g_thread_context->mutex);
+            debug("[JAUNCH-MACOS] Runloop state cleared");
         }
 
         debug("[JAUNCH-MACOS] macOS CoreFoundation runloop completed");
@@ -338,7 +347,7 @@ void runloop_stop() {
     // when the runloop fails to shut down cleanly and force-exit if needed.
 
     // Give the runloop 2 seconds to shut down gracefully
-    const double timeout_seconds = 5.0;
+    const double timeout_seconds = 2.0;
     const double start_time = CFAbsoluteTimeGetCurrent();
 
     extern ThreadContext *g_thread_context;
