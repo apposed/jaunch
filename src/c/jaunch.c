@@ -86,39 +86,6 @@ const char *JAUNCH_SEARCH_PATHS[] = {
     NULL,
 };
 
-// Thread communication states.
-typedef enum {
-    STATE_WAITING,
-    STATE_EXECUTING,
-    STATE_COMPLETE
-} ThreadState;
-
-// Structure for thread communication and directive processing.
-typedef struct {
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
-    ThreadState state;
-
-    // Original directive data.
-    size_t out_argc;
-    char **out_argv;
-
-    // Directive to execute on main thread.
-    const char *pending_directive;
-    size_t pending_argc;
-    const char **pending_argv;
-    int directive_result;
-
-    // Exit code to use at process conclusion.
-    int exit_code;
-
-    // Runloop state tracking.
-    volatile sig_atomic_t runloop_active;
-} ThreadContext;
-
-// Global context pointer for runloop functions to access.
-static ThreadContext *g_thread_context = NULL;
-
 /*
  * Execute a single directive and return its error code.
  * This function handles the actual directive execution logic.
@@ -133,7 +100,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
     if (strcmp(directive, "SETCWD") == 0) {
         if (dir_argc >= 1) {
             const char *cwd = dir_argv[0];
-            debug("Changing working directory to: %s", cwd);
+            debug("[JAUNCH] Changing working directory to: %s", cwd);
             return chdir(cwd);
         }
         error("Ignoring invalid SETCWD directive with no argument.");
@@ -145,7 +112,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
     if (strcmp(directive, "RUNLOOP") == 0) {
         const char *mode = dir_argc >= 1 ? dir_argv[0] : runloop_mode;
         if (mode) {
-          debug("Invoking runloop with mode %s", mode);
+          debug("[JAUNCH] Invoking runloop with mode %s", mode);
         }
         else {
             error("Ignoring invalid RUNLOOP directive with no mode.");
@@ -202,7 +169,7 @@ int request_main_thread_execution(ThreadContext *ctx, const char *directive, siz
     // Wait for completion unless asynchronous.
     int result = SUCCESS; // Default result for async operations
     if (async) {
-        debug("NOT blocking directives thread for async %s directive.", directive);
+        debug("[JAUNCH] NOT blocking directives thread for async %s directive.", directive);
         // For async operations, we don't wait for completion, so return success immediately
     }
     else {

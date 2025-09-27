@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #define SUCCESS 0
 #define ERROR_DLOPEN 1
@@ -56,12 +57,49 @@ typedef int (*LaunchFunc)(const size_t, const char **);
 int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
     const size_t argc, const char **argv);
 
+// ===============
+// DATA STRUCTURES
+// ===============
+
+// Thread communication states.
+typedef enum {
+    STATE_WAITING,
+    STATE_EXECUTING,
+    STATE_COMPLETE
+} ThreadState;
+
+// Structure for thread communication and directive processing.
+typedef struct {
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    ThreadState state;
+
+    // Original directive data.
+    size_t out_argc;
+    char **out_argv;
+
+    // Directive to execute on main thread.
+    const char *pending_directive;
+    size_t pending_argc;
+    const char **pending_argv;
+    int directive_result;
+
+    // Exit code to use at process conclusion.
+    int exit_code;
+
+    // Runloop state tracking.
+    volatile sig_atomic_t runloop_active;
+} ThreadContext;
+
 // ============
 // GLOBAL STATE
 // ============
 int debug_mode = 0;
 int headless_mode = 0;
 char *runloop_mode = NULL;
+
+// Global context pointer for runloop functions to access.
+static ThreadContext *g_thread_context = NULL;
 
 // =================
 // UTILITY FUNCTIONS

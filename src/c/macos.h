@@ -255,10 +255,12 @@ void runloop_config(const char *directive) {
     if (directive && strcmp(directive, "JVM") == 0) {
         // JVM default: park main thread in event loop.
         runloop_mode = "park";
+        debug("[JAUNCH-MACOS] runloop_mode -> %s [auto]", runloop_mode);
     }
 }
 void runloop_run(const char *mode) {
     runloop_mode = (char *)mode;
+    debug("[JAUNCH-MACOS] runloop_mode -> %s", runloop_mode);
 
     int park_mode = strcmp(mode, "park") == 0;
     if (park_mode) {
@@ -340,7 +342,7 @@ void runloop_stop() {
     // when the runloop fails to shut down cleanly and force-exit if needed.
 
     // Give the runloop 2 seconds to shut down gracefully
-    const double timeout_seconds = 2.0;
+    const double timeout_seconds = 5.0;
     const double start_time = CFAbsoluteTimeGetCurrent();
 
     extern ThreadContext *g_thread_context;
