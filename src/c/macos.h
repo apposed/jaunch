@@ -266,6 +266,10 @@ void runloop_run(const char *mode) {
     if (park_mode) {
         debug("[JAUNCH-MACOS] Entering macOS CoreFoundation runloop");
 
+        // Signal early completion and transition to runloop state
+        // This releases the directive thread while we block in the runloop
+        signal_directive_early_completion(STATE_RUNLOOP);
+
         // Create a far-future timer to keep the runloop active.
         // This timer is necessary to prevent the runloop from exiting immediately
         // when there are no other sources/timers scheduled.
@@ -274,28 +278,20 @@ void runloop_run(const char *mode) {
         CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopDefaultMode);
         CFRelease(timer);
 
-        // Signal the directive thread that we're about to block in the runloop.
-        // This allows any async RUNLOOP request to complete properly.
-        extern ThreadContext *g_thread_context;
-        if (g_thread_context && g_thread_context->state == STATE_EXECUTING) {
-            pthread_mutex_lock(&g_thread_context->mutex);
-            if (strcmp(g_thread_context->pending_directive, "RUNLOOP") == 0) {
-                debug("[JAUNCH-MACOS] Signaling async RUNLOOP directive completion before blocking");
-                g_thread_context->state = STATE_WAITING;
-                pthread_cond_signal(&g_thread_context->cond);
-            }
-            pthread_mutex_unlock(&g_thread_context->mutex);
-        }
-
         // Run the main runloop.
         CFRunLoopRun();
 
-        // Clear the runloop active flag when the runloop exits
+        // Clear the runloop state when the runloop exits
         if (g_thread_context) {
-            g_thread_context->runloop_active = 0;
+            pthread_mutex_lock(&g_thread_context->mutex);
+            g_thread_context->state = STATE_WAITING;
+            pthread_mutex_unlock(&g_thread_context->mutex);
         }
 
         debug("[JAUNCH-MACOS] macOS CoreFoundation runloop completed");
+    } else {
+        debug("[JAUNCH-MACOS] Runloop mode '%s' - no event loop needed", mode);
+        // For non-park modes, just return normally - no early completion needed
     }
 }
 void runloop_stop() {
@@ -346,7 +342,7 @@ void runloop_stop() {
     const double start_time = CFAbsoluteTimeGetCurrent();
 
     extern ThreadContext *g_thread_context;
-    while (g_thread_context && g_thread_context->runloop_active) {
+    while (g_thread_context && g_thread_context->state == STATE_RUNLOOP) {
         double elapsed = CFAbsoluteTimeGetCurrent() - start_time;
         if (elapsed > timeout_seconds) {
             debug("[JAUNCH-MACOS] CFRunLoop failed to terminate within %.1fs; forcing process exit", timeout_seconds);

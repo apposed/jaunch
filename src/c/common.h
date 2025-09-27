@@ -63,9 +63,10 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
 
 // Thread communication states.
 typedef enum {
-    STATE_WAITING,
-    STATE_EXECUTING,
-    STATE_COMPLETE
+    STATE_WAITING,     // Main thread is available for directive execution
+    STATE_EXECUTING,   // Main thread is executing a directive
+    STATE_RUNLOOP,     // Main thread is blocked in platform runloop
+    STATE_COMPLETE     // All directive processing is complete
 } ThreadState;
 
 // Structure for thread communication and directive processing.
@@ -86,9 +87,6 @@ typedef struct {
 
     // Exit code to use at process conclusion.
     int exit_code;
-
-    // Runloop state tracking.
-    volatile sig_atomic_t runloop_active;
 } ThreadContext;
 
 // ============
@@ -99,7 +97,7 @@ int headless_mode = 0;
 char *runloop_mode = NULL;
 
 // Global context pointer for runloop functions to access.
-static ThreadContext *g_thread_context = NULL;
+extern ThreadContext *g_thread_context;
 
 // =================
 // UTILITY FUNCTIONS
@@ -179,5 +177,8 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
 
     return result;
 }
+
+// Function declarations
+void signal_directive_early_completion(ThreadState new_state);
 
 #endif
