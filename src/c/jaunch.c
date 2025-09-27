@@ -111,7 +111,13 @@ typedef struct {
 
     // Exit code to use at process conclusion.
     int exit_code;
+
+    // Runloop state tracking.
+    volatile sig_atomic_t runloop_active;
 } ThreadContext;
+
+// Global context pointer for runloop functions to access.
+static ThreadContext *g_thread_context = NULL;
 
 /*
  * Execute a single directive and return its error code.
@@ -145,6 +151,12 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
             error("Ignoring invalid RUNLOOP directive with no mode.");
             return ERROR_BAD_DIRECTIVE_SYNTAX;
         }
+
+        // Set runloop active flag before calling runloop_run
+        if (g_thread_context) {
+            g_thread_context->runloop_active = 1;
+        }
+
         runloop_run(mode);
         return SUCCESS;
     }
@@ -188,8 +200,10 @@ int request_main_thread_execution(ThreadContext *ctx, const char *directive, siz
     pthread_cond_signal(&ctx->cond);
 
     // Wait for completion unless asynchronous.
+    int result = SUCCESS; // Default result for async operations
     if (async) {
         debug("NOT blocking directives thread for async %s directive.", directive);
+        // For async operations, we don't wait for completion, so return success immediately
     }
     else {
         debug("Blocking directives thread until %s directive completes...", directive);
@@ -197,9 +211,9 @@ int request_main_thread_execution(ThreadContext *ctx, const char *directive, siz
             pthread_cond_wait(&ctx->cond, &ctx->mutex);
         }
         debug("Resuming directives thread due to %s directive completion", directive);
+        result = ctx->directive_result;
     }
 
-    int result = ctx->directive_result;
     pthread_mutex_unlock(&ctx->mutex);
     return result;
 }
@@ -247,28 +261,23 @@ int process_directives(ThreadContext *ctx) {
         }
 
         int error_code = SUCCESS;
-        // CLAUDE: There is a race condition here: RUNLOOP is sent to the main thread
-        // above, and then still in the process of executing, when this point is reached,
-        // meaning the ctx->state is still STATE_EXECUTING. How can we address this?
-        // We really only want the RUNLOOP directive to return asynchronously if it's
-        // actually going to block the main thread due to subsequent CFRunLoopRun().
-        // But at this layer of the program we don't know whether it will do so...
-        // Maybe the runloop_run function implementation in src/c/macos.h could do
-        // something just prior to blocking that triggers a break of the
-        // `while (ctx->state == STATE_EXECUTING)` loop in `request_main_thread_execution`?
-        if (ctx->state == STATE_WAITING) {
-            // Main thread is available, waiting for a command.
-            // Therefore, we execute the directive on the main thread.
+
+        // Determine execution context based on main thread availability and runloop state
+        int main_thread_available = (ctx->state == STATE_WAITING);
+        int runloop_is_active = (ctx->runloop_active != 0);
+
+        if (main_thread_available && !runloop_is_active) {
+            // Main thread is available and no runloop is blocking it.
+            // Execute the directive on the main thread.
             debug("[JAUNCH] Executing %s directive on main thread", directive);
             int async = strcmp("RUNLOOP", directive) == 0; // RUNLOOP should not block this thread.
             error_code = request_main_thread_execution(ctx, directive, dir_argc, dir_argv, async);
         }
         else {
-            // The main thread is not available. Probably it's blocked by a runloop.
-            // Alternately, it's conceivable that it somehow terminated early.
-            // Regardless, we cannot request the main thread to execute this directive.
-            // Therefore, we execute the directive here on the current thread.
-            debug("[JAUNCH] Executing %s directive off the main thread due to it being unavailable", directive);
+            // Either the main thread is busy executing something, or a runloop is active.
+            // Execute the directive on the current (directive processing) thread.
+            const char *reason = runloop_is_active ? "runloop is active" : "main thread is busy";
+            debug("[JAUNCH] Executing %s directive on directive thread because %s", directive, reason);
             error_code = execute_directive(directive, dir_argc, dir_argv);
         }
 
@@ -419,7 +428,12 @@ int main(const int argc, const char *argv[]) {
         .pending_argc = 0,
         .pending_argv = NULL,
         .directive_result = SUCCESS,
+        .exit_code = SUCCESS,
+        .runloop_active = 0,
     };
+
+    // Set global context pointer for runloop functions
+    g_thread_context = &ctx;
 
     debug("[JAUNCH] Starting directive processing on separate thread");
     pthread_t directive_thread;
@@ -469,6 +483,9 @@ int main(const int argc, const char *argv[]) {
     pthread_join(directive_thread, NULL);
     int exit_code = ctx.exit_code;
     debug("[JAUNCH] Directives processing complete");
+
+    // Clean up global context pointer
+    g_thread_context = NULL;
 
     // Clean up.
     for (size_t i = 0; i < out_argc; i++) {

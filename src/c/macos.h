@@ -265,14 +265,33 @@ void runloop_run(const char *mode) {
         debug("[JAUNCH-MACOS] Entering macOS CoreFoundation runloop");
 
         // Create a far-future timer to keep the runloop active.
-        // CLAUDE: How necessary is it to create this timer?
+        // This timer is necessary to prevent the runloop from exiting immediately
+        // when there are no other sources/timers scheduled.
         CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault,
             1.0e20, 0.0, 0, 0, (CFRunLoopTimerCallBack)dummy_call_back, NULL);
         CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopDefaultMode);
         CFRelease(timer);
 
+        // Signal the directive thread that we're about to block in the runloop.
+        // This allows any async RUNLOOP request to complete properly.
+        extern ThreadContext *g_thread_context;
+        if (g_thread_context && g_thread_context->state == STATE_EXECUTING) {
+            pthread_mutex_lock(&g_thread_context->mutex);
+            if (strcmp(g_thread_context->pending_directive, "RUNLOOP") == 0) {
+                debug("[JAUNCH-MACOS] Signaling async RUNLOOP directive completion before blocking");
+                g_thread_context->state = STATE_WAITING;
+                pthread_cond_signal(&g_thread_context->cond);
+            }
+            pthread_mutex_unlock(&g_thread_context->mutex);
+        }
+
         // Run the main runloop.
         CFRunLoopRun();
+
+        // Clear the runloop active flag when the runloop exits
+        if (g_thread_context) {
+            g_thread_context->runloop_active = 0;
+        }
 
         debug("[JAUNCH-MACOS] macOS CoreFoundation runloop completed");
     }
@@ -317,18 +336,25 @@ void runloop_stop() {
     //    - Still fails because CFRunLoopRunInMode never processes the signals
     //    - Main thread polling loop remains stuck in the never-returning call
     //
-    // Therefore, as a HACK here, we will wait for a fixed amount of time to
-    // see whether the runloop actually shuts down, and if it fails to do so
-    // in a timely manner, we'll give up and force-exit the process.
+    // Therefore, as a fallback, we implement a timeout mechanism to detect
+    // when the runloop fails to shut down cleanly and force-exit if needed.
 
-    // CLAUDE: Implement a fixed-timeout check for runloop termination. If the
-    // runloop has not exited by the timeout, call exit with cached exit code.
-    /*
-    if (!CFRunLoopExited()) {
-        debug("[JAUNCH-MACOS] CFRunLoop failed to terminate; forcing process exit");
-        exit(exit_code);
+    // Give the runloop 2 seconds to shut down gracefully
+    const double timeout_seconds = 2.0;
+    const double start_time = CFAbsoluteTimeGetCurrent();
+
+    extern ThreadContext *g_thread_context;
+    while (g_thread_context && g_thread_context->runloop_active) {
+        double elapsed = CFAbsoluteTimeGetCurrent() - start_time;
+        if (elapsed > timeout_seconds) {
+            debug("[JAUNCH-MACOS] CFRunLoop failed to terminate within %.1fs; forcing process exit", timeout_seconds);
+            int exit_code = g_thread_context ? g_thread_context->exit_code : 1;
+            exit(exit_code);
+        }
+
+        // Check every 50ms
+        usleep(50000);
     }
-    */
 
     debug("[JAUNCH-MACOS] CFRunLoop has successfully terminated! ^_^");
 }
