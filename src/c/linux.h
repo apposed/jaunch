@@ -40,58 +40,9 @@ int find_executable(const char *name, char *path_buf, size_t buf_size) {
 void setup(const int argc, const char *argv[]) {}
 void teardown() {}
 
-// BEGIN TEMP CODE FOR TESTING THREADING
-volatile int fake_runloop_running = 0;
-void runloop_config(const char *directive) {
-    if (directive && strcmp(directive, "JVM") == 0) {
-        // JVM default: park main thread in event loop.
-        runloop_mode = "park";
-        debug("[JAUNCH-LINUXTEMP] runloop_mode -> %s [auto]", runloop_mode);
-    }
-}
-void runloop_run(const char *mode) {
-    runloop_mode = (char *)mode;
-    fake_runloop_running = 1;
-    debug("[JAUNCH-LINUXTEMP] runloop_mode -> %s", runloop_mode);
-
-    int park_mode = strcmp(mode, "park") == 0;
-    if (park_mode) {
-        debug("[JAUNCH-LINUXTEMP] Park mode -- initializing FAKE runloop");
-
-        // Get the thread context from thread-local storage.
-        // Note: This requires tls_thread_context to be accessible from platform code.
-        extern __thread ThreadContext *tls_thread_context;
-        ThreadContext *ctx = tls_thread_context;
-
-        if (ctx) {
-            // Signal early completion, transitioning to runloop state. This
-            // releases the directive thread while we block the main thread with
-            // this runloop.
-            debug("[JAUNCH-LINUXTEMP] Invoking ctx_signal_early_completion");
-            pthread_mutex_lock(&ctx->mutex);
-            ctx_signal_early_completion(ctx, STATE_RUNLOOP);
-            pthread_mutex_unlock(&ctx->mutex);
-            debug("[JAUNCH-LINUXTEMP] ctx_signal_early_completion invoked");
-        } else {
-            error("[JAUNCH-LINUXTEMP] Cannot signal early completion - thread context is NULL");
-        }
-
-        // Run the main runloop.
-        debug("[JAUNCH-LINUXTEMP] Invoking 'CFRunLoopRun'");
-        while (fake_runloop_running) {
-          // Sleep for a short time (100ms)
-          struct timespec sleep_time = { 0, 100000000L }; // 100ms
-          nanosleep(&sleep_time, NULL);
-        }
-        debug("[JAUNCH-LINUXTEMP] FAKE runloop completed");
-    } else {
-        debug("[JAUNCH-LINUXTEMP] Runloop mode '%s' - no event loop needed", mode);
-        // For non-park modes, just return normally - no early completion needed
-    }
-}
-void runloop_stop(ThreadContext *ctx) {
-  fake_runloop_running = 0;
-}
+void runloop_config(const char *directive) {}
+void runloop_run(const char *mode) {}
+void runloop_stop(ThreadContext *ctx) {}
 
 int init_threads() {
     void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
