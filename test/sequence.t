@@ -20,7 +20,7 @@ Detect libjvm and libpython locations:
   $ libjvm=$(jaunch/jaunch-"$platform" hi | head -n3 | tail -n1)
   $ libpython=$(jaunch/jaunch-"$platform" hiss | head -n3 | tail -n1)
   $ echo "libjvm = $libjvm"
-  libjvm = *jvm* (glob)
+  libjvm = .*(libjvm|libjli|jvm.dll|JVM.DLL).* (re)
   $ echo "libpython = $libpython"
   libpython = *python* (glob)
 
