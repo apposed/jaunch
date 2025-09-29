@@ -403,8 +403,8 @@ int run_command(const char *command,
     return split_result;
 }
 
-void runloop_config(const char *directive) {}
-void runloop_run(const char *mode) {}
+void runloop_config(ThreadContext *ctx, const char *directive) {}
+void runloop_run(ThreadContext *ctx, const char *mode) {}
 void runloop_stop(ThreadContext *ctx) {}
 
 int init_threads() { return SUCCESS; }

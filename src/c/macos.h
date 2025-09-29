@@ -251,38 +251,29 @@ void setup(const int argc, const char *argv[]) {
 }
 void teardown() {}
 
-void runloop_config(const char *directive) {
+void runloop_config(ThreadContext *ctx, const char *directive) {
     if (directive && strcmp(directive, "JVM") == 0) {
         // JVM default: park main thread in event loop.
-        runloop_mode = "park";
-        debug("[JAUNCH-MACOS] runloop_mode -> %s [auto]", runloop_mode);
+        ctx->runloop_mode = "park";
+        debug("[JAUNCH-MACOS] runloop_mode -> %s [auto]", ctx->runloop_mode);
     }
 }
-void runloop_run(const char *mode) {
-    runloop_mode = (char *)mode;
-    debug("[JAUNCH-MACOS] runloop_mode -> %s", runloop_mode);
+void runloop_run(ThreadContext *ctx, const char *mode) {
+    ctx->runloop_mode = (char *)mode;
+    debug("[JAUNCH-MACOS] runloop_mode -> %s", ctx->runloop_mode);
 
     int park_mode = strcmp(mode, "park") == 0;
     if (park_mode) {
         debug("[JAUNCH-MACOS] Park mode -- initializing macOS CoreFoundation runloop");
 
-        // Get the thread context from thread-local storage.
-        // Note: This requires tls_thread_context to be accessible from platform code.
-        extern __thread ThreadContext *tls_thread_context;
-        ThreadContext *ctx = tls_thread_context;
-
-        if (ctx) {
-            // Signal early completion, transitioning to runloop state. This
-            // releases the directive thread while we block the main thread with
-            // this runloop.
-            debug("[JAUNCH-MACOS] Invoking ctx_signal_early_completion");
-            pthread_mutex_lock(&ctx->mutex);
-            ctx_signal_early_completion(ctx, STATE_RUNLOOP);
-            pthread_mutex_unlock(&ctx->mutex);
-            debug("[JAUNCH-MACOS] ctx_signal_early_completion invoked");
-        } else {
-            error("[JAUNCH-MACOS] Cannot signal early completion - thread context is NULL");
-        }
+        // Signal early completion, transitioning to runloop state. This
+        // releases the directive thread while we block the main thread with
+        // this runloop.
+        debug("[JAUNCH-MACOS] Invoking ctx_signal_early_completion");
+        pthread_mutex_lock(&ctx->mutex);
+        ctx_signal_early_completion(ctx, STATE_RUNLOOP);
+        pthread_mutex_unlock(&ctx->mutex);
+        debug("[JAUNCH-MACOS] ctx_signal_early_completion invoked");
 
         // Create a far-future timer to keep the runloop active.
         // This timer is necessary to prevent the runloop from exiting immediately
@@ -437,12 +428,16 @@ int launch(const LaunchFunc launch_runtime,
 {
     int runtime_result = SUCCESS;
 
+    // Get the thread context from thread-local storage.
+    extern __thread ThreadContext *tls_thread_context;
+    ThreadContext *ctx = tls_thread_context;
+
     // Note: For "park" mode, this function will be invoked from the already
     // active pthread, whereas for "main" and "none" modes, it will be invoked
     // from the main thread. Therefore, we only need to differentiate between
     // "main" and "none" here.
 
-    int main_mode = runloop_mode && strcmp(runloop_mode, "main") == 0;
+    int main_mode = ctx && ctx->runloop_mode && strcmp(ctx->runloop_mode, "main") == 0;
     if (main_mode) {
         // GUI frameworks like SWT need the runtime to run on the main thread, but
         // might expect the following setup to have been performed. Needs testing!

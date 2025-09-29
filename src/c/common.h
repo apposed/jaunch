@@ -59,6 +59,9 @@ typedef struct {
     const char **pending_argv;
     int directive_result;
 
+    // Runloop configuration.
+    char *runloop_mode;
+
     // Exit code to use at process conclusion.
     int exit_code;
 } ThreadContext;
@@ -68,7 +71,6 @@ typedef struct {
 // ============
 int debug_mode = 0;
 int headless_mode = 0;
-char *runloop_mode = NULL;
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -87,8 +89,8 @@ int run_command(const char *command,
 // Implementations in linux.h, macos.h, win32.h
 void setup(const int argc, const char *argv[]);
 void teardown();
-void runloop_config(const char *directive);
-void runloop_run(const char *mode);
+void runloop_config(ThreadContext *ctx, const char *directive);
+void runloop_run(ThreadContext *ctx, const char *mode);
 void runloop_stop(ThreadContext *ctx);
 int init_threads();                                      // INIT_THREADS
 void show_alert(const char *title, const char *message); // ERROR

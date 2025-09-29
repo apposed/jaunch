@@ -122,7 +122,7 @@ const char *JAUNCH_SEARCH_PATHS[] = {
  * Execute a single directive and return its error code.
  * This function handles the actual directive execution logic.
  */
-int execute_directive(const char *directive, size_t dir_argc, const char **dir_argv) {
+int execute_directive(ThreadContext *ctx, const char *directive, size_t dir_argc, const char **dir_argv) {
     if (strcmp(directive, "JVM") == 0) {
         return launch(launch_jvm, dir_argc, dir_argv);
     }
@@ -142,7 +142,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
         return init_threads();
     }
     if (strcmp(directive, "RUNLOOP") == 0) {
-        const char *mode = dir_argc >= 1 ? dir_argv[0] : runloop_mode;
+        const char *mode = dir_argc >= 1 ? dir_argv[0] : ctx->runloop_mode;
         if (mode) {
           debug("[JAUNCH] Invoking runloop with mode %s", mode);
         }
@@ -153,7 +153,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
 
         // Note: runloop_run will set STATE_RUNLOOP when appropriate
 
-        runloop_run(mode);
+        runloop_run(ctx, mode);
         return SUCCESS;
     }
     if (strcmp(directive, "ERROR") == 0) {
@@ -238,14 +238,14 @@ int process_directives(ThreadContext *ctx) {
         index += 2 + dir_argc; // Advance index past this directive block.
 
         // If no runloop mode is set, give the platform a chance to set one.
-        if (!runloop_mode) {
-            runloop_config(directive);
-            if (runloop_mode) {
+        if (!ctx->runloop_mode) {
+            runloop_config(ctx, directive);
+            if (ctx->runloop_mode) {
                 // The auto-configuration function has chosen a runloop mode.
                 // Now we invoke an extra RUNLOOP directive to lock it in.
                 int code = ctx_main_thread_available(ctx)
                     ? ctx_request_main_execution(ctx, "RUNLOOP", 0, NULL)
-                    : execute_directive("RUNLOOP", 0, NULL);
+                    : execute_directive(ctx, "RUNLOOP", 0, NULL);
 
                 if (code != SUCCESS) {
                     debug("[JAUNCH] RUNLOOP auto-directive failed with code %d", code);
@@ -266,7 +266,7 @@ int process_directives(ThreadContext *ctx) {
             // Execute the directive on the current (directive processing) thread.
             const char *reason = (ctx->state == STATE_RUNLOOP) ? "runloop is active" : "main thread is busy";
             debug("[JAUNCH] Executing %s directive on directive thread because %s", directive, reason);
-            error_code = execute_directive(directive, dir_argc, dir_argv);
+            error_code = execute_directive(ctx, directive, dir_argc, dir_argv);
         }
 
         if (error_code != SUCCESS) {
@@ -417,6 +417,7 @@ int main(const int argc, const char *argv[]) {
         .pending_argc = 0,
         .pending_argv = NULL,
         .directive_result = SUCCESS,
+        .runloop_mode = NULL,
         .exit_code = SUCCESS,
     };
 
@@ -447,6 +448,7 @@ int main(const int argc, const char *argv[]) {
 
             // Execute the directive.
             int result = execute_directive(
+                &ctx,
                 ctx.pending_directive,
                 ctx.pending_argc,
                 ctx.pending_argv
