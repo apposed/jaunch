@@ -4,7 +4,6 @@
 #include <objc/message.h>
 #include <sys/xattr.h>
 #include <dlfcn.h>
-#include <pthread.h>
 #include <spawn.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -14,6 +13,7 @@
 extern void NSApplicationLoad(void);
 
 #include "common.h"
+#include "thread.h"
 
 #define OS_NAME "macos"
 

@@ -49,6 +49,7 @@
 #include <time.h>
 
 #include "common.h"
+#include "thread.h"
 
 // -- PLATFORMS --
 #ifdef __linux__
@@ -72,32 +73,6 @@
 // -- RUNTIMES --
 #include "jvm.h"
 #include "python.h"
-
-/*
- * Signal early completion of the current directive to the directive thread.
- * This allows long-running or blocking operations to release the directive thread
- * while continuing to run on the main thread.
- *
- * Must be called from main thread while executing a directive.
- * The main thread must hold the mutex when calling this function.
- */
-void ctx_signal_early_completion(ThreadState new_state) {
-    debug("[JAUNCH] ctx_signal_early_completion called: new state=%d", new_state);
-
-    if (ctx->state != STATE_EXECUTING) {
-        error("[JAUNCH] Cannot signal early completion - not in EXECUTING state (current: %d)", ctx->state);
-        return;
-    }
-
-    debug("[JAUNCH] Transitioning %s directive to early completion with state %s",
-          ctx->pending_directive ? ctx->pending_directive : "unknown",
-          new_state == STATE_RUNLOOP ? "RUNLOOP" : "WAITING");
-
-    ctx_set_state(new_state);
-    ctx_signal_main();
-
-    debug("[JAUNCH] Early completion signaled successfully");
-}
 
 // List of places to search for the jaunch configurator executable.
 //
@@ -174,35 +149,6 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
     }
     error("Unknown directive: %s", directive);
     return ERROR_UNKNOWN_DIRECTIVE;
-}
-
-/*
- * Request execution of a directive on the main thread.
- * Blocks until the directive completes (or signals early completion).
- * Returns the error code from the directive execution.
- */
-int ctx_request_main_execution(const char *directive, size_t dir_argc, const char **dir_argv) {
-    ctx_lock();
-
-    // Set up the directive for execution
-    ctx->pending_directive = directive;
-    ctx->pending_argc = dir_argc;
-    ctx->pending_argv = dir_argv;
-    ctx_set_state(STATE_EXECUTING);
-
-    // Signal main thread and wait for completion or early completion
-    debug("[JAUNCH] Signaling main thread to execute %s directive", directive);
-    ctx_signal_main();
-
-    // Wait for state to change from EXECUTING (either to WAITING, RUNLOOP, or COMPLETE)
-    debug("[JAUNCH] Waiting for %s directive to complete...", directive);
-    ctx_wait_for_state_change(STATE_EXECUTING);
-
-    debug("[JAUNCH] %s directive completed with state %d", directive, ctx->state);
-
-    int result = ctx->directive_result;
-    ctx_unlock();
-    return result;
 }
 
 /*

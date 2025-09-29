@@ -5,7 +5,7 @@
 
 #include "common.h"
 
-// Global JVM state for reuse across multiple directives
+// Global JVM state for reuse across multiple directives.
 static JavaVM *cached_jvm = NULL;
 static void *cached_jvm_library = NULL;
 
