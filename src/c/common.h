@@ -182,6 +182,14 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
 // THREAD SYNCHRONIZATION HELPERS
 // =============================
 
+static inline void ctx_lock() {
+    pthread_mutex_lock(&ctx->mutex);
+}
+
+static inline void ctx_unlock() {
+    pthread_mutex_unlock(&ctx->mutex);
+}
+
 /*
  * Transition the thread context to a new state while holding the mutex.
  * This ensures atomic state transitions with proper synchronization.

@@ -182,7 +182,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
  * Returns the error code from the directive execution.
  */
 int ctx_request_main_execution(const char *directive, size_t dir_argc, const char **dir_argv) {
-    pthread_mutex_lock(&ctx->mutex);
+    ctx_lock();
 
     // Set up the directive for execution
     ctx->pending_directive = directive;
@@ -201,7 +201,7 @@ int ctx_request_main_execution(const char *directive, size_t dir_argc, const cha
     debug("[JAUNCH] %s directive completed with state %d", directive, ctx->state);
 
     int result = ctx->directive_result;
-    pthread_mutex_unlock(&ctx->mutex);
+    ctx_unlock();
     return result;
 }
 
@@ -279,11 +279,11 @@ int process_directives(void *unused) {
     runloop_stop();
 
     // Signal completion to main thread.
-    pthread_mutex_lock(&ctx->mutex);
+    ctx_lock();
     ctx->exit_code = exit_code;
     ctx_set_state(STATE_COMPLETE);
     ctx_signal_main();
-    pthread_mutex_unlock(&ctx->mutex);
+    ctx_unlock();
 
     debug("[JAUNCH] Directive thread returning with exit code %d", exit_code);
     return exit_code;
@@ -428,7 +428,7 @@ int main(const int argc, const char *argv[]) {
 
     // Main thread event loop - handle signals from directive thread.
     while (1) {
-        pthread_mutex_lock(&ctx->mutex);
+        ctx_lock();
 
         // Wait for state to change from WAITING
         ctx_wait_for_state_change(STATE_WAITING);
@@ -438,7 +438,7 @@ int main(const int argc, const char *argv[]) {
 
             // Release mutex while executing the directive
             // (which may call ctx_signal_early_completion).
-            pthread_mutex_unlock(&ctx->mutex);
+            ctx_unlock();
 
             // Execute the directive.
             int result = execute_directive(
@@ -448,7 +448,7 @@ int main(const int argc, const char *argv[]) {
             );
 
             // Re-acquire mutex to update state.
-            pthread_mutex_lock(&ctx->mutex);
+            ctx_lock();
             ctx->directive_result = result;
 
             // Signal completion back to directive thread.
@@ -458,20 +458,20 @@ int main(const int argc, const char *argv[]) {
                 ctx_set_state(STATE_WAITING);
             }
             ctx_signal_main();
-            pthread_mutex_unlock(&ctx->mutex);
+            ctx_unlock();
         }
         else if (ctx->state == STATE_RUNLOOP) {
             debug("[JAUNCH-MAIN] Main thread in runloop state - continuing to wait");
-            pthread_mutex_unlock(&ctx->mutex);
+            ctx_unlock();
             // Continue waiting - the runloop will eventually exit and change state.
         }
         else if (ctx->state == STATE_COMPLETE) {
-            pthread_mutex_unlock(&ctx->mutex);
+            ctx_unlock();
             debug("[JAUNCH-MAIN] Exiting directives loop");
             break;
         }
         else {
-            pthread_mutex_unlock(&ctx->mutex);
+            ctx_unlock();
             error("[JAUNCH-MAIN] Unknown thread state encountered: %d", ctx->state);
             break;
         }

@@ -272,9 +272,9 @@ void runloop_run(const char *mode) {
         // releases the directive thread while we block the main thread with
         // this runloop.
         debug("[JAUNCH-MACOS] Invoking ctx_signal_early_completion");
-        pthread_mutex_lock(&ctx->mutex);
+        ctx_lock();
         ctx_signal_early_completion(STATE_RUNLOOP);
-        pthread_mutex_unlock(&ctx->mutex);
+        ctx_unlock();
         debug("[JAUNCH-MACOS] ctx_signal_early_completion invoked");
 
         // Create a far-future timer to keep the runloop active.
@@ -293,13 +293,13 @@ void runloop_run(const char *mode) {
         debug("[JAUNCH-MACOS] CFRunLoopRun completed");
 
         // Now that the runloop has exited, transition back to WAITING state.
-        pthread_mutex_lock(&ctx->mutex);
+        ctx_lock();
         if (ctx->state == STATE_RUNLOOP) {
             debug("[JAUNCH-MACOS] Transitioning from RUNLOOP to WAITING after CFRunLoopRun returned");
             ctx_set_state(STATE_WAITING);
             ctx_signal_main();
         }
-        pthread_mutex_unlock(&ctx->mutex);
+        ctx_unlock();
     } else {
         debug("[JAUNCH-MACOS] Runloop mode '%s' - no event loop needed", mode);
         // For non-park modes, just return normally - no early completion needed
