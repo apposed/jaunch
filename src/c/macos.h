@@ -251,14 +251,16 @@ void setup(const int argc, const char *argv[]) {
 }
 void teardown() {}
 
-void runloop_config(ThreadContext *ctx, const char *directive) {
+void runloop_config(const char *directive) {
+    extern ThreadContext *ctx;
     if (directive && strcmp(directive, "JVM") == 0) {
         // JVM default: park main thread in event loop.
         ctx->runloop_mode = "park";
         debug("[JAUNCH-MACOS] runloop_mode -> %s [auto]", ctx->runloop_mode);
     }
 }
-void runloop_run(ThreadContext *ctx, const char *mode) {
+void runloop_run(const char *mode) {
+    extern ThreadContext *ctx;
     ctx->runloop_mode = (char *)mode;
     debug("[JAUNCH-MACOS] runloop_mode -> %s", ctx->runloop_mode);
 
@@ -271,7 +273,7 @@ void runloop_run(ThreadContext *ctx, const char *mode) {
         // this runloop.
         debug("[JAUNCH-MACOS] Invoking ctx_signal_early_completion");
         pthread_mutex_lock(&ctx->mutex);
-        ctx_signal_early_completion(ctx, STATE_RUNLOOP);
+        ctx_signal_early_completion(STATE_RUNLOOP);
         pthread_mutex_unlock(&ctx->mutex);
         debug("[JAUNCH-MACOS] ctx_signal_early_completion invoked");
 
@@ -303,7 +305,8 @@ void runloop_run(ThreadContext *ctx, const char *mode) {
         // For non-park modes, just return normally - no early completion needed
     }
 }
-void runloop_stop(ThreadContext *ctx) {
+void runloop_stop() {
+    extern ThreadContext *ctx;
     // First, try to stop the runloop directly.
     debug("[JAUNCH-MACOS] Invoking CFRunLoopStop");
     CFRunLoopStop(CFRunLoopGetMain());
@@ -426,11 +429,8 @@ void show_alert(const char *title, const char *message) {
 int launch(const LaunchFunc launch_runtime,
     const size_t argc, const char **argv)
 {
+    extern ThreadContext *ctx;
     int runtime_result = SUCCESS;
-
-    // Get the thread context from thread-local storage.
-    extern __thread ThreadContext *tls_thread_context;
-    ThreadContext *ctx = tls_thread_context;
 
     // Note: For "park" mode, this function will be invoked from the already
     // active pthread, whereas for "main" and "none" modes, it will be invoked

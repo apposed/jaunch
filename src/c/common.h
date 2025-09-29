@@ -71,6 +71,7 @@ typedef struct {
 // ============
 int debug_mode = 0;
 int headless_mode = 0;
+ThreadContext *ctx = NULL;
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -89,9 +90,9 @@ int run_command(const char *command,
 // Implementations in linux.h, macos.h, win32.h
 void setup(const int argc, const char *argv[]);
 void teardown();
-void runloop_config(ThreadContext *ctx, const char *directive);
-void runloop_run(ThreadContext *ctx, const char *mode);
-void runloop_stop(ThreadContext *ctx);
+void runloop_config(const char *directive);
+void runloop_run(const char *mode);
+void runloop_stop();
 int init_threads();                                      // INIT_THREADS
 void show_alert(const char *title, const char *message); // ERROR
 typedef int (*LaunchFunc)(const size_t, const char **);
@@ -211,8 +212,7 @@ static inline void ctx_wait_for_state_change(ThreadContext *ctx, ThreadState exp
  * Blocks until the directive completes (or signals early completion).
  * Returns the directive result code.
  */
-int ctx_request_main_execution(ThreadContext *ctx, const char *directive,
-                                 size_t dir_argc, const char **dir_argv);
+int ctx_request_main_execution(const char *directive, size_t dir_argc, const char **dir_argv);
 
 /*
  * Signal that the current directive has completed early and will continue
@@ -220,7 +220,7 @@ int ctx_request_main_execution(ThreadContext *ctx, const char *directive,
  * This releases the directive thread to continue processing.
  * Must be called from main thread while executing a directive.
  */
-void ctx_signal_early_completion(ThreadContext *ctx, ThreadState new_state);
+void ctx_signal_early_completion(ThreadState new_state);
 
 /*
  * Check if the current thread is the main thread by examining the context state.
