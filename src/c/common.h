@@ -186,14 +186,14 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
  * Transition the thread context to a new state while holding the mutex.
  * This ensures atomic state transitions with proper synchronization.
  */
-static inline void ctx_set_state(ThreadContext *ctx, ThreadState new_state) {
+static inline void ctx_set_state(ThreadState new_state) {
     ctx->state = new_state;
 }
 
 /*
  * Signal the main thread to wake up and check for work.
  */
-static inline void ctx_signal_main(ThreadContext *ctx) {
+static inline void ctx_signal_main() {
     pthread_cond_signal(&ctx->cond);
 }
 
@@ -201,7 +201,7 @@ static inline void ctx_signal_main(ThreadContext *ctx) {
  * Wait for the state to change from the current state.
  * Must be called with mutex locked; returns with mutex still locked.
  */
-static inline void ctx_wait_for_state_change(ThreadContext *ctx, ThreadState expected_state) {
+static inline void ctx_wait_for_state_change(ThreadState expected_state) {
     while (ctx->state == expected_state) {
         pthread_cond_wait(&ctx->cond, &ctx->mutex);
     }
@@ -226,7 +226,7 @@ void ctx_signal_early_completion(ThreadState new_state);
  * Check if the current thread is the main thread by examining the context state.
  * Returns 1 if main thread is available for directive execution, 0 otherwise.
  */
-static inline int ctx_main_thread_available(ThreadContext *ctx) {
+static inline int ctx_main_thread_available() {
     return ctx->state == STATE_WAITING;
 }
 

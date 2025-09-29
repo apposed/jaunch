@@ -296,8 +296,8 @@ void runloop_run(const char *mode) {
         pthread_mutex_lock(&ctx->mutex);
         if (ctx->state == STATE_RUNLOOP) {
             debug("[JAUNCH-MACOS] Transitioning from RUNLOOP to WAITING after CFRunLoopRun returned");
-            ctx_set_state(ctx, STATE_WAITING);
-            ctx_signal_main(ctx);
+            ctx_set_state(STATE_WAITING);
+            ctx_signal_main();
         }
         pthread_mutex_unlock(&ctx->mutex);
     } else {
@@ -437,7 +437,7 @@ int launch(const LaunchFunc launch_runtime,
     // from the main thread. Therefore, we only need to differentiate between
     // "main" and "none" here.
 
-    int main_mode = ctx && ctx->runloop_mode && strcmp(ctx->runloop_mode, "main") == 0;
+    int main_mode = ctx->runloop_mode && strcmp(ctx->runloop_mode, "main") == 0;
     if (main_mode) {
         // GUI frameworks like SWT need the runtime to run on the main thread, but
         // might expect the following setup to have been performed. Needs testing!
