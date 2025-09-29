@@ -144,7 +144,7 @@ but only certain cross-compilations are possible:
 <td><center>➖<sup>7,9</sup></center></td> <!-- Linux arm64 host -->
 <td><center>➖<sup>9</sup></center></td> <!-- Linux x64 host -->
 <td><center>➖<sup>9</sup></center></td> <!-- macOS host -->
-<td><center>➖<sup>6,9</sup></center></td> <!-- Windows arm64 host -->
+<td><center>➖<sup>8,9</sup></center></td> <!-- Windows arm64 host -->
 <td><center>➖<sup>9</sup></center></td> <!-- Windows x64 host -->
 </tr>
 <tr>
