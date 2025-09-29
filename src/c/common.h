@@ -63,6 +63,13 @@ typedef struct {
     int exit_code;
 } ThreadContext;
 
+// ============
+// GLOBAL STATE
+// ============
+int debug_mode = 0;
+int headless_mode = 0;
+char *runloop_mode = NULL;
+
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
 // For implementations, see linux.h, macos.h, posix.h, win32.h
@@ -88,13 +95,6 @@ void show_alert(const char *title, const char *message); // ERROR
 typedef int (*LaunchFunc)(const size_t, const char **);
 int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
     const size_t argc, const char **argv);
-
-// ============
-// GLOBAL STATE
-// ============
-int debug_mode = 0;
-int headless_mode = 0;
-char *runloop_mode = NULL;
 
 // =================
 // UTILITY FUNCTIONS
