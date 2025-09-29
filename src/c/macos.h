@@ -27,7 +27,7 @@ extern void NSApplicationLoad(void);
  *
  * RUNLOOP MODES SUPPORTED:
  * - "main": Runtime runs on main thread (for -XstartOnFirstThread behavior)
- * - "park": Runtime runs on pthread, main thread parks in event loop
+ * - "park": Runtime runs on pthread, main thread runs the event loop
  * - "none": Runtime runs on main thread, no event loop management
  * ===========================================================================
  */
@@ -369,7 +369,7 @@ void show_alert(const char *title, const char *message) {
  *
  * The behavior depends on the runloop mode:
  * - "main": Launch on main thread with event loop (like Java's -XstartOnFirstThread flag)
- * - "park": Launch on pthread, park main thread in event loop (like OpenJDK's default behavior)
+ * - "park": Launch on pthread, main thread runs the event loop (like OpenJDK's default behavior)
  * - "none": Launch on main thread, no event loop (e.g. Python Qt apps)
  */
 int launch(const LaunchFunc launch_runtime,
@@ -379,7 +379,7 @@ int launch(const LaunchFunc launch_runtime,
     int runtime_result = SUCCESS;
 
     // Note: For "park" mode, this function will be invoked from the already
-    // active pthread, whereas for "main" and "none" modes, it will be invoked
+    // active thread, whereas for "main" and "none" modes, it will be invoked
     // from the main thread. Therefore, we only need to differentiate between
     // "main" and "none" here.
 
