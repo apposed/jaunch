@@ -119,7 +119,7 @@ actual class File actual constructor(rawPath: String) {
                         null
                     )
 
-                    if (result == 0) {  // 0 indicates failure in Windows
+                    if (result == 0) { // 0 indicates failure in Windows
                         throw RuntimeException("Error writing to file '$this': ${lastError()}")
                     }
                 }

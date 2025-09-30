@@ -342,7 +342,7 @@ void show_alert(const char *title, const char *message) {
     pool = ((id (*)(id, SEL))objc_msgSend)(pool, sel_registerName("init"));
 
     // Initialize application
-    ((void(*)(void))NSApplicationLoad)();  // Cast the function pointer
+    ((void(*)(void))NSApplicationLoad)(); // Cast the function pointer
     id app = ((id (*)(id, SEL))objc_msgSend)((id)NSApplication, sel_registerName("sharedApplication"));
 
     // Create strings

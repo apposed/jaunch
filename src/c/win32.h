@@ -30,7 +30,7 @@ void handle_error(const char* errorMessage) {
 void write_line(HANDLE stdinWrite, const char *input) {
     // Copy the input string and add a newline
     size_t inputLength = strlen(input);
-    char *line = (char *)malloc(inputLength + 2);  // +1 for newline, +1 for null terminator
+    char *line = (char *)malloc(inputLength + 2); // +1 for newline, +1 for null terminator
     strcpy(line, input);
     strcat(line, "\n");
 
@@ -241,7 +241,7 @@ void *lib_open(const char *path) {
     char *dll_dir = strdup(path);
     char *last_slash = strrchr(dll_dir, '\\');
     if (last_slash != NULL) {
-        *last_slash = '\0';  // Truncate to get directory path
+        *last_slash = '\0'; // Truncate to get directory path
         LOG_DEBUG("WIN32", "Adding directory to DLL search path: %s", dll_dir);
 
         // Use SetDllDirectory to add the Python directory to the search path
