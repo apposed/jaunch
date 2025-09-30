@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 #define SUCCESS 0
 #define ERROR_DLOPEN 1
@@ -26,58 +25,11 @@
 #define ERROR_BAD_DIRECTIVE_SYNTAX 17
 #define ERROR_MISSING_FUNCTION 18
 
-#define RUNLOOP_NONE 0
-#define RUNLOOP_MAIN 1
-#define RUNLOOP_PARK 2
-
-// ===============
-// DATA STRUCTURES
-// ===============
-
-// Thread communication states.
-typedef enum {
-    STATE_WAITING,     // Main thread is available for directive execution
-    STATE_EXECUTING,   // Main thread is executing a directive
-    STATE_RUNLOOP,     // Main thread is blocked in platform runloop
-    STATE_COMPLETE     // All directive processing is complete
-} ThreadState;
-
-// Structure for thread communication and directive processing.
-typedef struct {
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
-    ThreadState state;
-
-    // Original directive data.
-    size_t out_argc;
-    char **out_argv;
-
-    // Directive to execute on main thread.
-    const char *pending_directive;
-    size_t pending_argc;
-    const char **pending_argv;
-    int directive_result;
-
-    // Runloop configuration.
-    char *runloop_mode;
-
-    // Exit code to use at process conclusion.
-    int exit_code;
-} ThreadContext;
-
 // ============
 // GLOBAL STATE
 // ============
 int debug_mode = 0;
 int headless_mode = 0;
-ThreadContext *ctx = NULL;
-
-// Thread IDs for thread detection.
-pthread_t thread_id_main = 0;
-pthread_t thread_id_directives = 0;
-
-// Implementation in thread.h
-const char* current_thread_name();
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -122,11 +74,6 @@ void print_at_level(int verbosity, const char *fmt, ...) {
 #define error(fmt, ...) print_at_level(0, fmt, ##__VA_ARGS__)
 #define debug(fmt, ...) print_at_level(1, fmt, ##__VA_ARGS__)
 #define debug_verbose(fmt, ...) print_at_level(2, fmt, ##__VA_ARGS__)
-
-// Thread-aware debug macro: DEBUG(component, format, ...)
-// Automatically includes thread name in prefix: [COMPONENT:thread]
-#define DEBUG(component, fmt, ...) \
-    debug("[%s:%s] " fmt, component, current_thread_name(), ##__VA_ARGS__)
 
 #define CHECK_ARGS(prefix, name, argc, min, max, argv) \
     do { \

@@ -157,8 +157,9 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
  */
 int process_directives(void *unused) {
     // Save directives thread ID for thread detection.
-    extern pthread_t thread_id_directives;
-    thread_id_directives = pthread_self();
+    ctx_lock();
+    ctx->thread_id_directives = pthread_self();
+    ctx_unlock();
 
     int exit_code = SUCCESS;
 
@@ -264,9 +265,11 @@ char *path(const char *argv0, const char *subdir, const char *command) {
 }
 
 int main(const int argc, const char *argv[]) {
-    // Save main thread ID for thread detection.
-    extern pthread_t thread_id_main;
-    thread_id_main = pthread_self();
+    ctx = ctx_create();
+    if (ctx == NULL) {
+        fprintf(stderr, "Failed to allocate memory (thread context)\n");
+        return ERROR_MALLOC;
+    }
 
     // Enable debug mode when --debug is an argument.
     for (size_t i = 0; i < argc; i++)
@@ -341,8 +344,8 @@ int main(const int argc, const char *argv[]) {
     }
 
     // Run external command to process the command line arguments.
-    char **out_argv;
     size_t out_argc;
+    char **out_argv;
     int run_result = run_command((const char *)command, extended_argc, extended_argv, &out_argc, &out_argv);
     free(extended_argv);
     free(command);
@@ -355,21 +358,10 @@ int main(const int argc, const char *argv[]) {
     // programming error in the configurator yields a much-too-large argc
     // value, and it is better to fail fast than to access invalid memory.
 
-    // Initialize thread context for directive processing.
-    ThreadContext the_ctx = {
-        .mutex = PTHREAD_MUTEX_INITIALIZER,
-        .cond = PTHREAD_COND_INITIALIZER,
-        .state = STATE_WAITING,
-        .out_argc = out_argc,
-        .out_argv = out_argv,
-        .pending_directive = NULL,
-        .pending_argc = 0,
-        .pending_argv = NULL,
-        .directive_result = SUCCESS,
-        .runloop_mode = NULL,
-        .exit_code = SUCCESS,
-    };
-    ctx = &the_ctx;
+    ctx_lock();
+    ctx->out_argc = out_argc;
+    ctx->out_argv = out_argv;
+    ctx_unlock();
 
     DEBUG("JAUNCH", "Starting directive processing thread");
     pthread_t directive_thread;
@@ -436,14 +428,15 @@ int main(const int argc, const char *argv[]) {
     int exit_code = ctx->exit_code;
     DEBUG("JAUNCH", "Directives processing complete");
 
-    // Clean up global context pointer
-    ctx = NULL;
-
     // Clean up.
     for (size_t i = 0; i < out_argc; i++) {
         free(out_argv[i]);
     }
     free(out_argv);
+
+    // Clean up thread context.
+    ctx_destroy(ctx);
+    ctx = NULL;
 
     // Do any final platform-specific cleanup.
     teardown();
