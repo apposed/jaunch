@@ -72,10 +72,12 @@ int debug_mode = 0;
 int headless_mode = 0;
 ThreadContext *ctx = NULL;
 
-// Main thread ID for thread detection on non-Apple platforms
-//#ifndef __APPLE__
-pthread_t main_thread_id;
-//#endif
+// Thread IDs for thread detection.
+pthread_t thread_id_main = 0;
+pthread_t thread_id_directives = 0;
+
+// Implementation in thread.h
+const char* current_thread_name();
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -115,24 +117,6 @@ void print_at_level(int verbosity, const char *fmt, ...) {
     va_end(ap);
     fputc('\n', stderr);
     fflush(stderr);
-}
-
-// CTR START HERE --
-// 1. Why doesn't pthread_self() work on macOS?
-// 2. Move this pthread junk into thread.h if possible.
-// 3. Name the `DEBUG` (not `debug`) macro differently/better.
-// 4. Refactor remaining `JAUNCH-` prefix occurrences to match the rest of the debug logging.
-
-// Thread detection for debug messages
-static inline const char* current_thread_name() {
-//#ifdef __APPLE__
-//    return pthread_main_np() ? "main" : "directives";
-//#else
-    // On non-Apple platforms, use pthread_self() comparison
-    // Note: main_thread_id is set in main() before creating directive thread
-    extern pthread_t main_thread_id;
-    return pthread_equal(pthread_self(), main_thread_id) ? "main" : "directives";
-//#endif
 }
 
 #define error(fmt, ...) print_at_level(0, fmt, ##__VA_ARGS__)

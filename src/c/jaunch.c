@@ -156,6 +156,10 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
  * coordinates with the main thread for runloop management and directive execution.
  */
 int process_directives(void *unused) {
+    // Save directives thread ID for thread detection.
+    extern pthread_t thread_id_directives;
+    thread_id_directives = pthread_self();
+
     int exit_code = SUCCESS;
 
     size_t index = 0;
@@ -260,10 +264,9 @@ char *path(const char *argv0, const char *subdir, const char *command) {
 }
 
 int main(const int argc, const char *argv[]) {
-    // Save main thread ID for thread detection on non-Apple platforms
-//#ifndef __APPLE__
-    main_thread_id = pthread_self();
-//#endif
+    // Save main thread ID for thread detection.
+    extern pthread_t thread_id_main;
+    thread_id_main = pthread_self();
 
     // Enable debug mode when --debug is an argument.
     for (size_t i = 0; i < argc; i++)
