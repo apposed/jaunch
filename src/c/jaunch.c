@@ -105,7 +105,30 @@ const char *JAUNCH_SEARCH_PATHS[] = {
 
 /*
  * Execute a single directive and return its error code.
- * This function handles the actual directive execution logic.
+ *
+ * Handles the following directives:
+ *   - "JVM": Launches a JVM process. Returns the error code from launch_jvm().
+ *   - "PYTHON": Launches a Python process. Returns the error code from launch_python().
+ *   - "SETCWD": Changes the current working directory.
+ *       - On success, returns 0.
+ *       - If no argument is provided, returns ERROR_BAD_DIRECTIVE_SYNTAX.
+ *       - If chdir fails, returns the error code from chdir().
+ *   - "INIT_THREADS": Initializes thread context. Returns the error code from init_threads().
+ *   - "RUNLOOP": Starts the runloop with the specified mode.
+ *       - On success, returns SUCCESS.
+ *       - If no mode is provided, returns ERROR_BAD_DIRECTIVE_SYNTAX.
+ *   - "ERROR": Logs and displays an error message.
+ *       - Returns the numeric error code specified as the first argument (clamped to [20, 255]).
+ *       - If no code is provided, returns 255.
+ *   - Unknown directive: Returns ERROR_UNKNOWN_DIRECTIVE.
+ *
+ * Return values:
+ *   - 0 or SUCCESS: Success.
+ *   - ERROR_BAD_DIRECTIVE_SYNTAX: Directive syntax is invalid or missing arguments.
+ *   - ERROR_UNKNOWN_DIRECTIVE: Unrecognized directive.
+ *   - Other error codes: As returned by the underlying function (e.g., chdir, launch_jvm, etc.).
+ *
+ * See common.h for error code definitions.
  */
 int execute_directive(const char *directive, size_t dir_argc, const char **dir_argv) {
     if (strcmp(directive, "JVM") == 0) {
