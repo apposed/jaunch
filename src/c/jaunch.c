@@ -54,10 +54,12 @@
 #include "thread.h"
 
 // -- RUNTIMES --
+
 #include "jvm.h"
 #include "python.h"
 
 // -- PLATFORMS --
+
 #ifdef __linux__
     #include "linux.h"
 #endif
@@ -76,6 +78,14 @@
     #define OS_ARCH "arm64"
 #endif
 
+// -- GLOBAL STATE DEFINITIONS --
+
+int debug_mode = 0;        // see logging.h
+int headless_mode = 0;     // see logging.h
+ThreadContext *ctx = NULL; // see thread.h
+
+// -- CONSTANTS --
+
 // List of places to search for the jaunch configurator executable.
 //
 // NB: This list should align with the configDirs list in Jaunch.kt,
@@ -90,6 +100,8 @@ const char *JAUNCH_SEARCH_PATHS[] = {
     "Contents"SLASH"MacOS"SLASH,
     NULL,
 };
+
+// -- FUNCTIONS --
 
 /*
  * Execute a single directive and return its error code.

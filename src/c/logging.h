@@ -4,11 +4,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-// ============
-// GLOBAL STATE
-// ============
-static int debug_mode;
-static int headless_mode;
+// =========================
+// GLOBAL STATE DECLARATIONS
+// =========================
+
+extern int debug_mode;
+extern int headless_mode;
 
 // =================
 // LOGGING FUNCTIONS

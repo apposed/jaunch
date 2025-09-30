@@ -45,8 +45,12 @@ typedef struct {
     int exit_code;
 } ThreadContext;
 
+// =========================
+// GLOBAL STATE DECLARATIONS
+// =========================
+
 // Global thread state instance.
-static ThreadContext *ctx = NULL;
+extern ThreadContext *ctx;
 
 // =========================
 // THREAD INSPECTION METHODS
