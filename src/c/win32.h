@@ -82,7 +82,7 @@ static ParentProcessType getParentProcessType() {
         Process32FirstW(snapshot, &entry);
         do {
             if (entry.th32ProcessID == parentPID) {
-                debug("[JAUNCH-WIN32] PARENT PROCESS = %S", entry.szExeFile);
+                DEBUG("WIN32", "PARENT PROCESS = %S", entry.szExeFile);
                 if (_wcsicmp(entry.szExeFile, L"cmd.exe") == 0) {
                     result = PARENT_CMD;
                 }
@@ -134,11 +134,11 @@ void setup(const int argc, const char *argv[]) {
     // Ahh, the Windows console. Good times!
     // See doc/WINDOWS.md for why this logic is here.
 
-    debug("[JAUNCH-WIN32] CONFIGURING CONSOLE");
+    DEBUG("WIN32", "CONFIGURING CONSOLE");
 
     // First, try to attach to an existing console
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        debug("[JAUNCH-WIN32] ATTACHED TO PARENT CONSOLE");
+        DEBUG("WIN32", "ATTACHED TO PARENT CONSOLE");
 
         // Glean the parent process type.
         ParentProcessType parentType = getParentProcessType();
@@ -161,7 +161,7 @@ void setup(const int argc, const char *argv[]) {
             freopen("CONIN$", "r", stdin);
             freopen("CONOUT$", "w", stdout);
             freopen("CONOUT$", "w", stderr);
-            debug("[JAUNCH-WIN32] REOPENED CONSOLE STREAMS");
+            DEBUG("WIN32", "REOPENED CONSOLE STREAMS");
 
             // NB: In debug mode, we call getParentProcessType() again so
             // that the name of the parent process gets emitted to stderr,
@@ -198,10 +198,10 @@ void setup(const int argc, const char *argv[]) {
                     error("=======================================================");
                     break;
                 case PARENT_BASH:
-                    debug("[JAUNCH-WIN32] Running from bash; all is well.");
+                    DEBUG("WIN32", "Running from bash; all is well.");
                     break;
                 case PARENT_EXPLORER:
-                    debug("[JAUNCH-WIN32] Running from Explorer; all is well.");
+                    DEBUG("WIN32", "Running from Explorer; all is well.");
                     break;
                 case PARENT_OTHER:
                     error("");
@@ -211,7 +211,7 @@ void setup(const int argc, const char *argv[]) {
                     error("==========================================================");
                     break;
                 case PARENT_UNKNOWN:
-                    debug("[JAUNCH-WIN32] Failed to detect parent process type.");
+                    DEBUG("WIN32", "Failed to detect parent process type.");
                     break;
             }
         }
@@ -221,9 +221,9 @@ void setup(const int argc, const char *argv[]) {
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
     HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE hStderr = GetStdHandle(STD_ERROR_HANDLE);
-    if (hStdin != NULL && hStdin != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDIN IS VALID");
-    if (hStdout != NULL && hStdout != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDOUT IS VALID");
-    if (hStderr != NULL && hStderr != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDERR IS VALID");
+    if (hStdin != NULL && hStdin != INVALID_HANDLE_VALUE) DEBUG("WIN32", "STDIN IS VALID");
+    if (hStdout != NULL && hStdout != INVALID_HANDLE_VALUE) DEBUG("WIN32", "STDOUT IS VALID");
+    if (hStderr != NULL && hStderr != INVALID_HANDLE_VALUE) DEBUG("WIN32", "STDERR IS VALID");
 }
 
 void teardown() {
@@ -241,11 +241,11 @@ void *lib_open(const char *path) {
     char *last_slash = strrchr(dll_dir, '\\');
     if (last_slash != NULL) {
         *last_slash = '\0';  // Truncate to get directory path
-        debug("[JAUNCH-WIN32] Adding directory to DLL search path: %s", dll_dir);
+        DEBUG("WIN32", "Adding directory to DLL search path: %s", dll_dir);
 
         // Use SetDllDirectory to add the Python directory to the search path
         if (!SetDllDirectoryA(dll_dir)) {
-            debug("[JAUNCH-WIN32] Warning: Failed to set DLL directory: %s", lib_error());
+            DEBUG("WIN32", "Warning: Failed to set DLL directory: %s", lib_error());
             // Continue anyway - this is not fatal, just falls back to PATH dependency
         }
     }
@@ -284,7 +284,7 @@ int run_command(const char *command,
     HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite, stderrRead, stderrWrite;
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
-    debug("[JAUNCH-WIN32] OPENING STREAMS TO/FROM SUBPROCESS");
+    DEBUG("WIN32", "OPENING STREAMS TO/FROM SUBPROCESS");
     if (!CreatePipe(&stdinRead, &stdinWrite, &sa, 0) ||
         !CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0) ||
         !CreatePipe(&stderrRead, &stderrWrite, &sa, 0))
@@ -330,7 +330,7 @@ int run_command(const char *command,
     CloseHandle(stderrWrite);
 
     // Write to the child process's stdin
-    debug("[JAUNCH-WIN32] WRITING TO SUBPROCESS STDIN");
+    DEBUG("WIN32", "WRITING TO SUBPROCESS STDIN");
     // Passing the input line count as the first line tells the child process what
     // to expect, so that it can stop reading from stdin once it has received
     // those lines, even though the pipe is not yet closed. This avoids deadlocks.
@@ -347,7 +347,7 @@ int run_command(const char *command,
 
     // Close the stdin write handle to signal end of input
     CloseHandle(stdinWrite);
-    debug("[JAUNCH-WIN32] CLOSED SUBPROCESS STDIN STREAM");
+    DEBUG("WIN32", "CLOSED SUBPROCESS STDIN STREAM");
 
     // Read from the child process's stderr in its own thread
     HANDLE hThread = CreateThread(NULL, 0, ReadStderrThread, stderrRead, 0, NULL);
@@ -379,20 +379,20 @@ int run_command(const char *command,
 
     // Wait for stderr thread to terminate
     if (hThread) {
-        debug("[JAUNCH-WIN32] WAITING FOR STDERR THREAD");
+        DEBUG("WIN32", "WAITING FOR STDERR THREAD");
         WaitForSingleObject(hThread, INFINITE);
         CloseHandle(hThread);
-        debug("[JAUNCH-WIN32] STDERR THREAD COMPLETE");
+        DEBUG("WIN32", "STDERR THREAD COMPLETE");
     }
 
     // Close handles
-    debug("[JAUNCH-WIN32] CLOSING OUTPUT STREAM HANDLES");
+    DEBUG("WIN32", "CLOSING OUTPUT STREAM HANDLES");
     CloseHandle(stdoutRead);
     CloseHandle(stderrRead);
-    debug("[JAUNCH-WIN32] CLOSING SUBPROCESS HANDLES");
+    DEBUG("WIN32", "CLOSING SUBPROCESS HANDLES");
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-    debug("[JAUNCH-WIN32] ALL HANDLES CLOSED");
+    DEBUG("WIN32", "ALL HANDLES CLOSED");
 
     // Return the output buffer and the number of lines
     *output = NULL;

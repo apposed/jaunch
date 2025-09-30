@@ -15,19 +15,19 @@ static int launch_python(const size_t argc, const char **argv) {
     // =======================================================================
 
     const char *libpython_path = argv[0];
-    debug("[JAUNCH-PYTHON] libpython_path = %s", libpython_path);
+    DEBUG("PYTHON", "libpython_path = %s", libpython_path);
 
     // =======================================================================
     // Load the Python runtime.
     // =======================================================================
 
     // Load libpython.
-    debug("[JAUNCH-PYTHON] LOADING LIBPYTHON");
+    DEBUG("PYTHON", "Loading libpython");
     void *python_library = lib_open(libpython_path);
     if (!python_library) { error("Error loading libpython: %s", lib_error()); return ERROR_DLOPEN; }
 
     // Load Py_BytesMain function.
-    debug("[JAUNCH-PYTHON] LOADING Py_BytesMain");
+    DEBUG("PYTHON", "Loading Py_BytesMain");
     static int (*Py_BytesMain)(int, char **);
     Py_BytesMain = lib_sym(python_library, "Py_BytesMain");
     if (!Py_BytesMain) {
@@ -49,9 +49,9 @@ static int launch_python(const size_t argc, const char **argv) {
     // Clean up.
     // =======================================================================
 
-    debug("[JAUNCH-PYTHON] CLOSING LIBPYTHON");
+    DEBUG("PYTHON", "Closing libpython");
     lib_close(python_library);
-    debug("[JAUNCH-PYTHON] GOODBYE");
+    DEBUG("PYTHON", "Python cleanup complete");
 
     return SUCCESS;
 }

@@ -43,7 +43,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     // Load Security framework
     void *security_framework = dlopen("/System/Library/Frameworks/Security.framework/Security", RTLD_LAZY);
     if (!security_framework) {
-        debug("[JAUNCH-MACOS] Failed to load Security framework");
+        DEBUG("MACOS", "Failed to load Security framework");
         return 0; // Continue with normal execution
     }
 
@@ -54,7 +54,7 @@ int handle_translocation(const int argc, const char *argv[]) {
         dlsym(security_framework, "SecTranslocateCreateOriginalPathForURL");
 
     if (!isTranslocatedFunc || !getOriginalPathFunc) {
-        debug("[JAUNCH-MACOS] Failed to find translocation functions");
+        DEBUG("MACOS", "Failed to find translocation functions");
         dlclose(security_framework);
         return 0; // Continue with normal execution
     }
@@ -62,14 +62,14 @@ int handle_translocation(const int argc, const char *argv[]) {
     // Get bundle path
     CFBundleRef mainBundle = CFBundleGetMainBundle();
     if (!mainBundle) {
-        debug("[JAUNCH-MACOS] Failed to get main bundle");
+        DEBUG("MACOS", "Failed to get main bundle");
         dlclose(security_framework);
         return 0;
     }
 
     CFURLRef bundleURL = CFBundleCopyBundleURL(mainBundle);
     if (!bundleURL) {
-        debug("[JAUNCH-MACOS] Failed to get bundle URL");
+        DEBUG("MACOS", "Failed to get bundle URL");
         dlclose(security_framework);
         return 0;
     }
@@ -79,18 +79,18 @@ int handle_translocation(const int argc, const char *argv[]) {
     isTranslocatedFunc(bundleURL, &isTranslocated, NULL);
 
     if (!isTranslocated) {
-        debug("[JAUNCH-MACOS] Application is not translocated");
+        DEBUG("MACOS", "Application is not translocated");
         CFRelease(bundleURL);
         dlclose(security_framework);
         return 0; // Continue with normal execution
     }
 
-    debug("[JAUNCH-MACOS] Application is translocated, finding original path");
+    DEBUG("MACOS", "Application is translocated, finding original path");
 
     // Get the original path
     CFURLRef originalURL = getOriginalPathFunc(bundleURL, NULL);
     if (!originalURL) {
-        debug("[JAUNCH-MACOS] Failed to get original path");
+        DEBUG("MACOS", "Failed to get original path");
         CFRelease(bundleURL);
         dlclose(security_framework);
         return 0;
@@ -99,19 +99,19 @@ int handle_translocation(const int argc, const char *argv[]) {
     // Convert the URL to a filesystem path
     char originalPath[PATH_MAX];
     if (!CFURLGetFileSystemRepresentation(originalURL, TRUE, (UInt8*)originalPath, PATH_MAX)) {
-        debug("[JAUNCH-MACOS] Failed to convert URL to path");
+        DEBUG("MACOS", "Failed to convert URL to path");
         CFRelease(originalURL);
         CFRelease(bundleURL);
         dlclose(security_framework);
         return 0;
     }
 
-    debug("[JAUNCH-MACOS] Original path: %s", originalPath);
+    DEBUG("MACOS", "Original path: %s", originalPath);
 
     // Get path to the executable within the bundle
     CFURLRef executableURL = CFBundleCopyExecutableURL(mainBundle);
     if (!executableURL) {
-        debug("[JAUNCH-MACOS] Failed to get executable URL");
+        DEBUG("MACOS", "Failed to get executable URL");
         CFRelease(originalURL);
         CFRelease(bundleURL);
         dlclose(security_framework);
@@ -120,7 +120,7 @@ int handle_translocation(const int argc, const char *argv[]) {
 
     char executablePath[PATH_MAX];
     if (!CFURLGetFileSystemRepresentation(executableURL, TRUE, (UInt8*)executablePath, PATH_MAX)) {
-        debug("[JAUNCH-MACOS] Failed to convert executable URL to path");
+        DEBUG("MACOS", "Failed to convert executable URL to path");
         CFRelease(executableURL);
         CFRelease(originalURL);
         CFRelease(bundleURL);
@@ -131,7 +131,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     // Get relative path of executable within bundle
     char bundlePath[PATH_MAX];
     if (!CFURLGetFileSystemRepresentation(bundleURL, TRUE, (UInt8*)bundlePath, PATH_MAX)) {
-        debug("[JAUNCH-MACOS] Failed to convert bundle URL to path");
+        DEBUG("MACOS", "Failed to convert bundle URL to path");
         CFRelease(executableURL);
         CFRelease(originalURL);
         CFRelease(bundleURL);
@@ -145,12 +145,12 @@ int handle_translocation(const int argc, const char *argv[]) {
     char originalExecPath[PATH_MAX];
     snprintf(originalExecPath, PATH_MAX, "%s%s", originalPath, relativeExecPath);
 
-    debug("[JAUNCH-MACOS] Original executable path: %s", originalExecPath);
+    DEBUG("MACOS", "Original executable path: %s", originalExecPath);
 
     // Remove quarantine attribute from the original bundle
     char xattrCmd[PATH_MAX * 2];
     snprintf(xattrCmd, PATH_MAX * 2, "xattr -dr com.apple.quarantine \"%s\"", originalPath);
-    debug("[JAUNCH-MACOS] Removing quarantine attribute: %s", xattrCmd);
+    DEBUG("MACOS", "Removing quarantine attribute: %s", xattrCmd);
     system(xattrCmd);
 
     // Prepare to relaunch from original location
@@ -170,17 +170,17 @@ int handle_translocation(const int argc, const char *argv[]) {
     dlclose(security_framework);
 
     // Execute the original application
-    debug("[JAUNCH-MACOS] Relaunching from original location");
+    DEBUG("MACOS", "Relaunching from original location");
     pid_t pid;
     int status = posix_spawn(&pid, originalExecPath, NULL, NULL, args, environ);
 
     if (status == 0) {
-        debug("[JAUNCH-MACOS] Successfully relaunched, exiting translocated instance");
+        DEBUG("MACOS", "Successfully relaunched, exiting translocated instance");
         free(args);
         exit(0); // Exit this translocated instance
     }
     else {
-        debug("[JAUNCH-MACOS] Failed to relaunch: %s", strerror(status));
+        DEBUG("MACOS", "Failed to relaunch: %s", strerror(status));
         free(args);
         return 0; // Continue with normal execution as fallback
     }
@@ -202,61 +202,61 @@ void runloop_config(const char *directive) {
     if (directive && strcmp(directive, "JVM") == 0) {
         // JVM default: park main thread in event loop.
         ctx->runloop_mode = "park";
-        debug("[JAUNCH-MACOS] runloop_mode -> %s [auto]", ctx->runloop_mode);
+        DEBUG("MACOS", "Setting runloop_mode to %s [auto]", ctx->runloop_mode);
     }
 }
 void runloop_run(const char *mode) {
     extern ThreadContext *ctx;
     ctx->runloop_mode = (char *)mode;
-    debug("[JAUNCH-MACOS] runloop_mode -> %s", ctx->runloop_mode);
+    DEBUG("MACOS", "Setting runloop_mode to %s", ctx->runloop_mode);
 
     int park_mode = strcmp(mode, "park") == 0;
     if (park_mode) {
-        debug("[JAUNCH-MACOS] Park mode -- initializing macOS CoreFoundation runloop");
+        DEBUG("MACOS", "Initializing runloop (park mode)");
 
         // Signal early completion, transitioning to runloop state. This
         // releases the directive thread while we block the main thread with
         // this runloop.
-        debug("[JAUNCH-MACOS] Invoking ctx_signal_early_completion");
+        DEBUG("MACOS", "Invoking ctx_signal_early_completion");
         ctx_lock();
         ctx_signal_early_completion(STATE_RUNLOOP);
         ctx_unlock();
-        debug("[JAUNCH-MACOS] ctx_signal_early_completion invoked");
+        DEBUG("MACOS", "ctx_signal_early_completion invoked");
 
         // Create a far-future timer to keep the runloop active.
         // This timer is necessary to prevent the runloop from exiting immediately
         // when there are no other sources/timers scheduled.
-        debug("[JAUNCH-MACOS] Creating far-future timer");
+        DEBUG("MACOS", "Creating far-future timer");
         CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault,
             1.0e20, 0.0, 0, 0, (CFRunLoopTimerCallBack)dummy_call_back, NULL);
         CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopDefaultMode);
         CFRelease(timer);
-        debug("[JAUNCH-MACOS] Timer created");
+        DEBUG("MACOS", "Timer created");
 
         // Run the main runloop.
-        debug("[JAUNCH-MACOS] Invoking CFRunLoopRun");
+        DEBUG("MACOS", "Invoking CFRunLoopRun");
         CFRunLoopRun();
-        debug("[JAUNCH-MACOS] CFRunLoopRun completed");
+        DEBUG("MACOS", "CFRunLoopRun completed");
 
         // Now that the runloop has exited, transition back to WAITING state.
         ctx_lock();
         if (ctx->state == STATE_RUNLOOP) {
-            debug("[JAUNCH-MACOS] Transitioning from RUNLOOP to WAITING after CFRunLoopRun returned");
+            DEBUG("MACOS", "Transitioning from RUNLOOP to WAITING after CFRunLoopRun returned");
             ctx_set_state(STATE_WAITING);
             ctx_signal_main();
         }
         ctx_unlock();
     } else {
-        debug("[JAUNCH-MACOS] Runloop mode '%s' - no event loop needed", mode);
+        DEBUG("MACOS", "Runloop mode '%s' - no event loop needed", mode);
         // For non-park modes, just return normally - no early completion needed
     }
 }
 void runloop_stop() {
     extern ThreadContext *ctx;
     // First, try to stop the runloop directly.
-    debug("[JAUNCH-MACOS] Invoking CFRunLoopStop");
+    DEBUG("MACOS", "Invoking CFRunLoopStop");
     CFRunLoopStop(CFRunLoopGetMain());
-    debug("[JAUNCH-MACOS] CFRunLoopStop completed");
+    DEBUG("MACOS", "CFRunLoopStop completed");
 
     // Note: On macOS, GUI frameworks like Java AWT/Swing fundamentally
     // alter the CoreFoundation runloop state during initialization, making
@@ -302,7 +302,7 @@ void runloop_stop() {
     while (ctx->state == STATE_RUNLOOP) {
         double elapsed = CFAbsoluteTimeGetCurrent() - start_time;
         if (elapsed > timeout_seconds) {
-            debug("[JAUNCH-MACOS] CFRunLoop failed to terminate within %.1fs; forcing process exit", timeout_seconds);
+            DEBUG("MACOS", "CFRunLoop failed to terminate within %.1fs; forcing process exit", timeout_seconds);
             exit(ctx->exit_code);
         }
 
@@ -310,7 +310,7 @@ void runloop_stop() {
         usleep(50000);
     }
 
-    debug("[JAUNCH-MACOS] CFRunLoop has successfully terminated! ^_^");
+    DEBUG("MACOS", "CFRunLoop has successfully terminated! ^_^");
 }
 
 int init_threads() { return SUCCESS; }
@@ -392,27 +392,27 @@ int launch(const LaunchFunc launch_runtime,
         // This ensures AppKit is properly set up for GUI applications.
         // It does *not* start the event loop, though; that will be the
         // responsibility of the launched program within the runtime.
-        debug("[JAUNCH-MACOS] Invoking NSApplicationLoad (-XstartOnFirstThread style)");
+        DEBUG("MACOS", "Invoking NSApplicationLoad (-XstartOnFirstThread style)");
         NSApplicationLoad();
 
         // Use NSAutoreleasePool for proper Objective-C memory management.
-        debug("[JAUNCH-MACOS] Configuring autorelease pool (-XstartOnFirstThread style)");
+        DEBUG("MACOS", "Configuring autorelease pool (-XstartOnFirstThread style)");
         Class NSAutoreleasePool = objc_getClass("NSAutoreleasePool");
         id pool = ((id (*)(id, SEL))objc_msgSend)((id)NSAutoreleasePool, sel_registerName("alloc"));
         pool = ((id (*)(id, SEL))objc_msgSend)(pool, sel_registerName("init"));
 
-        debug("[JAUNCH-MACOS] Launching runtime (\"main\" mode)");
+        DEBUG("MACOS", "Launching runtime (\"main\" mode)");
         runtime_result = launch_runtime(argc, argv);
-        debug("[JAUNCH-MACOS] Runtime finished with code: %d", runtime_result);
+        DEBUG("MACOS", "Runtime finished with code: %d", runtime_result);
 
-        debug("[JAUNCH-MACOS] Cleaning up autorelease pool (-XstartOnFirstThread style)");
+        DEBUG("MACOS", "Cleaning up autorelease pool (-XstartOnFirstThread style)");
         ((void (*)(id, SEL))objc_msgSend)(pool, sel_registerName("drain"));
     }
     else {
         // Either "none" or "park" mode, depending on the current thread.
-        debug("[JAUNCH-MACOS] Launching runtime");
+        DEBUG("MACOS", "Launching runtime");
         runtime_result = launch_runtime(argc, argv);
-        debug("[JAUNCH-MACOS] Runtime finished with code: %d", runtime_result);
+        DEBUG("MACOS", "Runtime finished with code: %d", runtime_result);
     }
 
     return runtime_result;

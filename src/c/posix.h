@@ -123,7 +123,7 @@ int run_command(const char *command,
 
         // Close the read end of stdout
         close(stdoutPipe[0]);
-        debug("[JAUNCH-POSIX] run_command: closed jaunch stdout pipe");
+        DEBUG("POSIX", "run_command: closed jaunch stdout pipe");
 
         // Wait for the child process to finish
         if (waitpid(pid, NULL, 0) == -1) {

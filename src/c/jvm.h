@@ -36,7 +36,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     char **ptr = (char **)argv;
  
     const char *libjvm_path = *ptr++;
-    debug("[JAUNCH-JVM] libjvm_path = %s", libjvm_path);
+    DEBUG("JVM", "libjvm_path = %s", libjvm_path);
 
     const int jvm_argc = atoi(*ptr++);
     const char **jvm_argv = (const char **)ptr;
@@ -44,7 +44,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     ptr += jvm_argc;
 
     const char *main_class_name = *ptr++;
-    debug("[JAUNCH-JVM] main_class_name = %s", main_class_name);
+    DEBUG("JVM", "main_class_name = %s", main_class_name);
 
     const int main_argc = argc - 3 - jvm_argc;
     const char **main_argv = (const char **)ptr;
@@ -60,12 +60,12 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
     if (cached_jvm == NULL) {
         // First JVM directive - create new JVM instance
-        debug("[JAUNCH-JVM] LOADING LIBJVM (first time)");
+        DEBUG("JVM", "Loading libjvm (first time)");
         jvm_library = lib_open(libjvm_path);
         if (!jvm_library) { error("Error loading libjvm: %s", lib_error()); return ERROR_DLOPEN; }
 
         // Load JNI_CreateJavaVM function.
-        debug("[JAUNCH-JVM] LOADING JNI_CreateJavaVM");
+        DEBUG("JVM", "Loading JNI_CreateJavaVM");
         static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
         JNI_CreateJavaVM = lib_sym(jvm_library, "JNI_CreateJavaVM");
         if (!JNI_CreateJavaVM) {
@@ -75,7 +75,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
         }
 
         // Populate VM options.
-        debug("[JAUNCH-JVM] POPULATING VM OPTIONS");
+        DEBUG("JVM", "Populating VM options");
         JavaVMOption vmOptions[jvm_argc + 1];
         for (size_t i = 0; i < jvm_argc; i++) {
             vmOptions[i].optionString = (char *)jvm_argv[i];
@@ -83,7 +83,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
         vmOptions[jvm_argc].optionString = NULL;
 
         // Populate VM init args.
-        debug("[JAUNCH-JVM] POPULATING VM INIT ARGS");
+        DEBUG("JVM", "Populating VM init args");
         JavaVMInitArgs vmInitArgs;
         vmInitArgs.version = JNI_VERSION_1_8;
         vmInitArgs.options = vmOptions;
@@ -91,7 +91,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
         vmInitArgs.ignoreUnrecognized = JNI_FALSE;
 
         // Create the JVM.
-        debug("[JAUNCH-JVM] CREATING JVM");
+        DEBUG("JVM", "Creating JVM");
         if (JNI_CreateJavaVM(&jvm, (void **)&env, &vmInitArgs) != JNI_OK) {
             error("Error creating Java Virtual Machine");
             lib_close(jvm_library);
@@ -101,10 +101,10 @@ static int launch_jvm(const size_t argc, const char **argv) {
         // Cache the JVM instance for reuse
         cached_jvm = jvm;
         cached_jvm_library = jvm_library;
-        debug("[JAUNCH-JVM] JVM created and cached for reuse");
+        DEBUG("JVM", "JVM created and cached for reuse");
     } else {
         // Subsequent JVM directive - reuse cached instance
-        debug("[JAUNCH-JVM] REUSING CACHED JVM");
+        DEBUG("JVM", "Reusing cached JVM");
         jvm = cached_jvm;
         jvm_library = cached_jvm_library;
 
@@ -116,12 +116,12 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
         // Note: JVM options from subsequent directives are ignored when reusing JVM
         if (jvm_argc > 0) {
-            debug("[JAUNCH-JVM] WARNING: JVM options ignored when reusing cached JVM instance");
+            DEBUG("JVM", "WARNING: JVM options ignored when reusing cached JVM instance");
         }
     }
 
     // Find the main class.
-    debug("[JAUNCH-JVM] FINDING MAIN CLASS");
+    DEBUG("JVM", "Finding main class");
     jclass mainClass = (*env)->FindClass(env, main_class_name);
     if (mainClass == NULL) {
         error("Error finding class %s", main_class_name);
@@ -131,7 +131,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     }
 
     // Find the main method.
-    debug("[JAUNCH-JVM] FINDING MAIN METHOD");
+    DEBUG("JVM", "Finding main method");
     jmethodID mainMethod = (*env)->GetStaticMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
     if (mainMethod == NULL) {
         error("Error finding main method of class %s", main_class_name);
@@ -141,17 +141,17 @@ static int launch_jvm(const size_t argc, const char **argv) {
     }
 
     // Populate main method arguments.
-    debug("[JAUNCH-JVM] FINDING MAIN METHOD ARGUMENTS");
+    DEBUG("JVM", "Populating main method arguments");
     jobjectArray javaArgs = (*env)->NewObjectArray(env, main_argc, (*env)->FindClass(env, "java/lang/String"), NULL);
     for (size_t i = 0; i < main_argc; i++) {
         (*env)->SetObjectArrayElement(env, javaArgs, i, (*env)->NewStringUTF(env, main_argv[i]));
     }
 
     // Invoke the main method.
-    debug("[JAUNCH-JVM] INVOKING MAIN METHOD");
+    DEBUG("JVM", "Invoking main method");
     (*env)->CallStaticVoidMethodA(env, mainClass, mainMethod, (jvalue *)&javaArgs);
 
-    debug("[JAUNCH-JVM] DETACHING CURRENT THREAD");
+    DEBUG("JVM", "Detaching current thread");
     if ((*jvm)->DetachCurrentThread(jvm)) {
         error("Could not detach current thread from JVM");
     }
@@ -160,7 +160,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     // Clean up - but keep JVM alive for potential reuse
     // =======================================================================
 
-    debug("[JAUNCH-JVM] JVM directive completed - keeping JVM alive for potential reuse");
+    DEBUG("JVM", "JVM directive completed - keeping JVM alive for potential reuse");
     // JVM will be destroyed later in cleanup_jvm() when all directives are done
 
     return SUCCESS;
@@ -172,13 +172,13 @@ static int launch_jvm(const size_t argc, const char **argv) {
  */
 static void cleanup_jvm() {
     if (cached_jvm != NULL) {
-        debug("[JAUNCH-JVM] DESTROYING CACHED JVM");
+        DEBUG("JVM", "Destroying cached JVM");
         (*cached_jvm)->DestroyJavaVM(cached_jvm);
-        debug("[JAUNCH-JVM] CLOSING LIBJVM");
+        DEBUG("JVM", "Closing libjvm");
         lib_close(cached_jvm_library);
         cached_jvm = NULL;
         cached_jvm_library = NULL;
-        debug("[JAUNCH-JVM] JVM CLEANUP COMPLETE");
+        DEBUG("JVM", "JVM cleanup complete");
     }
 }
 

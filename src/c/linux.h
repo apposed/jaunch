@@ -47,7 +47,7 @@ void runloop_stop() {}
 int init_threads() {
     void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
     if (libX11Handle != NULL) {
-        debug("[JAUNCH-LINUX] Running XInitThreads");
+        DEBUG("LINUX", "Running XInitThreads");
         xinit_threads_reference = dlsym(libX11Handle, "XInitThreads");
 
         if (xinit_threads_reference != NULL) {
@@ -80,7 +80,7 @@ void show_alert(const char *title, const char *message) {
         char *textArg = malloc(strlen(message) + 8);  // --text={message}
         strcpy(textArg, "--text=");
         strcat(textArg, message);
-        debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s'", exe, "--error", titleArg, textArg);
+        DEBUG("LINUX", "'%s' '%s' '%s' '%s'", exe, "--error", titleArg, textArg);
         execlp(exe, "zenity", "--error", titleArg, textArg, (char *)NULL);
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
@@ -90,19 +90,19 @@ void show_alert(const char *title, const char *message) {
         char *titleArg = malloc(strlen(title) + 9);  // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
-        debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s'", exe, "--sorry", titleArg, message);
+        DEBUG("LINUX", "'%s' '%s' '%s' '%s'", exe, "--sorry", titleArg, message);
         execlp(exe, "kdialog", "--sorry", titleArg, message, (char *)NULL);
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
     }
     else if (find_executable("xmessage", exe, sizeof(exe))) {
-      debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s' '%s'", exe,
+      DEBUG("LINUX", "'%s' '%s' '%s' '%s' '%s'", exe,
           "-buttons", "OK:0", "-nearmouse", message);
       execlp(exe, "xmessage",
           "-buttons", "OK:0", "-nearmouse", message, (char *)NULL);
     }
     else if (find_executable("notify-send", exe, sizeof(exe))) {
-        debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s' '%s' '%s'", exe,
+        DEBUG("LINUX", "'%s' '%s' '%s' '%s' '%s' '%s'", exe,
             "-a", title, "-c", "im.error", message);
         execlp(exe, "notify-send",
             "-a", title, "-c", "im.error", message, (char *)NULL);

@@ -103,7 +103,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
     if (strcmp(directive, "SETCWD") == 0) {
         if (dir_argc >= 1) {
             const char *cwd = dir_argv[0];
-            debug("[JAUNCH] Changing working directory to: %s", cwd);
+            DEBUG("JAUNCH", "Changing working directory to %s", cwd);
             return chdir(cwd);
         }
         error("Ignoring invalid SETCWD directive with no argument.");
@@ -115,7 +115,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
     if (strcmp(directive, "RUNLOOP") == 0) {
         const char *mode = dir_argc >= 1 ? dir_argv[0] : ctx->runloop_mode;
         if (mode) {
-          debug("[JAUNCH] Invoking runloop with mode %s", mode);
+          DEBUG("JAUNCH", "Invoking runloop with mode %s", mode);
         }
         else {
             error("Ignoring invalid RUNLOOP directive with no mode.");
@@ -189,7 +189,7 @@ int process_directives(void *unused) {
                     : execute_directive("RUNLOOP", 0, NULL);
 
                 if (code != SUCCESS) {
-                    debug("[JAUNCH] RUNLOOP auto-directive failed with code %d", code);
+                    DEBUG("JAUNCH", "RUNLOOP auto-directive failed with code %d", code);
                     exit_code |= code; // Remember non-zero error code bits.
                 }
             }
@@ -199,25 +199,25 @@ int process_directives(void *unused) {
         int error_code;
         if (ctx_main_thread_available()) {
             // Main thread is available for directive execution.
-            debug("[JAUNCH] Executing %s directive on main thread", directive);
+            DEBUG("JAUNCH", "Executing %s directive on main thread", directive);
             error_code = ctx_request_main_execution(directive, dir_argc, dir_argv);
         }
         else {
             // Main thread is busy (executing directive or blocked in runloop).
             // Execute the directive on the current (directive processing) thread.
             const char *reason = (ctx->state == STATE_RUNLOOP) ? "runloop is active" : "main thread is busy";
-            debug("[JAUNCH] Executing %s directive on directive thread because %s", directive, reason);
+            DEBUG("JAUNCH", "Executing %s directive on directive thread because %s", directive, reason);
             error_code = execute_directive(directive, dir_argc, dir_argv);
         }
 
         if (error_code != SUCCESS) {
-            debug("[JAUNCH] %s directive failed with code %d, continuing with remaining directives", directive, error_code);
+            DEBUG("JAUNCH", "%s directive failed with code %d, continuing with remaining directives", directive, error_code);
             exit_code |= error_code; // Remember non-zero error code bits.
         }
     }
 
     // Cleanup all runtime instances after processing all directives.
-    debug("[JAUNCH] All directives processed, cleaning up runtimes");
+    DEBUG("JAUNCH", "All directives processed, cleaning up runtimes");
     cleanup_jvm();
     cleanup_python();
 
@@ -231,7 +231,7 @@ int process_directives(void *unused) {
     ctx_signal_main();
     ctx_unlock();
 
-    debug("[JAUNCH] Directive thread returning with exit code %d", exit_code);
+    DEBUG("JAUNCH", "Directive thread returning with exit code %d", exit_code);
     return exit_code;
 }
 
@@ -260,6 +260,11 @@ char *path(const char *argv0, const char *subdir, const char *command) {
 }
 
 int main(const int argc, const char *argv[]) {
+    // Save main thread ID for thread detection on non-Apple platforms
+//#ifndef __APPLE__
+    main_thread_id = pthread_self();
+//#endif
+
     // Enable debug mode when --debug is an argument.
     for (size_t i = 0; i < argc; i++)
         if (strcmp(argv[i], "--debug") == 0) debug_mode = 1;
@@ -280,7 +285,7 @@ int main(const int argc, const char *argv[]) {
             "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX
         );
         if (file_exists(command)) break;
-        debug("[JAUNCH] No configurator at %s", command);
+        DEBUG("JAUNCH", "No configurator at %s", command);
         free(command);
 
         // If not found, look for jaunch configurator with fallback suffix.
@@ -291,7 +296,7 @@ int main(const int argc, const char *argv[]) {
                 "jaunch-" SUFFIX_FALLBACK EXE_SUFFIX
             );
             if (file_exists(command)) break;
-            debug("[JAUNCH] No fallback configurator at %s", command);
+            DEBUG("JAUNCH", "No fallback configurator at %s", command);
             free(command);
         }
 
@@ -302,7 +307,7 @@ int main(const int argc, const char *argv[]) {
             "jaunch" EXE_SUFFIX
         );
         if (file_exists(command)) break;
-        debug("[JAUNCH] No plain configurator at %s", command);
+        DEBUG("JAUNCH", "No plain configurator at %s", command);
         free(command);
 
         // Nothing at this search path; move on to the next one.
@@ -312,7 +317,7 @@ int main(const int argc, const char *argv[]) {
         error("Failed to locate the jaunch configurator program.");
         return ERROR_COMMAND_PATH;
     }
-    debug("[JAUNCH] configurator command = %s", command);
+    DEBUG("JAUNCH", "Configurator command: %s", command);
 
     // Prepend original arguments with needed internal arguments.
     // For the moment, the only internal argument passed here is an
@@ -363,7 +368,7 @@ int main(const int argc, const char *argv[]) {
     };
     ctx = &the_ctx;
 
-    debug("[JAUNCH] Starting directive processing on separate thread");
+    DEBUG("JAUNCH", "Starting directive processing thread");
     pthread_t directive_thread;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -380,7 +385,7 @@ int main(const int argc, const char *argv[]) {
         ctx_wait_for_state_change(STATE_WAITING);
 
         if (ctx->state == STATE_EXECUTING) {
-            debug("[JAUNCH-MAIN] Executing directive: %s", ctx->pending_directive);
+            DEBUG("JAUNCH", "Executing %s directive", ctx->pending_directive);
 
             // Release mutex while executing the directive
             // (which may call ctx_signal_early_completion).
@@ -407,13 +412,13 @@ int main(const int argc, const char *argv[]) {
             ctx_unlock();
         }
         else if (ctx->state == STATE_RUNLOOP) {
-            debug("[JAUNCH-MAIN] Main thread in runloop state - continuing to wait");
+            DEBUG("JAUNCH", "Main thread in runloop state, continuing to wait");
             ctx_unlock();
             // Continue waiting - the runloop will eventually exit and change state.
         }
         else if (ctx->state == STATE_COMPLETE) {
             ctx_unlock();
-            debug("[JAUNCH-MAIN] Exiting directives loop");
+            DEBUG("JAUNCH", "Exiting directives loop");
             break;
         }
         else {
@@ -426,7 +431,7 @@ int main(const int argc, const char *argv[]) {
     // Wait for directive processing thread to complete.
     pthread_join(directive_thread, NULL);
     int exit_code = ctx->exit_code;
-    debug("[JAUNCH] Directives processing complete");
+    DEBUG("JAUNCH", "Directives processing complete");
 
     // Clean up global context pointer
     ctx = NULL;
