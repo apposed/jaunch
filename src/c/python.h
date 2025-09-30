@@ -29,14 +29,14 @@ static int launch_python(const size_t argc, const char **argv) {
     // Load libpython.
     LOG_DEBUG("PYTHON", "Loading libpython");
     void *python_library = lib_open(libpython_path);
-    if (!python_library) { LOG_ERROR("Error loading libpython: %s", lib_error()); return ERROR_DLOPEN; }
+    if (!python_library) { LOG_ERROR("Failed to load libpython: %s", lib_error()); return ERROR_DLOPEN; }
 
     // Load Py_BytesMain function.
     LOG_DEBUG("PYTHON", "Loading Py_BytesMain");
     static int (*Py_BytesMain)(int, char **);
     Py_BytesMain = lib_sym(python_library, "Py_BytesMain");
     if (!Py_BytesMain) {
-        LOG_ERROR("Error finding Py_BytesMain function: %s", lib_error());
+        LOG_ERROR("Failed to locate Py_BytesMain function: %s", lib_error());
         lib_close(python_library);
         return 1;
     }
@@ -45,7 +45,7 @@ static int launch_python(const size_t argc, const char **argv) {
     int result = Py_BytesMain(argc, (char **)argv);
 
     if (result != 0) {
-      LOG_ERROR("Error running Python script: %d", result);
+      LOG_ERROR("Failed to run Python script: %d", result);
       lib_close(python_library);
       return result;
     }

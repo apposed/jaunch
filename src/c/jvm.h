@@ -65,14 +65,14 @@ static int launch_jvm(const size_t argc, const char **argv) {
         // First JVM directive - create new JVM instance
         LOG_INFO("JVM", "Loading libjvm (first time)");
         jvm_library = lib_open(libjvm_path);
-        if (!jvm_library) { LOG_ERROR("Error loading libjvm: %s", lib_error()); return ERROR_DLOPEN; }
+        if (!jvm_library) { LOG_ERROR("Failed to load libjvm: %s", lib_error()); return ERROR_DLOPEN; }
 
         // Load JNI_CreateJavaVM function.
         LOG_DEBUG("JVM", "Loading JNI_CreateJavaVM");
         static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
         JNI_CreateJavaVM = lib_sym(jvm_library, "JNI_CreateJavaVM");
         if (!JNI_CreateJavaVM) {
-            LOG_ERROR("Error finding JNI_CreateJavaVM: %s", lib_error());
+            LOG_ERROR("Failed to locate JNI_CreateJavaVM function: %s", lib_error());
             lib_close(jvm_library);
             return ERROR_DLSYM;
         }
@@ -96,7 +96,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
         // Create the JVM.
         LOG_DEBUG("JVM", "Creating JVM");
         if (JNI_CreateJavaVM(&jvm, (void **)&env, &vmInitArgs) != JNI_OK) {
-            LOG_ERROR("Error creating Java Virtual Machine");
+            LOG_ERROR("Failed to create the Java Virtual Machine");
             lib_close(jvm_library);
             return ERROR_CREATE_JAVA_VM;
         }
@@ -113,7 +113,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
         // Attach current thread to existing JVM
         if ((*jvm)->AttachCurrentThread(jvm, (void **)&env, NULL) != JNI_OK) {
-            LOG_ERROR("Error attaching thread to cached JVM");
+            LOG_ERROR("Failed to attach thread to cached JVM");
             return ERROR_CREATE_JAVA_VM;
         }
 
@@ -127,7 +127,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     LOG_DEBUG("JVM", "Finding main class");
     jclass mainClass = (*env)->FindClass(env, main_class_name);
     if (mainClass == NULL) {
-        LOG_ERROR("Error finding class %s", main_class_name);
+        LOG_ERROR("Failed to locate class %s", main_class_name);
         (*jvm)->DestroyJavaVM(jvm);
         lib_close(jvm_library);
         return ERROR_FIND_CLASS;
@@ -137,7 +137,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     LOG_DEBUG("JVM", "Finding main method");
     jmethodID mainMethod = (*env)->GetStaticMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
     if (mainMethod == NULL) {
-        LOG_ERROR("Error finding main method of class %s", main_class_name);
+        LOG_ERROR("Failed to find main method of class %s", main_class_name);
         (*jvm)->DestroyJavaVM(jvm);
         lib_close(jvm_library);
         return ERROR_GET_STATIC_METHOD_ID;
