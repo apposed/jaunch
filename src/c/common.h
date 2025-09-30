@@ -1,10 +1,10 @@
 #ifndef _JAUNCH_COMMON_H
 #define _JAUNCH_COMMON_H
 
-#include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "logging.h"
 
 #define SUCCESS 0
 #define ERROR_DLOPEN 1
@@ -24,12 +24,6 @@
 #define ERROR_UNKNOWN_DIRECTIVE 16
 #define ERROR_BAD_DIRECTIVE_SYNTAX 17
 #define ERROR_MISSING_FUNCTION 18
-
-// ============
-// GLOBAL STATE
-// ============
-int debug_mode = 0;
-int headless_mode = 0;
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -61,30 +55,16 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
 // UTILITY FUNCTIONS
 // =================
 
-void print_at_level(int verbosity, const char *fmt, ...) {
-    if (debug_mode < verbosity) return;
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    fputc('\n', stderr);
-    fflush(stderr);
-}
-
-#define error(fmt, ...) print_at_level(0, fmt, ##__VA_ARGS__)
-#define debug(fmt, ...) print_at_level(1, fmt, ##__VA_ARGS__)
-#define debug_verbose(fmt, ...) print_at_level(2, fmt, ##__VA_ARGS__)
-
-#define CHECK_ARGS(prefix, name, argc, min, max, argv) \
+#define CHECK_ARGS(component, name, argc, min, max, argv) \
     do { \
-        debug_verbose("[%s] %s_argc = %zu", (prefix), (name), (argc)); \
+        LOG_DEBUG(component, "%s_argc = %zu", (name), (argc)); \
         if ((argc) < (min) || (argc) > (max)) { \
-            error("Error: %s_argc value %d is out of bounds [%d, %d]\n", \
+            LOG_ERROR("Error: %s_argc value %d is out of bounds [%d, %d]\n", \
                 name, (argc), (min), (max)); \
             return ERROR_ARGC_OUT_OF_BOUNDS; \
         } \
         for (size_t a = 0; a < (argc); a++) { \
-            debug_verbose("[%s] %s_argv[%zu] = %s", (prefix), (name), a, argv[a]); \
+            LOG_DEBUG(component, "%s_argv[%zu] = %s", (name), a, argv[a]); \
         } \
     } \
     while(0)
@@ -96,12 +76,12 @@ int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     while (token != NULL) {
         *output = realloc(*output, (lineCount + 1) * sizeof(char *));
         if (*output == NULL) {
-          error("Failed to reallocate memory (split lines)");
+          LOG_ERROR("Failed to reallocate memory (split lines)");
           return ERROR_REALLOC;
         }
         (*output)[lineCount] = strdup(token);
         if ((*output)[lineCount] == NULL) {
-          error("Failed to duplicate string");
+          LOG_ERROR("Failed to duplicate string");
           return ERROR_STRDUP;
         }
         lineCount++;

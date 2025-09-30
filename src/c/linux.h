@@ -2,6 +2,7 @@
 #include <dlfcn.h>
 #include <limits.h>
 
+#include "logging.h"
 #include "common.h"
 
 #define OS_NAME "linux"
@@ -47,17 +48,17 @@ void runloop_stop() {}
 int init_threads() {
     void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
     if (libX11Handle != NULL) {
-        DEBUG("LINUX", "Running XInitThreads");
+        LOG_INFO("LINUX", "Running XInitThreads");
         xinit_threads_reference = dlsym(libX11Handle, "XInitThreads");
 
         if (xinit_threads_reference != NULL) {
             xinit_threads_reference();
             return SUCCESS;
         }
-        error("Could not find XInitThreads in X11 library: %s", dlerror());
+        LOG_ERROR("Could not find XInitThreads in X11 library: %s", dlerror());
     }
     else {
-        error("Could not find X11 library, not running XInitThreads.");
+        LOG_ERROR("Could not find X11 library, not running XInitThreads.");
     }
     return ERROR_MISSING_FUNCTION;
 }
@@ -80,7 +81,7 @@ void show_alert(const char *title, const char *message) {
         char *textArg = malloc(strlen(message) + 8);  // --text={message}
         strcpy(textArg, "--text=");
         strcat(textArg, message);
-        DEBUG("LINUX", "'%s' '%s' '%s' '%s'", exe, "--error", titleArg, textArg);
+        LOG_INFO("LINUX", "'%s' '%s' '%s' '%s'", exe, "--error", titleArg, textArg);
         execlp(exe, "zenity", "--error", titleArg, textArg, (char *)NULL);
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
@@ -90,19 +91,19 @@ void show_alert(const char *title, const char *message) {
         char *titleArg = malloc(strlen(title) + 9);  // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
-        DEBUG("LINUX", "'%s' '%s' '%s' '%s'", exe, "--sorry", titleArg, message);
+        LOG_INFO("LINUX", "'%s' '%s' '%s' '%s'", exe, "--sorry", titleArg, message);
         execlp(exe, "kdialog", "--sorry", titleArg, message, (char *)NULL);
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
     }
     else if (find_executable("xmessage", exe, sizeof(exe))) {
-      DEBUG("LINUX", "'%s' '%s' '%s' '%s' '%s'", exe,
+      LOG_INFO("LINUX", "'%s' '%s' '%s' '%s' '%s'", exe,
           "-buttons", "OK:0", "-nearmouse", message);
       execlp(exe, "xmessage",
           "-buttons", "OK:0", "-nearmouse", message, (char *)NULL);
     }
     else if (find_executable("notify-send", exe, sizeof(exe))) {
-        DEBUG("LINUX", "'%s' '%s' '%s' '%s' '%s' '%s'", exe,
+        LOG_INFO("LINUX", "'%s' '%s' '%s' '%s' '%s' '%s'", exe,
             "-a", title, "-c", "im.error", message);
         execlp(exe, "notify-send",
             "-a", title, "-c", "im.error", message, (char *)NULL);

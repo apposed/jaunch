@@ -3,6 +3,7 @@
 
 #include "jni.h"
 
+#include "logging.h"
 #include "common.h"
 
 // Global JVM state for reuse across multiple directives.
@@ -36,19 +37,19 @@ static int launch_jvm(const size_t argc, const char **argv) {
     char **ptr = (char **)argv;
  
     const char *libjvm_path = *ptr++;
-    DEBUG("JVM", "libjvm_path = %s", libjvm_path);
+    LOG_INFO("JVM", "libjvm_path = %s", libjvm_path);
 
     const int jvm_argc = atoi(*ptr++);
     const char **jvm_argv = (const char **)ptr;
-    CHECK_ARGS("JAUNCH-JVM", "jvm", jvm_argc, 0, argc - 3, jvm_argv);
+    CHECK_ARGS("JVM", "jvm", jvm_argc, 0, argc - 3, jvm_argv);
     ptr += jvm_argc;
 
     const char *main_class_name = *ptr++;
-    DEBUG("JVM", "main_class_name = %s", main_class_name);
+    LOG_INFO("JVM", "main_class_name = %s", main_class_name);
 
     const int main_argc = argc - 3 - jvm_argc;
     const char **main_argv = (const char **)ptr;
-    CHECK_ARGS("JAUNCH-JVM", "main", main_argc, 0, main_argc, main_argv);
+    CHECK_ARGS("JVM", "main", main_argc, 0, main_argc, main_argv);
 
     // =======================================================================
     // Load the JVM or reuse cached instance.
@@ -60,22 +61,22 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
     if (cached_jvm == NULL) {
         // First JVM directive - create new JVM instance
-        DEBUG("JVM", "Loading libjvm (first time)");
+        LOG_INFO("JVM", "Loading libjvm (first time)");
         jvm_library = lib_open(libjvm_path);
-        if (!jvm_library) { error("Error loading libjvm: %s", lib_error()); return ERROR_DLOPEN; }
+        if (!jvm_library) { LOG_ERROR("Error loading libjvm: %s", lib_error()); return ERROR_DLOPEN; }
 
         // Load JNI_CreateJavaVM function.
-        DEBUG("JVM", "Loading JNI_CreateJavaVM");
+        LOG_DEBUG("JVM", "Loading JNI_CreateJavaVM");
         static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
         JNI_CreateJavaVM = lib_sym(jvm_library, "JNI_CreateJavaVM");
         if (!JNI_CreateJavaVM) {
-            error("Error finding JNI_CreateJavaVM: %s", lib_error());
+            LOG_ERROR("Error finding JNI_CreateJavaVM: %s", lib_error());
             lib_close(jvm_library);
             return ERROR_DLSYM;
         }
 
         // Populate VM options.
-        DEBUG("JVM", "Populating VM options");
+        LOG_DEBUG("JVM", "Populating VM options");
         JavaVMOption vmOptions[jvm_argc + 1];
         for (size_t i = 0; i < jvm_argc; i++) {
             vmOptions[i].optionString = (char *)jvm_argv[i];
@@ -83,7 +84,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
         vmOptions[jvm_argc].optionString = NULL;
 
         // Populate VM init args.
-        DEBUG("JVM", "Populating VM init args");
+        LOG_DEBUG("JVM", "Populating VM init args");
         JavaVMInitArgs vmInitArgs;
         vmInitArgs.version = JNI_VERSION_1_8;
         vmInitArgs.options = vmOptions;
@@ -91,9 +92,9 @@ static int launch_jvm(const size_t argc, const char **argv) {
         vmInitArgs.ignoreUnrecognized = JNI_FALSE;
 
         // Create the JVM.
-        DEBUG("JVM", "Creating JVM");
+        LOG_DEBUG("JVM", "Creating JVM");
         if (JNI_CreateJavaVM(&jvm, (void **)&env, &vmInitArgs) != JNI_OK) {
-            error("Error creating Java Virtual Machine");
+            LOG_ERROR("Error creating Java Virtual Machine");
             lib_close(jvm_library);
             return ERROR_CREATE_JAVA_VM;
         }
@@ -101,66 +102,66 @@ static int launch_jvm(const size_t argc, const char **argv) {
         // Cache the JVM instance for reuse
         cached_jvm = jvm;
         cached_jvm_library = jvm_library;
-        DEBUG("JVM", "JVM created and cached for reuse");
+        LOG_INFO("JVM", "JVM created and cached for reuse");
     } else {
         // Subsequent JVM directive - reuse cached instance
-        DEBUG("JVM", "Reusing cached JVM");
+        LOG_INFO("JVM", "Reusing cached JVM");
         jvm = cached_jvm;
         jvm_library = cached_jvm_library;
 
         // Attach current thread to existing JVM
         if ((*jvm)->AttachCurrentThread(jvm, (void **)&env, NULL) != JNI_OK) {
-            error("Error attaching thread to cached JVM");
+            LOG_ERROR("Error attaching thread to cached JVM");
             return ERROR_CREATE_JAVA_VM;
         }
 
         // Note: JVM options from subsequent directives are ignored when reusing JVM
         if (jvm_argc > 0) {
-            DEBUG("JVM", "WARNING: JVM options ignored when reusing cached JVM instance");
+            LOG_INFO("JVM", "WARNING: JVM options ignored when reusing cached JVM instance");
         }
     }
 
     // Find the main class.
-    DEBUG("JVM", "Finding main class");
+    LOG_DEBUG("JVM", "Finding main class");
     jclass mainClass = (*env)->FindClass(env, main_class_name);
     if (mainClass == NULL) {
-        error("Error finding class %s", main_class_name);
+        LOG_ERROR("Error finding class %s", main_class_name);
         (*jvm)->DestroyJavaVM(jvm);
         lib_close(jvm_library);
         return ERROR_FIND_CLASS;
     }
 
     // Find the main method.
-    DEBUG("JVM", "Finding main method");
+    LOG_DEBUG("JVM", "Finding main method");
     jmethodID mainMethod = (*env)->GetStaticMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
     if (mainMethod == NULL) {
-        error("Error finding main method of class %s", main_class_name);
+        LOG_ERROR("Error finding main method of class %s", main_class_name);
         (*jvm)->DestroyJavaVM(jvm);
         lib_close(jvm_library);
         return ERROR_GET_STATIC_METHOD_ID;
     }
 
     // Populate main method arguments.
-    DEBUG("JVM", "Populating main method arguments");
+    LOG_DEBUG("JVM", "Populating main method arguments");
     jobjectArray javaArgs = (*env)->NewObjectArray(env, main_argc, (*env)->FindClass(env, "java/lang/String"), NULL);
     for (size_t i = 0; i < main_argc; i++) {
         (*env)->SetObjectArrayElement(env, javaArgs, i, (*env)->NewStringUTF(env, main_argv[i]));
     }
 
     // Invoke the main method.
-    DEBUG("JVM", "Invoking main method");
+    LOG_DEBUG("JVM", "Invoking main method");
     (*env)->CallStaticVoidMethodA(env, mainClass, mainMethod, (jvalue *)&javaArgs);
 
-    DEBUG("JVM", "Detaching current thread");
+    LOG_DEBUG("JVM", "Detaching current thread");
     if ((*jvm)->DetachCurrentThread(jvm)) {
-        error("Could not detach current thread from JVM");
+        LOG_ERROR("Could not detach current thread from JVM");
     }
 
     // =======================================================================
     // Clean up - but keep JVM alive for potential reuse
     // =======================================================================
 
-    DEBUG("JVM", "JVM directive completed - keeping JVM alive for potential reuse");
+    LOG_INFO("JVM", "JVM directive completed - keeping JVM alive for potential reuse");
     // JVM will be destroyed later in cleanup_jvm() when all directives are done
 
     return SUCCESS;
@@ -172,13 +173,13 @@ static int launch_jvm(const size_t argc, const char **argv) {
  */
 static void cleanup_jvm() {
     if (cached_jvm != NULL) {
-        DEBUG("JVM", "Destroying cached JVM");
+        LOG_DEBUG("JVM", "Destroying cached JVM");
         (*cached_jvm)->DestroyJavaVM(cached_jvm);
-        DEBUG("JVM", "Closing libjvm");
+        LOG_DEBUG("JVM", "Closing libjvm");
         lib_close(cached_jvm_library);
         cached_jvm = NULL;
         cached_jvm_library = NULL;
-        DEBUG("JVM", "JVM cleanup complete");
+        LOG_INFO("JVM", "JVM cleanup complete");
     }
 }
 

@@ -1,6 +1,8 @@
 #ifndef _JAUNCH_PYTHON_H
 #define _JAUNCH_PYTHON_H
 
+#include "logging.h"
+
 /*
  * This is the logic implementing Jaunch's PYTHON directive.
  * 
@@ -15,23 +17,23 @@ static int launch_python(const size_t argc, const char **argv) {
     // =======================================================================
 
     const char *libpython_path = argv[0];
-    DEBUG("PYTHON", "libpython_path = %s", libpython_path);
+    LOG_INFO("PYTHON", "libpython_path = %s", libpython_path);
 
     // =======================================================================
     // Load the Python runtime.
     // =======================================================================
 
     // Load libpython.
-    DEBUG("PYTHON", "Loading libpython");
+    LOG_DEBUG("PYTHON", "Loading libpython");
     void *python_library = lib_open(libpython_path);
-    if (!python_library) { error("Error loading libpython: %s", lib_error()); return ERROR_DLOPEN; }
+    if (!python_library) { LOG_ERROR("Error loading libpython: %s", lib_error()); return ERROR_DLOPEN; }
 
     // Load Py_BytesMain function.
-    DEBUG("PYTHON", "Loading Py_BytesMain");
+    LOG_DEBUG("PYTHON", "Loading Py_BytesMain");
     static int (*Py_BytesMain)(int, char **);
     Py_BytesMain = lib_sym(python_library, "Py_BytesMain");
     if (!Py_BytesMain) {
-        error("Error finding Py_BytesMain function: %s", lib_error());
+        LOG_ERROR("Error finding Py_BytesMain function: %s", lib_error());
         lib_close(python_library);
         return 1;
     }
@@ -40,7 +42,7 @@ static int launch_python(const size_t argc, const char **argv) {
     int result = Py_BytesMain(argc, (char **)argv);
 
     if (result != 0) {
-      error("Error running Python script: %d", result);
+      LOG_ERROR("Error running Python script: %d", result);
       lib_close(python_library);
       return result;
     }
@@ -49,9 +51,9 @@ static int launch_python(const size_t argc, const char **argv) {
     // Clean up.
     // =======================================================================
 
-    DEBUG("PYTHON", "Closing libpython");
+    LOG_DEBUG("PYTHON", "Closing libpython");
     lib_close(python_library);
-    DEBUG("PYTHON", "Python cleanup complete");
+    LOG_INFO("PYTHON", "Python cleanup complete");
 
     return SUCCESS;
 }

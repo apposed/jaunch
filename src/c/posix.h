@@ -1,6 +1,7 @@
 #include <dlfcn.h>
 #include <sys/wait.h>
 
+#include "logging.h"
 #include "common.h"
 
 #define SLASH "/"
@@ -38,9 +39,9 @@ int run_command(const char *command,
     int stdinPipe[2];
     int stdoutPipe[2];
 
-    debug_verbose("[JAUNCH-POSIX] run_command: opening pipes to/from configurator");
+    LOG_DEBUG("POSIX", "run_command: opening pipes to/from configurator");
     if (pipe(stdinPipe) == -1 || pipe(stdoutPipe) == -1) {
-      error("Failed to open pipes to/from configurator");
+      LOG_ERROR("Failed to open pipes to/from configurator");
       return ERROR_PIPE;
     }
 
@@ -48,7 +49,7 @@ int run_command(const char *command,
     pid_t pid = fork();
 
     if (pid == -1) {
-      error("Failed to fork the process");
+      LOG_ERROR("Failed to fork the process");
       return ERROR_FORK;
     }
 
@@ -72,7 +73,7 @@ int run_command(const char *command,
         execlp(command, command, "-", (char *)NULL);
 
         // If execlp fails
-        error("Failed to execute the jaunch configurator");
+        LOG_ERROR("Failed to execute the jaunch configurator");
         return ERROR_EXECLP;
     }
     else { // Parent process
@@ -81,20 +82,20 @@ int run_command(const char *command,
         close(stdoutPipe[1]);
 
         // Write to the child process's stdin
-        debug_verbose("[JAUNCH-POSIX] run_command: writing to jaunch stdin");
+        LOG_DEBUG("POSIX", "run_command: writing to jaunch stdin");
         // Passing the input line count as the first line tells the child process what
         // to expect, so that it can stop reading from stdin once it has received
         // those lines, even though the pipe is not yet closed. This avoids deadlocks.
         dprintf(stdinPipe[1], "%zu\n", numInput);
-        debug_verbose("[JAUNCH-POSIX] run_command: wrote numInput: %d", numInput);
+        LOG_DEBUG("POSIX", "run_command: wrote numInput: %zu", numInput);
         for (size_t i = 0; i < numInput; i++) {
             dprintf(stdinPipe[1], "%s\n", input[i]);
-            debug_verbose("[JAUNCH-POSIX] run_command: wrote input #%d: %s", i, input[i]);
+            LOG_DEBUG("POSIX", "run_command: wrote input #%zu: %s", i, input[i]);
         }
 
         // Close the write end of stdin to signal the end of input
         close(stdinPipe[1]);
-        debug_verbose("[JAUNCH-POSIX] run_command: closed jaunch stdin pipe");
+        LOG_DEBUG("POSIX", "run_command: closed jaunch stdin pipe");
 
         // Read from the child process's stdout
         char buffer[1024];
@@ -104,7 +105,7 @@ int run_command(const char *command,
         char *outputBuffer = malloc(bufferSize);
 
         if (outputBuffer == NULL) {
-          error("Failed to allocate memory (initial buffer)");
+          LOG_ERROR("Failed to allocate memory (initial buffer)");
           return ERROR_MALLOC;
         }
 
@@ -113,7 +114,7 @@ int run_command(const char *command,
                 bufferSize *= 2;
                 outputBuffer = realloc(outputBuffer, bufferSize);
                 if (outputBuffer == NULL) {
-                  error("Failed to reallocate memory (run_command)");
+                  LOG_ERROR("Failed to reallocate memory (run_command)");
                   return ERROR_REALLOC;
                 }
             }
@@ -123,11 +124,11 @@ int run_command(const char *command,
 
         // Close the read end of stdout
         close(stdoutPipe[0]);
-        DEBUG("POSIX", "run_command: closed jaunch stdout pipe");
+        LOG_DEBUG("POSIX", "run_command: closed jaunch stdout pipe");
 
         // Wait for the child process to finish
         if (waitpid(pid, NULL, 0) == -1) {
-          error("Failed waiting for Jaunch termination");
+          LOG_ERROR("Failed waiting for Jaunch termination");
           return ERROR_WAITPID;
         }
 
