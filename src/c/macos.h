@@ -201,7 +201,6 @@ void setup(const int argc, const char *argv[]) {
 void teardown() {}
 
 void runloop_config(const char *directive) {
-    extern ThreadContext *ctx;
     if (directive && strcmp(directive, "JVM") == 0) {
         // JVM default: park main thread in event loop.
         ctx->runloop_mode = "park";
@@ -209,7 +208,6 @@ void runloop_config(const char *directive) {
     }
 }
 void runloop_run(const char *mode) {
-    extern ThreadContext *ctx;
     ctx->runloop_mode = (char *)mode;
     LOG_INFO("MACOS", "Setting runloop_mode to %s", ctx->runloop_mode);
 
@@ -255,7 +253,6 @@ void runloop_run(const char *mode) {
     }
 }
 void runloop_stop() {
-    extern ThreadContext *ctx;
     // First, try to stop the runloop directly.
     LOG_DEBUG("MACOS", "Invoking CFRunLoopStop");
     CFRunLoopStop(CFRunLoopGetMain());
@@ -378,7 +375,6 @@ void show_alert(const char *title, const char *message) {
 int launch(const LaunchFunc launch_runtime,
     const size_t argc, const char **argv)
 {
-    extern ThreadContext *ctx;
     int runtime_result = SUCCESS;
 
     // Note: For "park" mode, this function will be invoked from the already
