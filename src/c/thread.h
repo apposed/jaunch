@@ -46,7 +46,7 @@ typedef struct {
 } ThreadContext;
 
 // Global thread state instance.
-ThreadContext *ctx = NULL;
+static ThreadContext *ctx = NULL;
 
 // =========================
 // THREAD INSPECTION METHODS

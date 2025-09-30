@@ -7,8 +7,8 @@
 // ============
 // GLOBAL STATE
 // ============
-int debug_mode;
-int headless_mode;
+static int debug_mode;
+static int headless_mode;
 
 // =================
 // LOGGING FUNCTIONS
