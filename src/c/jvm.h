@@ -119,7 +119,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
         // Note: JVM options from subsequent directives are ignored when reusing JVM
         if (jvm_argc > 0) {
-            LOG_INFO("JVM", "WARNING: JVM options ignored when reusing cached JVM instance");
+            LOG_WARN("JVM", "JVM options ignored when reusing cached JVM instance");
         }
     }
 
