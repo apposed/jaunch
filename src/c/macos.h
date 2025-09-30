@@ -208,7 +208,7 @@ void runloop_config(const char *directive) {
     }
 }
 void runloop_run(const char *mode) {
-    ctx->runloop_mode = (char *)mode;
+    ctx->runloop_mode = mode;
     LOG_INFO("MACOS", "Setting runloop_mode to %s", ctx->runloop_mode);
 
     int park_mode = strcmp(mode, "park") == 0;

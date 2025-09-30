@@ -35,7 +35,7 @@ typedef struct {
     int directive_result;
 
     // Runloop configuration.
-    char *runloop_mode;
+    const char *runloop_mode;
 
     // Bookmarked thread IDs, for use with thread_name function.
     pthread_t thread_id_main;
