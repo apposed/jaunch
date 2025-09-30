@@ -1,3 +1,5 @@
+#include <unistd.h>   // for access
+#include <string.h>   // for memcpy
 #include <dlfcn.h>
 #include <sys/wait.h>
 

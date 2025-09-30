@@ -2,7 +2,7 @@
 #define _JAUNCH_COMMON_H
 
 #include <stdlib.h>
-#include <string.h>
+#include <string.h>   // for strcat, strdup, strlen, strtok
 
 #include "logging.h"
 

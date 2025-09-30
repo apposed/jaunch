@@ -1,6 +1,6 @@
-#include <string.h>
+#include <string.h>   // for strcat, strcpy, strdup, strlen, strtok
 #include <dlfcn.h>
-#include <limits.h>
+#include <limits.h>   // for PATH_MAX
 
 #include "logging.h"
 #include "common.h"

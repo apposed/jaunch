@@ -1,7 +1,10 @@
 #ifndef _JAUNCH_PYTHON_H
 #define _JAUNCH_PYTHON_H
 
+#include <stddef.h>   // for size_t
+
 #include "logging.h"
+#include "common.h"
 
 /*
  * This is the logic implementing Jaunch's PYTHON directive.

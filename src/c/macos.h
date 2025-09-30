@@ -2,21 +2,23 @@
 #include <objc/objc.h>
 #include <objc/runtime.h>
 #include <objc/message.h>
-#include <sys/xattr.h>
 #include <dlfcn.h>
 #include <spawn.h>
 #include <stdlib.h>
-#include <signal.h>
-
-// Declare needed AppKit function without including AppKit,
-// to avoid difficulties with Objective-C versus pure C.
-extern void NSApplicationLoad(void);
+#include <limits.h>   // for PATH_MAX
+#include <string.h>   // for strcmp, strerror, strlen
+#include <stdio.h>    // for snprintf
+#include <unistd.h>   // for usleep, exit
 
 #include "logging.h"
 #include "common.h"
 #include "thread.h"
 
 #define OS_NAME "macos"
+
+// Declare needed AppKit function without including AppKit,
+// to avoid difficulties with Objective-C versus pure C.
+extern void NSApplicationLoad(void);
 
 /*
  * ===========================================================================

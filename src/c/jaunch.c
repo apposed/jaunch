@@ -43,14 +43,19 @@
  * can be flexibly configured to decide how arguments are transformed.
  */
 
-#include <unistd.h>
-#include <pthread.h>
-#include <errno.h>
-#include <time.h>
+#include <stdio.h>    // for NULL, size_t, fprintf, stderr
+#include <stdlib.h>   // for malloc, free, atoi
+#include <unistd.h>   // for chdir
+#include <string.h>   // for strcat, strcmp, strlen, strncpy, strrchr
+#include <pthread.h>  // for pthread_create, pthread_join, etc.
 
 #include "logging.h"
 #include "common.h"
 #include "thread.h"
+
+// -- RUNTIMES --
+#include "jvm.h"
+#include "python.h"
 
 // -- PLATFORMS --
 #ifdef __linux__
@@ -70,10 +75,6 @@
 #ifdef __aarch64__
     #define OS_ARCH "arm64"
 #endif
-
-// -- RUNTIMES --
-#include "jvm.h"
-#include "python.h"
 
 // List of places to search for the jaunch configurator executable.
 //

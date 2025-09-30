@@ -1,7 +1,9 @@
 #ifndef _JAUNCH_JVM_H
 #define _JAUNCH_JVM_H
 
-#include "jni.h"
+#include <stdlib.h>   // for NULL, size_t, atoi
+
+#include "jni.h"      // for JavaVM, JNIEnv, JNI_CreateJavaVM, JNI_* constants
 
 #include "logging.h"
 #include "common.h"
