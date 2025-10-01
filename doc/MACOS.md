@@ -17,7 +17,7 @@ Jaunch provides the `RUNLOOP` directive to control how the macOS main thread eve
 - **`none`**: No special main thread handling; launches the runtime directly on the main thread with no event loop initialization. This mode behaves the same as direct launch mechanisms like `python`.
 
 - **`auto`**: Automatically selects the appropriate mode based on the runtime configuration and detected frameworks. This setting, which is Jaunch's default, attempts to behave as closely as possible to the runtime's standard launcher:
-  - For JVM runtime launches, **`park`** mode will be used, because its what the `java` launcher does.
+  - For JVM runtime launches, **`park`** mode will be used, because it's what the `java` launcher does.
   - For other runtime launches, **`none`** mode is used; e.g., `python` performs no special handling of the main thread.
 
 #### Combining Java AWT and Python Qt
