@@ -32,8 +32,8 @@ static int launch_jvm(const size_t argc, const char **argv) {
     // 4. Fully qualified main class name in slash-separated (not dot-separated) format.
     // 5. List of main arguments, one per line.
     //
-    // Note that an explicit count of main arguments is not needed because
-    // it can be computed from argc
+    // Note that an explicit count of main arguments is
+    // not needed because it can be computed from argc.
     // =======================================================================
 
     char **ptr = (char **)argv;
@@ -62,7 +62,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
     void *jvm_library;
 
     if (cached_jvm == NULL) {
-        // First JVM directive - create new JVM instance
+        // First JVM directive - create new JVM instance.
         LOG_INFO("JVM", "Loading libjvm (first time)");
         jvm_library = lib_open(libjvm_path);
         if (jvm_library == NULL) {
@@ -103,22 +103,22 @@ static int launch_jvm(const size_t argc, const char **argv) {
             return ERROR_CREATE_JAVA_VM;
         }
 
-        // Cache the JVM instance for reuse
+        // Cache the JVM instance for reuse.
         cached_jvm = jvm;
         cached_jvm_library = jvm_library;
         LOG_INFO("JVM", "JVM created and cached for reuse");
     } else {
-        // Subsequent JVM directive - reuse cached instance
+        // Subsequent JVM directive - reuse cached instance.
         LOG_INFO("JVM", "Reusing cached JVM");
         jvm = cached_jvm;
         jvm_library = cached_jvm_library;
 
-        // Attach current thread to existing JVM
+        // Attach current thread to existing JVM.
         if ((*jvm)->AttachCurrentThread(jvm, (void **)&env, NULL) != JNI_OK) {
             FAIL(ERROR_CREATE_JAVA_VM, "Failed to attach thread to cached JVM");
         }
 
-        // Note: JVM options from subsequent directives are ignored when reusing JVM
+        // Note: JVM options from subsequent directives are ignored when reusing JVM.
         if (jvm_argc > 0) {
             LOG_WARN("JVM", "JVM options ignored when reusing cached JVM instance");
         }
@@ -161,11 +161,11 @@ static int launch_jvm(const size_t argc, const char **argv) {
     }
 
     // =======================================================================
-    // Clean up - but keep JVM alive for potential reuse
+    // Clean up, but keep JVM alive for potential reuse.
     // =======================================================================
 
     LOG_INFO("JVM", "JVM directive completed - keeping JVM alive for potential reuse");
-    // JVM will be destroyed later in cleanup_jvm() when all directives are done
+    // JVM will be destroyed later in cleanup_jvm() when all directives are done.
 
     return SUCCESS;
 }

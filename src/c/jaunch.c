@@ -158,9 +158,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
             FAIL(ERROR_BAD_DIRECTIVE_SYNTAX,
                 "Ignoring invalid RUNLOOP directive with no mode.");
         }
-
-        // Note: runloop_run will set STATE_RUNLOOP when appropriate
-
+        // Note: runloop_run will set STATE_RUNLOOP when appropriate.
         runloop_run(mode);
         return SUCCESS;
     }
@@ -236,7 +234,7 @@ int process_directives(void *unused) {
             }
         }
 
-        // Determine execution context and execute directive
+        // Determine execution context and execute directive.
         int error_code;
         if (ctx_main_thread_available()) {
             // Main thread is available for directive execution.
@@ -403,7 +401,7 @@ int main(const int argc, const char *argv[]) {
     while (1) {
         ctx_lock();
 
-        // Wait for state to change from WAITING
+        // Wait for state to change from WAITING.
         ctx_wait_for_state_change(STATE_WAITING);
 
         if (ctx()->state == STATE_EXECUTING) {

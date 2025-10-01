@@ -40,7 +40,7 @@ int run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output)
 {
-    // Create pipes for stdin and stdout
+    // Create pipes for stdin and stdout.
     int stdinPipe[2];
     int stdoutPipe[2];
 
@@ -49,7 +49,7 @@ int run_command(const char *command,
       DIE(ERROR_PIPE, "Failed to open pipes to/from configurator");
     }
 
-    // Fork to create a child process
+    // Fork to create a child process.
     pid_t pid = fork();
 
     if (pid == -1) {
@@ -57,33 +57,33 @@ int run_command(const char *command,
     }
 
     if (pid == 0) { // Child process
-        // Close unused ends of the pipes
+        // Close unused ends of the pipes.
         close(stdinPipe[1]);
         close(stdoutPipe[0]);
 
-        // Redirect stdin and stdout
+        // Redirect stdin and stdout.
         dup2(stdinPipe[0], STDIN_FILENO);
         dup2(stdoutPipe[1], STDOUT_FILENO);
 
-        // Close duplicated ends
+        // Close duplicated ends.
         close(stdinPipe[0]);
         close(stdoutPipe[1]);
 
-        // Execute the command
+        // Execute the command.
         // NB: We pass a single "-" argument to indicate to the jaunch
         // configurator that it should harvest the actual input arguments
         // from the stdin stream. We do this to avoid issues with quoting.
         execlp(command, command, "-", (char *)NULL);
 
-        // If execlp fails
+        // Note: If we reach this point, execlp has failed.
         FAIL(ERROR_EXECLP, "Failed to execute the jaunch configurator");
     }
     else { // Parent process
-        // Close unused ends of the pipes
+        // Close unused ends of the pipes.
         close(stdinPipe[0]);
         close(stdoutPipe[1]);
 
-        // Write to the child process's stdin
+        // Write to the child process's stdin.
         LOG_DEBUG("POSIX", "run_command: writing to jaunch stdin");
         // Passing the input line count as the first line tells the child process what
         // to expect, so that it can stop reading from stdin once it has received
@@ -95,11 +95,11 @@ int run_command(const char *command,
             LOG_DEBUG("POSIX", "run_command: wrote input #%zu: %s", i, input[i]);
         }
 
-        // Close the write end of stdin to signal the end of input
+        // Close the write end of stdin to signal the end of input.
         close(stdinPipe[1]);
         LOG_DEBUG("POSIX", "run_command: closed jaunch stdin pipe");
 
-        // Read from the child process's stdout
+        // Read from the child process's stdout.
         char buffer[1024];
         size_t bytesRead;
         size_t totalBytesRead = 0;
@@ -122,16 +122,16 @@ int run_command(const char *command,
             totalBytesRead += bytesRead;
         }
 
-        // Close the read end of stdout
+        // Close the read end of stdout.
         close(stdoutPipe[0]);
         LOG_DEBUG("POSIX", "run_command: closed jaunch stdout pipe");
 
-        // Wait for the child process to finish
+        // Wait for the child process to finish.
         if (waitpid(pid, NULL, 0) == -1) {
           FAIL(ERROR_WAITPID, "Failed waiting for Jaunch termination");
         }
 
-        // Return the output buffer and the number of lines
+        // Return the output buffer and the number of lines.
         *output = NULL;
         *numOutput = 0;
         int split_result = SUCCESS;

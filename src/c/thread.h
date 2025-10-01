@@ -192,17 +192,17 @@ void ctx_signal_early_completion(ThreadState new_state) {
 int ctx_request_main_execution(const char *directive, size_t dir_argc, const char **dir_argv) {
     ctx_lock();
 
-    // Set up the directive for execution
+    // Set up the directive for execution.
     ctx()->pending_directive = directive;
     ctx()->pending_argc = dir_argc;
     ctx()->pending_argv = dir_argv;
     ctx_set_state(STATE_EXECUTING);
 
-    // Signal main thread and wait for completion or early completion
+    // Signal main thread and wait for completion or early completion.
     LOG_DEBUG("JAUNCH", "Signaling main thread to execute %s directive", directive);
     ctx_signal_main();
 
-    // Wait for state to change from EXECUTING (either to WAITING, RUNLOOP, or COMPLETE)
+    // Wait for state to change from EXECUTING (either to WAITING, RUNLOOP, or COMPLETE).
     LOG_DEBUG("JAUNCH", "Waiting for %s directive to complete", directive);
     ctx_wait_for_state_change(STATE_EXECUTING);
 

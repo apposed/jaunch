@@ -28,18 +28,18 @@ void handle_error(const char* errorMessage) {
 }
 
 void write_line(HANDLE stdinWrite, const char *input) {
-    // Copy the input string and add a newline
+    // Copy the input string and add a newline.
     size_t inputLength = strlen(input);
     char *line = (char *)malloc(inputLength + 2); // +1 for newline, +1 for null terminator
     strcpy(line, input);
     strcat(line, "\n");
 
-    // Write the string with newline to the pipe
+    // Write the string with newline to the pipe.
     DWORD bytesWritten;
     if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL))
         handle_error("Error writing to stdin");
 
-    // Free allocated memory
+    // Free allocated memory.
     free(line);
 }
 
@@ -60,7 +60,7 @@ static ParentProcessType getParentProcessType() {
     DWORD parentPID = 0;
     ParentProcessType result = PARENT_UNKNOWN;
 
-    // Get the parent process ID
+    // Get the parent process ID.
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) return result;
 
@@ -79,7 +79,7 @@ static ParentProcessType getParentProcessType() {
     }
 
     if (parentPID) {
-        // Reset to start of process list
+        // Reset to start of process list.
         Process32FirstW(snapshot, &entry);
         do {
             if (entry.th32ProcessID == parentPID) {
@@ -120,7 +120,7 @@ DWORD WINAPI ReadStderrThread(LPVOID param) {
     while (ReadFile(stderrRead, buffer, sizeof(buffer), &bytesRead, NULL)) {
         if (bytesRead <= 0) continue;
 
-        // Write directly to the main process stderr
+        // Write directly to the main process stderr.
         HANDLE parentStderr = GetStdHandle(STD_ERROR_HANDLE);
         WriteFile(parentStderr, buffer, bytesRead, NULL, NULL);
     }
@@ -137,7 +137,7 @@ void setup(const int argc, const char *argv[]) {
 
     LOG_DEBUG("WIN32", "Configuring console");
 
-    // First, try to attach to an existing console
+    // First, try to attach to an existing console.
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         LOG_DEBUG("WIN32", "Attached to parent console");
 
@@ -244,10 +244,10 @@ void *lib_open(const char *path) {
         *last_slash = '\0'; // Truncate to get directory path
         LOG_DEBUG("WIN32", "Adding directory to DLL search path: %s", dll_dir);
 
-        // Use SetDllDirectory to add the Python directory to the search path
+        // Use SetDllDirectory to add the Python directory to the search path.
         if (!SetDllDirectoryA(dll_dir)) {
             LOG_DEBUG("WIN32", "Warning: Failed to set DLL directory: %s", lib_error());
-            // Continue anyway - this is not fatal, just falls back to PATH dependency
+            // Continue anyway - this is not fatal, just falls back to PATH dependency.
         }
     }
     free(dll_dir);
@@ -281,7 +281,7 @@ int run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output)
 {
-    // Create pipes for stdin and stdout
+    // Create pipes for stdin and stdout.
     HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite, stderrRead, stderrWrite;
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
@@ -293,19 +293,19 @@ int run_command(const char *command,
         handle_error("Error creating pipes");
     }
 
-    // Set the properties of the process to start
+    // Set the properties of the process to start.
     STARTUPINFO si = { sizeof(STARTUPINFO) };
     PROCESS_INFORMATION pi;
 
-    // Specify that the process should inherit the handles
+    // Specify that the process should inherit the handles.
     si.hStdInput = stdinRead;
     si.hStdOutput = stdoutWrite;
     si.hStdError = stderrWrite;
     si.dwFlags |= STARTF_USESTDHANDLES;
 
-    // Create the subprocess
+    // Create the subprocess.
 
-    // Add CREATE_NO_WINDOW flag to prevent console window from appearing
+    // Add CREATE_NO_WINDOW flag to prevent console window from appearing.
     DWORD createFlags = CREATE_NO_WINDOW;
     char *commandPlusDash = malloc(strlen(command) + 3);
     if (commandPlusDash == NULL) {
@@ -324,12 +324,12 @@ int run_command(const char *command,
     }
     free(commandPlusDash);
 
-    // Close unnecessary handles
+    // Close unnecessary handles.
     CloseHandle(stdinRead);
     CloseHandle(stdoutWrite);
     CloseHandle(stderrWrite);
 
-    // Write to the child process's stdin
+    // Write to the child process's stdin.
     LOG_DEBUG("WIN32", "Writing to subprocess stdin");
     // Passing the input line count as the first line tells the child process what
     // to expect, so that it can stop reading from stdin once it has received
@@ -344,14 +344,14 @@ int run_command(const char *command,
     for (size_t i = 0; i < numInput; i++)
         write_line(stdinWrite, input[i]);
 
-    // Close the stdin write handle to signal end of input
+    // Close the stdin write handle to signal end of input.
     CloseHandle(stdinWrite);
     LOG_DEBUG("WIN32", "Closed subprocess stdin stream");
 
-    // Read from the child process's stderr in its own thread
+    // Read from the child process's stderr in its own thread.
     HANDLE hThread = CreateThread(NULL, 0, ReadStderrThread, stderrRead, 0, NULL);
 
-    // Read from the child process's stdout
+    // Read from the child process's stdout.
     char buffer[1024];
     DWORD bytesRead;
     DWORD totalBytesRead = 0;
@@ -373,7 +373,7 @@ int run_command(const char *command,
         totalBytesRead += bytesRead;
     }
 
-    // Wait for stderr thread to terminate
+    // Wait for stderr thread to terminate.
     if (hThread != NULL) {
         LOG_DEBUG("WIN32", "Waiting for stderr thread");
         WaitForSingleObject(hThread, INFINITE);
@@ -381,7 +381,7 @@ int run_command(const char *command,
         LOG_DEBUG("WIN32", "Stderr thread complete");
     }
 
-    // Close handles
+    // Close handles.
     LOG_DEBUG("WIN32", "Closing output stream handles");
     CloseHandle(stdoutRead);
     CloseHandle(stderrRead);
@@ -390,7 +390,7 @@ int run_command(const char *command,
     CloseHandle(pi.hThread);
     LOG_DEBUG("WIN32", "All handles closed");
 
-    // Return the output buffer and the number of lines
+    // Return the output buffer and the number of lines.
     *output = NULL;
     *numOutput = 0;
     int split_result = SUCCESS;
