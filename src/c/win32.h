@@ -173,7 +173,7 @@ void setup(const int argc, const char *argv[]) {
         // case logic here wouldn't even be triggered. But this console
         // logic has many edge cases, so let's check anyway, just in case.
         DWORD binaryType;
-        const char* argv0 = argv[0];
+        const char *argv0 = argv[0];
         if (GetBinaryTypeA(argv0, &binaryType) && (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY)) {
             switch (parentType) {
                 case PARENT_CMD:

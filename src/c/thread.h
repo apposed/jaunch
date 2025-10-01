@@ -70,13 +70,13 @@ static inline ThreadContext *ctx() {
 #define CHECK_THREAD_ID(tid1, tid2, name) \
     if (tid1 && tid2 && pthread_equal(tid1, tid2)) return name
 
-const char* thread_name(pthread_t thread_id) {
+const char *thread_name(pthread_t thread_id) {
     CHECK_THREAD_ID(thread_id, ctx()->thread_id_main, "main");
     CHECK_THREAD_ID(thread_id, ctx()->thread_id_directives, "directives");
     return "unknown";
 }
 
-const char* current_thread_name() {
+const char *current_thread_name() {
     return thread_name(pthread_self());
 }
 

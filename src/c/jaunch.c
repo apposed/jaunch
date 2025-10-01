@@ -357,7 +357,7 @@ int main(const int argc, const char *argv[]) {
     // windows-arm64 can launch in emulated x86-64 mode as appropriate.
     const int internal_argc = 1;
     const int extended_argc = internal_argc + argc;
-    const char **extended_argv = malloc(extended_argc * sizeof(char*));
+    const char **extended_argv = malloc(extended_argc * sizeof(char *));
     if (extended_argv == NULL) {
         free(command);
         DIE(ERROR_MALLOC, "Failed to allocate memory (extended argv)");
@@ -394,7 +394,7 @@ int main(const int argc, const char *argv[]) {
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    pthread_create(&directive_thread, &attr, (void*(*)(void*))process_directives, NULL);
+    pthread_create(&directive_thread, &attr, (void *(*)(void *))process_directives, NULL);
     pthread_attr_destroy(&attr);
 
     // Main thread event loop - handle signals from directive thread.

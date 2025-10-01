@@ -346,9 +346,9 @@ void show_alert(const char *title, const char *message) {
     id app = ((id (*)(id, SEL))objc_msgSend)((id)NSApplication, sel_registerName("sharedApplication"));
 
     // Create strings
-    id nsTitle = ((id (*)(id, SEL, const char*))objc_msgSend)((id)NSString,
+    id nsTitle = ((id (*)(id, SEL, const char *))objc_msgSend)((id)NSString,
         sel_registerName("stringWithUTF8String:"), title);
-    id nsMessage = ((id (*)(id, SEL, const char*))objc_msgSend)((id)NSString,
+    id nsMessage = ((id (*)(id, SEL, const char *))objc_msgSend)((id)NSString,
         sel_registerName("stringWithUTF8String:"), message);
 
     // Create and configure alert

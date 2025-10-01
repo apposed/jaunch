@@ -26,7 +26,7 @@ void log_at_level(int verbosity, const char *fmt, ...) {
 }
 
 // Forward declaration for thread-aware log messages - implementation in thread.h.
-const char* current_thread_name();
+const char *current_thread_name();
 
 // ==============
 // LOGGING MACROS
