@@ -14,7 +14,7 @@
 #define ERROR_GET_STATIC_METHOD_ID 5
 #define ERROR_PIPE 6
 #define ERROR_FORK 7
-#define ERROR_EXECLP 8
+#define ERROR_EXEC 8
 #define ERROR_MALLOC 9
 #define ERROR_REALLOC 10
 #define ERROR_WAITPID 11

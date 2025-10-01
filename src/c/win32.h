@@ -22,11 +22,6 @@
 //                      HELPER FUNCTIONS
 // ===========================================================
 
-void handle_error(const char* errorMessage) {
-    fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
-    exit(1);
-}
-
 void write_line(HANDLE stdinWrite, const char *input) {
     // Copy the input string and add a newline.
     size_t inputLength = strlen(input);
@@ -37,7 +32,7 @@ void write_line(HANDLE stdinWrite, const char *input) {
     // Write the string with newline to the pipe.
     DWORD bytesWritten;
     if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL)) {
-        handle_error("Error writing to stdin");
+        DIE(ERROR_PIPE, "Failed writing to stdin: %lu", GetLastError());
     }
 
     // Free allocated memory.
@@ -291,7 +286,7 @@ int run_command(const char *command,
         !CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0) ||
         !CreatePipe(&stderrRead, &stderrWrite, &sa, 0))
     {
-        handle_error("Error creating pipes");
+        DIE(ERROR_PIPE, "Error creating pipes: %lu", GetLastError());
     }
 
     // Set the properties of the process to start.
@@ -321,7 +316,7 @@ int run_command(const char *command,
         createFlags, NULL, NULL, &si, &pi))
     {
         free(commandPlusDash);
-        handle_error("Error creating process");
+        DIE(ERROR_EXEC, "Failed to create process: %lu", GetLastError());
     }
     free(commandPlusDash);
 

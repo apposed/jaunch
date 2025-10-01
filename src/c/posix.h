@@ -74,7 +74,7 @@ int run_command(const char *command,
         execlp(command, command, "-", (char *)NULL);
 
         // Note: If we reach this point, execlp has failed.
-        DIE(ERROR_EXECLP, "Failed to execute the jaunch configurator");
+        DIE(ERROR_EXEC, "Failed to execute the jaunch configurator");
     }
     else { // Parent process
         // Close unused ends of the pipes.
