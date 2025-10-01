@@ -221,9 +221,9 @@ int process_directives(void *unused) {
         index += 2 + dir_argc; // Advance index past this directive block.
 
         // If no runloop mode is set, give the platform a chance to set one.
-        if (!ctx()->runloop_mode) {
+        if (ctx()->runloop_mode == NULL) {
             runloop_config(directive);
-            if (ctx()->runloop_mode) {
+            if (ctx()->runloop_mode != NULL) {
                 // The auto-configuration function has chosen a runloop mode.
                 // Now we invoke an extra RUNLOOP directive to lock it in.
                 int code = ctx_main_thread_available()

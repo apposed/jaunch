@@ -379,7 +379,7 @@ int run_command(const char *command,
     }
 
     // Wait for stderr thread to terminate
-    if (hThread) {
+    if (hThread != NULL) {
         LOG_DEBUG("WIN32", "Waiting for stderr thread");
         WaitForSingleObject(hThread, INFINITE);
         CloseHandle(hThread);

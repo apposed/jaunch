@@ -65,13 +65,16 @@ static int launch_jvm(const size_t argc, const char **argv) {
         // First JVM directive - create new JVM instance
         LOG_INFO("JVM", "Loading libjvm (first time)");
         jvm_library = lib_open(libjvm_path);
-        if (!jvm_library) { LOG_ERROR("Failed to load libjvm: %s", lib_error()); return ERROR_DLOPEN; }
+        if (jvm_library == NULL) {
+            LOG_ERROR("Failed to load libjvm: %s", lib_error());
+            return ERROR_DLOPEN;
+        }
 
         // Load JNI_CreateJavaVM function.
         LOG_DEBUG("JVM", "Loading JNI_CreateJavaVM");
         static jint (*JNI_CreateJavaVM)(JavaVM **pvm, void **penv, void *args);
         JNI_CreateJavaVM = lib_sym(jvm_library, "JNI_CreateJavaVM");
-        if (!JNI_CreateJavaVM) {
+        if (JNI_CreateJavaVM == NULL) {
             LOG_ERROR("Failed to locate JNI_CreateJavaVM function: %s", lib_error());
             lib_close(jvm_library);
             return ERROR_DLSYM;

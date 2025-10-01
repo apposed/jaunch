@@ -15,10 +15,10 @@ int is_command_available(const char *command) {
 
 int find_executable(const char *name, char *path_buf, size_t buf_size) {
     char *path_env = getenv("PATH");
-    if (!path_env) return 0;
+    if (path_env == NULL) return 0;
 
     char *path_copy = strdup(path_env);
-    if (!path_copy) return 0;
+    if (path_copy == NULL) return 0;
 
     char *dir = strtok(path_copy, ":");
     while (dir) {
@@ -47,20 +47,20 @@ void runloop_stop() {}
 
 int init_threads() {
     void *libX11Handle = lib_open("libX11.so");
-    if (libX11Handle != NULL) {
-        LOG_INFO("LINUX", "Running XInitThreads");
-        xinit_threads_reference = lib_sym(libX11Handle, "XInitThreads");
-
-        if (xinit_threads_reference != NULL) {
-            xinit_threads_reference();
-            return SUCCESS;
-        }
-        LOG_ERROR("Could not find XInitThreads in X11 library: %s", lib_error());
-    }
-    else {
+    if (libX11Handle == NULL) {
         LOG_ERROR("Could not find X11 library, not running XInitThreads.");
+        return ERROR_MISSING_FUNCTION;
     }
-    return ERROR_MISSING_FUNCTION;
+
+    LOG_INFO("LINUX", "Running XInitThreads");
+    xinit_threads_reference = lib_sym(libX11Handle, "XInitThreads");
+    if (xinit_threads_reference == NULL) {
+        LOG_ERROR("Could not find XInitThreads in X11 library: %s", lib_error());
+        return ERROR_MISSING_FUNCTION;
+    }
+
+    xinit_threads_reference();
+    return SUCCESS;
 }
 
 /*

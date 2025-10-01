@@ -45,7 +45,7 @@ int handle_translocation(const int argc, const char *argv[]) {
 
     // Load Security framework
     void *security_framework = lib_open("/System/Library/Frameworks/Security.framework/Security");
-    if (!security_framework) {
+    if (security_framework == NULL) {
         LOG_DEBUG("MACOS", "Failed to load Security framework");
         return 0; // Continue with normal execution
     }
@@ -56,7 +56,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     CFURLRef (*getOriginalPathFunc)(CFURLRef, CFErrorRef *) =
         lib_sym(security_framework, "SecTranslocateCreateOriginalPathForURL");
 
-    if (!isTranslocatedFunc || !getOriginalPathFunc) {
+    if (isTranslocatedFunc == NULL || getOriginalPathFunc == NULL) {
         LOG_DEBUG("MACOS", "Failed to find translocation functions");
         lib_close(security_framework);
         return 0; // Continue with normal execution
@@ -64,14 +64,14 @@ int handle_translocation(const int argc, const char *argv[]) {
 
     // Get bundle path
     CFBundleRef mainBundle = CFBundleGetMainBundle();
-    if (!mainBundle) {
+    if (mainBundle == NULL) {
         LOG_DEBUG("MACOS", "Failed to get main bundle");
         lib_close(security_framework);
         return 0;
     }
 
     CFURLRef bundleURL = CFBundleCopyBundleURL(mainBundle);
-    if (!bundleURL) {
+    if (bundleURL == NULL) {
         LOG_DEBUG("MACOS", "Failed to get bundle URL");
         lib_close(security_framework);
         return 0;
@@ -92,7 +92,7 @@ int handle_translocation(const int argc, const char *argv[]) {
 
     // Get the original path
     CFURLRef originalURL = getOriginalPathFunc(bundleURL, NULL);
-    if (!originalURL) {
+    if (originalURL == NULL) {
         LOG_DEBUG("MACOS", "Failed to get original path");
         CFRelease(bundleURL);
         lib_close(security_framework);
@@ -113,7 +113,7 @@ int handle_translocation(const int argc, const char *argv[]) {
 
     // Get path to the executable within the bundle
     CFURLRef executableURL = CFBundleCopyExecutableURL(mainBundle);
-    if (!executableURL) {
+    if (executableURL == NULL) {
         LOG_DEBUG("MACOS", "Failed to get executable URL");
         CFRelease(originalURL);
         CFRelease(bundleURL);

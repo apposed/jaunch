@@ -29,13 +29,16 @@ static int launch_python(const size_t argc, const char **argv) {
     // Load libpython.
     LOG_DEBUG("PYTHON", "Loading libpython");
     void *python_library = lib_open(libpython_path);
-    if (!python_library) { LOG_ERROR("Failed to load libpython: %s", lib_error()); return ERROR_DLOPEN; }
+    if (python_library == NULL) {
+        LOG_ERROR("Failed to load libpython: %s", lib_error());
+        return ERROR_DLOPEN;
+    }
 
     // Load Py_BytesMain function.
     LOG_DEBUG("PYTHON", "Loading Py_BytesMain");
     static int (*Py_BytesMain)(int, char **);
     Py_BytesMain = lib_sym(python_library, "Py_BytesMain");
-    if (!Py_BytesMain) {
+    if (Py_BytesMain == NULL) {
         LOG_ERROR("Failed to locate Py_BytesMain function: %s", lib_error());
         lib_close(python_library);
         return 1;
