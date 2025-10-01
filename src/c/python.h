@@ -19,6 +19,10 @@ static int launch_python(const size_t argc, const char **argv) {
     // 2. List of arguments to the Python runtime, one per line.
     // =======================================================================
 
+    if (argc < 1) {
+      FAIL(ERROR_ARGC_OUT_OF_BOUNDS, "Too few PYTHON directive arguments: %d", argc);
+    }
+
     const char *libpython_path = argv[0];
     LOG_INFO("PYTHON", "libpython_path = %s", libpython_path);
 
