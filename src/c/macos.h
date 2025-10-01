@@ -203,13 +203,13 @@ void teardown() {}
 void runloop_config(const char *directive) {
     if (directive && strcmp(directive, "JVM") == 0) {
         // JVM default: park main thread in event loop.
-        ctx->runloop_mode = "park";
-        LOG_INFO("MACOS", "Setting runloop_mode to %s [auto]", ctx->runloop_mode);
+        ctx()->runloop_mode = "park";
+        LOG_INFO("MACOS", "Setting runloop_mode to %s [auto]", ctx()->runloop_mode);
     }
 }
 void runloop_run(const char *mode) {
-    ctx->runloop_mode = mode;
-    LOG_INFO("MACOS", "Setting runloop_mode to %s", ctx->runloop_mode);
+    ctx()->runloop_mode = mode;
+    LOG_INFO("MACOS", "Setting runloop_mode to %s", ctx()->runloop_mode);
 
     int park_mode = strcmp(mode, "park") == 0;
     if (park_mode) {
@@ -241,7 +241,7 @@ void runloop_run(const char *mode) {
 
         // Now that the runloop has exited, transition back to WAITING state.
         ctx_lock();
-        if (ctx->state == STATE_RUNLOOP) {
+        if (ctx()->state == STATE_RUNLOOP) {
             LOG_DEBUG("MACOS", "Transitioning from RUNLOOP to WAITING after CFRunLoopRun returned");
             ctx_set_state(STATE_WAITING);
             ctx_signal_main();
@@ -299,11 +299,11 @@ void runloop_stop() {
     const double timeout_seconds = 2.0;
     const double start_time = CFAbsoluteTimeGetCurrent();
 
-    while (ctx->state == STATE_RUNLOOP) {
+    while (ctx()->state == STATE_RUNLOOP) {
         double elapsed = CFAbsoluteTimeGetCurrent() - start_time;
         if (elapsed > timeout_seconds) {
             LOG_INFO("MACOS", "CFRunLoop failed to terminate within %.1fs; forcing process exit", timeout_seconds);
-            exit(ctx->exit_code);
+            exit(ctx()->exit_code);
         }
 
         // Check every 50ms
@@ -382,7 +382,7 @@ int launch(const LaunchFunc launch_runtime,
     // from the main thread. Therefore, we only need to differentiate between
     // "main" and "none" here.
 
-    int main_mode = ctx->runloop_mode && strcmp(ctx->runloop_mode, "main") == 0;
+    int main_mode = ctx()->runloop_mode && strcmp(ctx()->runloop_mode, "main") == 0;
     if (main_mode) {
         // GUI frameworks like SWT need the runtime to run on the main thread, but
         // might expect the following setup to have been performed. Needs testing!
