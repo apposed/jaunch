@@ -46,16 +46,14 @@ int run_command(const char *command,
 
     LOG_DEBUG("POSIX", "run_command: opening pipes to/from configurator");
     if (pipe(stdinPipe) == -1 || pipe(stdoutPipe) == -1) {
-      LOG_ERROR("Failed to open pipes to/from configurator");
-      return ERROR_PIPE;
+      DIE(ERROR_PIPE, "Failed to open pipes to/from configurator");
     }
 
     // Fork to create a child process
     pid_t pid = fork();
 
     if (pid == -1) {
-      LOG_ERROR("Failed to fork the process");
-      return ERROR_FORK;
+      FAIL(ERROR_FORK, "Failed to fork the process");
     }
 
     if (pid == 0) { // Child process
@@ -78,8 +76,7 @@ int run_command(const char *command,
         execlp(command, command, "-", (char *)NULL);
 
         // If execlp fails
-        LOG_ERROR("Failed to execute the jaunch configurator");
-        return ERROR_EXECLP;
+        FAIL(ERROR_EXECLP, "Failed to execute the jaunch configurator");
     }
     else { // Parent process
         // Close unused ends of the pipes
@@ -110,8 +107,7 @@ int run_command(const char *command,
         char *outputBuffer = malloc(bufferSize);
 
         if (outputBuffer == NULL) {
-          LOG_ERROR("Failed to allocate memory (initial buffer)");
-          return ERROR_MALLOC;
+          DIE(ERROR_MALLOC, "Failed to allocate memory (initial buffer)");
         }
 
         while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
@@ -119,8 +115,7 @@ int run_command(const char *command,
                 bufferSize *= 2;
                 outputBuffer = realloc(outputBuffer, bufferSize);
                 if (outputBuffer == NULL) {
-                  LOG_ERROR("Failed to reallocate memory (run_command)");
-                  return ERROR_REALLOC;
+                  DIE(ERROR_REALLOC, "Failed to reallocate memory (run_command)");
                 }
             }
             memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
@@ -133,8 +128,7 @@ int run_command(const char *command,
 
         // Wait for the child process to finish
         if (waitpid(pid, NULL, 0) == -1) {
-          LOG_ERROR("Failed waiting for Jaunch termination");
-          return ERROR_WAITPID;
+          FAIL(ERROR_WAITPID, "Failed waiting for Jaunch termination");
         }
 
         // Return the output buffer and the number of lines

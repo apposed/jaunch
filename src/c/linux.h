@@ -48,15 +48,15 @@ void runloop_stop() {}
 int init_threads() {
     void *libX11Handle = lib_open("libX11.so");
     if (libX11Handle == NULL) {
-        LOG_ERROR("Could not find X11 library, not running XInitThreads.");
-        return ERROR_MISSING_FUNCTION;
+        FAIL(ERROR_MISSING_FUNCTION,
+            "Could not find X11 library, not running XInitThreads.");
     }
 
     LOG_INFO("LINUX", "Running XInitThreads");
     xinit_threads_reference = lib_sym(libX11Handle, "XInitThreads");
     if (xinit_threads_reference == NULL) {
-        LOG_ERROR("Could not find XInitThreads in X11 library: %s", lib_error());
-        return ERROR_MISSING_FUNCTION;
+        FAIL(ERROR_MISSING_FUNCTION,
+            "Could not find XInitThreads in X11 library: %s", lib_error());
     }
 
     xinit_threads_reference();

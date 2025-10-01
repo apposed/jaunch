@@ -55,19 +55,15 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
 // UTILITY FUNCTIONS
 // =================
 
-#define CHECK_ARGS(component, name, argc, min, max, argv) \
-    do { \
-        LOG_DEBUG(component, "%s_argc = %zu", (name), (argc)); \
-        if ((argc) < (min) || (argc) > (max)) { \
-            LOG_ERROR("Error: %s_argc value %d is out of bounds [%d, %d]\n", \
-                name, (argc), (min), (max)); \
-            return ERROR_ARGC_OUT_OF_BOUNDS; \
-        } \
-        for (size_t a = 0; a < (argc); a++) { \
-            LOG_DEBUG(component, "%s_argv[%zu] = %s", (name), a, argv[a]); \
-        } \
-    } \
-    while(0)
+#define CHECK_ARGS(component, name, argc, min, max, argv) do { \
+    LOG_DEBUG(component, "%s_argc = %zu", (name), (argc)); \
+    if ((argc) < (min) || (argc) > (max)) \
+        DIE(ERROR_ARGC_OUT_OF_BOUNDS, \
+            "Error: %s_argc value %d is out of bounds [%d, %d]", \
+            (name), (argc), (min), (max)); \
+    for (size_t a = 0; a < (argc); a++) \
+        LOG_DEBUG(component, "%s_argv[%zu] = %s", (name), a, (argv)[a]); \
+} while (0)
 
 /* Splits an output buffer into lines. */
 int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
@@ -76,13 +72,11 @@ int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     while (token != NULL) {
         *output = realloc(*output, (lineCount + 1) * sizeof(char *));
         if (*output == NULL) {
-          LOG_ERROR("Failed to reallocate memory (split lines)");
-          return ERROR_REALLOC;
+            DIE(ERROR_REALLOC, "Failed to reallocate memory (split lines)");
         }
         (*output)[lineCount] = strdup(token);
         if ((*output)[lineCount] == NULL) {
-          LOG_ERROR("Failed to duplicate string");
-          return ERROR_STRDUP;
+            DIE(ERROR_STRDUP, "Failed to duplicate string");
         }
         lineCount++;
         token = strtok(NULL, delim);

@@ -88,8 +88,7 @@ const char* current_thread_name() {
 static inline void ctx_create() {
     ThreadContext *ctx = (ThreadContext *)malloc(sizeof(ThreadContext));
     if (ctx == NULL) {
-        LOG_ERROR("Failed to allocate memory (thread context)");
-        exit(ERROR_MALLOC);
+        DIE(ERROR_MALLOC, "Failed to allocate memory (thread context)");
     }
 
     ctx->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;

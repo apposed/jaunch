@@ -309,8 +309,7 @@ int run_command(const char *command,
     DWORD createFlags = CREATE_NO_WINDOW;
     char *commandPlusDash = malloc(strlen(command) + 3);
     if (commandPlusDash == NULL) {
-        LOG_ERROR("Failed to allocate memory (command plus dash)");
-        return ERROR_MALLOC;
+        DIE(ERROR_MALLOC, "Failed to allocate memory (command plus dash)");
     }
     strcpy(commandPlusDash, command);
     // NB: We pass a single "-" argument to indicate to the jaunch
@@ -337,8 +336,7 @@ int run_command(const char *command,
     // those lines, even though the pipe is not yet closed. This avoids deadlocks.
     char *numInputString = (char *)malloc(21);
     if (numInputString == NULL) {
-        LOG_ERROR("Failed to allocate memory (input line count)");
-        return ERROR_MALLOC;
+        DIE(ERROR_MALLOC, "Failed to allocate memory (input line count)");
     }
     snprintf(numInputString, 21, "%zu", numInput);
     write_line(stdinWrite, numInputString);
@@ -359,10 +357,8 @@ int run_command(const char *command,
     DWORD totalBytesRead = 0;
     size_t bufferSize = 1024;
     char *outputBuffer = malloc(bufferSize);
-
     if (outputBuffer == NULL) {
-        LOG_ERROR("Failed to allocate memory (output buffer)");
-        return ERROR_MALLOC;
+        DIE(ERROR_MALLOC, "Failed to allocate memory (output buffer)");
     }
 
     while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
@@ -370,8 +366,7 @@ int run_command(const char *command,
             bufferSize *= 2;
             outputBuffer = realloc(outputBuffer, bufferSize);
             if (outputBuffer == NULL) {
-                LOG_ERROR("Failed to reallocate memory (output buffer)");
-                return ERROR_REALLOC;
+                DIE(ERROR_REALLOC, "Failed to reallocate memory (output buffer)");
             }
         }
         memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);

@@ -66,8 +66,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
         LOG_INFO("JVM", "Loading libjvm (first time)");
         jvm_library = lib_open(libjvm_path);
         if (jvm_library == NULL) {
-            LOG_ERROR("Failed to load libjvm: %s", lib_error());
-            return ERROR_DLOPEN;
+            FAIL(ERROR_DLOPEN, "Failed to load libjvm: %s", lib_error());
         }
 
         // Load JNI_CreateJavaVM function.
@@ -116,8 +115,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
 
         // Attach current thread to existing JVM
         if ((*jvm)->AttachCurrentThread(jvm, (void **)&env, NULL) != JNI_OK) {
-            LOG_ERROR("Failed to attach thread to cached JVM");
-            return ERROR_CREATE_JAVA_VM;
+            FAIL(ERROR_CREATE_JAVA_VM, "Failed to attach thread to cached JVM");
         }
 
         // Note: JVM options from subsequent directives are ignored when reusing JVM

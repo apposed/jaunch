@@ -143,8 +143,8 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
             LOG_INFO("JAUNCH", "Changing working directory to %s", cwd);
             return chdir(cwd);
         }
-        LOG_ERROR("Ignoring invalid SETCWD directive with no argument.");
-        return ERROR_BAD_DIRECTIVE_SYNTAX;
+        FAIL(ERROR_BAD_DIRECTIVE_SYNTAX,
+            "Ignoring invalid SETCWD directive with no argument.");
     }
     if (strcmp(directive, "INIT_THREADS") == 0) {
         return init_threads();
@@ -155,8 +155,8 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
           LOG_INFO("JAUNCH", "Invoking runloop with mode %s", mode);
         }
         else {
-            LOG_ERROR("Ignoring invalid RUNLOOP directive with no mode.");
-            return ERROR_BAD_DIRECTIVE_SYNTAX;
+            FAIL(ERROR_BAD_DIRECTIVE_SYNTAX,
+                "Ignoring invalid RUNLOOP directive with no mode.");
         }
 
         // Note: runloop_run will set STATE_RUNLOOP when appropriate
@@ -184,8 +184,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
         if (error_code > 255) error_code = 255;
         return error_code;
     }
-    LOG_ERROR("Unknown directive: %s", directive);
-    return ERROR_UNKNOWN_DIRECTIVE;
+    FAIL(ERROR_UNKNOWN_DIRECTIVE, "Unknown directive: %s", directive);
 }
 
 /*
@@ -350,8 +349,7 @@ int main(const int argc, const char *argv[]) {
         command = NULL;
     }
     if (command == NULL) {
-        LOG_ERROR("Failed to locate the jaunch configurator program.");
-        return ERROR_COMMAND_PATH;
+        DIE(ERROR_COMMAND_PATH, "Failed to locate jaunch configurator program.");
     }
     LOG_INFO("JAUNCH", "Configurator command: %s", command);
 
@@ -363,9 +361,8 @@ int main(const int argc, const char *argv[]) {
     const int extended_argc = internal_argc + argc;
     const char **extended_argv = malloc(extended_argc * sizeof(char*));
     if (extended_argv == NULL) {
-        LOG_ERROR("Failed to allocate memory (extended argv)");
         free(command);
-        return ERROR_MALLOC;
+        DIE(ERROR_MALLOC, "Failed to allocate memory (extended argv)");
     }
     extended_argv[0] = argv[0]; // executable path
     extended_argv[1] = "--jaunch-target-arch=" OS_ARCH;

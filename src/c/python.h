@@ -30,8 +30,7 @@ static int launch_python(const size_t argc, const char **argv) {
     LOG_DEBUG("PYTHON", "Loading libpython");
     void *python_library = lib_open(libpython_path);
     if (python_library == NULL) {
-        LOG_ERROR("Failed to load libpython: %s", lib_error());
-        return ERROR_DLOPEN;
+        FAIL(ERROR_DLOPEN, "Failed to load libpython: %s", lib_error());
     }
 
     // Load Py_BytesMain function.
