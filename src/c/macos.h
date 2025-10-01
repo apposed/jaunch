@@ -293,19 +293,17 @@ void runloop_stop() {
     // Therefore, as a fallback, we implement a timeout mechanism to detect
     // when the runloop fails to shut down cleanly and force-exit if needed.
 
-    // Give the runloop 2 seconds to shut down gracefully
-    const double timeout_seconds = 2.0;
+    // Give the runloop a brief period to shut down gracefully.
+    const double timeout_seconds = 0.1;
     const double start_time = CFAbsoluteTimeGetCurrent();
 
     while (ctx()->state == STATE_RUNLOOP) {
         double elapsed = CFAbsoluteTimeGetCurrent() - start_time;
         if (elapsed > timeout_seconds) {
-            LOG_INFO("MACOS", "CFRunLoop failed to terminate within %.1fs; forcing process exit", timeout_seconds);
+            LOG_INFO("MACOS", "CFRunLoop failed to terminate; forcing process exit", timeout_seconds);
             exit(ctx()->exit_code);
         }
-
-        // Check every 50ms
-        usleep(50000);
+        usleep(1000);
     }
 
     LOG_INFO("MACOS", "CFRunLoop has successfully terminated! ^_^");
