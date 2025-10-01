@@ -70,8 +70,7 @@ static ParentProcessType getParentProcessType() {
                 parentPID = entry.th32ParentProcessID;
                 break;
             }
-        }
-        while (Process32NextW(snapshot, &entry));
+        } while (Process32NextW(snapshot, &entry));
     }
 
     if (parentPID) {
@@ -82,25 +81,20 @@ static ParentProcessType getParentProcessType() {
                 LOG_DEBUG("WIN32", "Parent process = %S", entry.szExeFile);
                 if (_wcsicmp(entry.szExeFile, L"cmd.exe") == 0) {
                     result = PARENT_CMD;
-                }
-                else if (_wcsicmp(entry.szExeFile, L"powershell.exe") == 0 ||
-                         _wcsicmp(entry.szExeFile, L"pwsh.exe") == 0)
+                } else if (_wcsicmp(entry.szExeFile, L"powershell.exe") == 0 ||
+                    _wcsicmp(entry.szExeFile, L"pwsh.exe") == 0)
                 {
                     result = PARENT_POWERSHELL;
-                }
-                else if (_wcsicmp(entry.szExeFile, L"bash.exe") == 0) {
+                } else if (_wcsicmp(entry.szExeFile, L"bash.exe") == 0) {
                     result = PARENT_BASH;
-                }
-                else if (_wcsicmp(entry.szExeFile, L"explorer.exe") == 0) {
+                } else if (_wcsicmp(entry.szExeFile, L"explorer.exe") == 0) {
                     result = PARENT_EXPLORER;
-                }
-                else {
+                } else {
                     result = PARENT_OTHER;
                 }
                 break;
             }
-        }
-        while (Process32NextW(snapshot, &entry));
+        } while (Process32NextW(snapshot, &entry));
     }
 
     CloseHandle(snapshot);

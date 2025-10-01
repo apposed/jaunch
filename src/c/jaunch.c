@@ -153,8 +153,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
         const char *mode = dir_argc >= 1 ? dir_argv[0] : ctx()->runloop_mode;
         if (mode) {
           LOG_INFO("JAUNCH", "Invoking runloop with mode %s", mode);
-        }
-        else {
+        } else {
             FAIL(ERROR_BAD_DIRECTIVE_SYNTAX,
                 "Ignoring invalid RUNLOOP directive with no mode.");
         }
@@ -171,8 +170,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
         if (message != NULL) {
             if (!headless_mode) show_alert("Error", message);
             free(message);
-        }
-        else {
+        } else {
             LOG_ERROR("An unknown error occurred.");
             if (!headless_mode) show_alert("Error", "An unknown error occurred.");
         }
@@ -240,8 +238,7 @@ void *process_directives(void *unused) {
             // Main thread is available for directive execution.
             LOG_INFO("JAUNCH", "Executing %s directive on main thread", directive);
             error_code = ctx_request_main_execution(directive, dir_argc, dir_argv);
-        }
-        else {
+        } else {
             // Main thread is busy (executing directive or blocked in runloop).
             // Execute the directive on the current (directive processing) thread.
             const char *reason = (ctx()->state == STATE_RUNLOOP) ? "runloop is active" : "main thread is busy";
@@ -430,18 +427,15 @@ int main(const int argc, const char *argv[]) {
             }
             ctx_signal_main();
             ctx_unlock();
-        }
-        else if (ctx()->state == STATE_RUNLOOP) {
+        } else if (ctx()->state == STATE_RUNLOOP) {
             LOG_INFO("JAUNCH", "Main thread in runloop state, continuing to wait");
             ctx_unlock();
             // Continue waiting - the runloop will eventually exit and change state.
-        }
-        else if (ctx()->state == STATE_COMPLETE) {
+        } else if (ctx()->state == STATE_COMPLETE) {
             ctx_unlock();
             LOG_INFO("JAUNCH", "Exiting directives loop");
             break;
-        }
-        else {
+        } else {
             ctx_unlock();
             LOG_ERROR("Unknown thread state encountered: %d", ctx()->state);
             break;

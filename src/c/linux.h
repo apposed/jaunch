@@ -86,8 +86,7 @@ void show_alert(const char *title, const char *message) {
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
         free(textArg);
-    }
-    else if (find_executable("kdialog", exe, sizeof(exe))) {
+    } else if (find_executable("kdialog", exe, sizeof(exe))) {
         char *titleArg = malloc(strlen(title) + 9); // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
@@ -95,20 +94,17 @@ void show_alert(const char *title, const char *message) {
         execlp(exe, "kdialog", "--sorry", titleArg, message, (char *)NULL);
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
-    }
-    else if (find_executable("xmessage", exe, sizeof(exe))) {
+    } else if (find_executable("xmessage", exe, sizeof(exe))) {
       LOG_INFO("LINUX", "'%s' '%s' '%s' '%s' '%s'", exe,
           "-buttons", "OK:0", "-nearmouse", message);
       execlp(exe, "xmessage",
           "-buttons", "OK:0", "-nearmouse", message, (char *)NULL);
-    }
-    else if (find_executable("notify-send", exe, sizeof(exe))) {
+    } else if (find_executable("notify-send", exe, sizeof(exe))) {
         LOG_INFO("LINUX", "'%s' '%s' '%s' '%s' '%s' '%s'", exe,
             "-a", title, "-c", "im.error", message);
         execlp(exe, "notify-send",
             "-a", title, "-c", "im.error", message, (char *)NULL);
-    }
-    else {
+    } else {
         printf("%s\n", message);
     }
 }

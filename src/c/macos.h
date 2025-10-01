@@ -181,8 +181,7 @@ int handle_translocation(const int argc, const char *argv[]) {
         LOG_DEBUG("MACOS", "Successfully relaunched, exiting translocated instance");
         free(args);
         exit(0); // Exit this translocated instance
-    }
-    else {
+    } else {
         LOG_DEBUG("MACOS", "Failed to relaunch: %s", strerror(status));
         free(args);
         return 0; // Continue with normal execution as fallback
@@ -211,8 +210,7 @@ void runloop_run(const char *mode) {
     ctx()->runloop_mode = mode;
     LOG_INFO("MACOS", "Setting runloop_mode to %s", ctx()->runloop_mode);
 
-    int park_mode = strcmp(mode, "park") == 0;
-    if (park_mode) {
+    if (strcmp(mode, "park") == 0) {
         LOG_INFO("MACOS", "Initializing runloop (park mode)");
 
         // Signal early completion, transitioning to runloop state. This
@@ -406,8 +404,7 @@ int launch(const LaunchFunc launch_runtime,
 
         LOG_DEBUG("MACOS", "Cleaning up autorelease pool (-XstartOnFirstThread style)");
         ((void (*)(id, SEL))objc_msgSend)(pool, sel_registerName("drain"));
-    }
-    else {
+    } else {
         // Either "none" or "park" mode, depending on the current thread.
         LOG_INFO("MACOS", "Launching runtime");
         runtime_result = launch_runtime(argc, argv);

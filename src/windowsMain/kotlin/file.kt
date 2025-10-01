@@ -85,8 +85,7 @@ actual class File actual constructor(rawPath: String) {
                             if (readCount > 0) {
                                 content.append(buffer.decodeToString(0, readCount))
                             }
-                        }
-                        else {
+                        } else {
                             printlnErr("Error reading file '$this': ${lastError()}")
                         }
                     }
