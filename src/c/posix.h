@@ -52,9 +52,7 @@ int run_command(const char *command,
     // Fork to create a child process.
     pid_t pid = fork();
 
-    if (pid == -1) {
-      FAIL(ERROR_FORK, "Failed to fork the process");
-    }
+    if (pid == -1) DIE(ERROR_FORK, "Failed to fork the process");
 
     if (pid == 0) { // Child process
         // Close unused ends of the pipes.
@@ -76,7 +74,7 @@ int run_command(const char *command,
         execlp(command, command, "-", (char *)NULL);
 
         // Note: If we reach this point, execlp has failed.
-        FAIL(ERROR_EXECLP, "Failed to execute the jaunch configurator");
+        DIE(ERROR_EXECLP, "Failed to execute the jaunch configurator");
     }
     else { // Parent process
         // Close unused ends of the pipes.
@@ -128,7 +126,7 @@ int run_command(const char *command,
 
         // Wait for the child process to finish.
         if (waitpid(pid, NULL, 0) == -1) {
-          FAIL(ERROR_WAITPID, "Failed waiting for Jaunch termination");
+          DIE(ERROR_WAITPID, "Failed waiting for Jaunch termination");
         }
 
         // Return the output buffer and the number of lines.
