@@ -36,8 +36,9 @@ void write_line(HANDLE stdinWrite, const char *input) {
 
     // Write the string with newline to the pipe.
     DWORD bytesWritten;
-    if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL))
+    if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL)) {
         handle_error("Error writing to stdin");
+    }
 
     // Free allocated memory.
     free(line);
