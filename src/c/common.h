@@ -35,7 +35,7 @@ void *lib_open(const char *path);
 void *lib_sym(void *library, const char *symbol);
 void lib_close(void *library);
 char *lib_error();
-int run_command(const char *command,
+void run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output);
 
@@ -66,7 +66,7 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
 } while (0)
 
 /* Splits an output buffer into lines. */
-int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
+void split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     size_t lineCount = 0;
     char *token = strtok(buffer, delim);
     while (token != NULL) {
@@ -82,7 +82,6 @@ int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
         token = strtok(NULL, delim);
     }
     *numOutput = lineCount;
-    return SUCCESS;
 }
 
 /* Joins strings with the given delimiter. Returns newly allocated string. */

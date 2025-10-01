@@ -267,7 +267,7 @@ char *lib_error() {
  *
  * As opposed to the POSIX (Linux and macOS) implementation in posix.h.
  */
-int run_command(const char *command,
+void run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output)
 {
@@ -383,10 +383,8 @@ int run_command(const char *command,
     // Return the output buffer and the number of lines.
     *output = NULL;
     *numOutput = 0;
-    int split_result = SUCCESS;
-    if (totalBytesRead > 0) split_result = split_lines(outputBuffer, "\r\n", output, numOutput);
+    if (totalBytesRead > 0) split_lines(outputBuffer, "\r\n", output, numOutput);
     free(outputBuffer);
-    return split_result;
 }
 
 void runloop_config(const char *directive) {}

@@ -36,7 +36,7 @@ char *lib_error() { return dlerror(); }
  *
  * As opposed to the Windows implementation in win32.h.
  */
-int run_command(const char *command,
+void run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output)
 {
@@ -131,10 +131,7 @@ int run_command(const char *command,
         // Return the output buffer and the number of lines.
         *output = NULL;
         *numOutput = 0;
-        int split_result = SUCCESS;
-        if (totalBytesRead > 0) split_result = split_lines(outputBuffer, "\n", output, numOutput);
+        if (totalBytesRead > 0) split_lines(outputBuffer, "\n", output, numOutput);
         free(outputBuffer);
-        if (split_result != SUCCESS) return split_result;
     }
-    return SUCCESS;
 }

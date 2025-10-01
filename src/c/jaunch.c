@@ -13,7 +13,7 @@
  * which is the more sophisticated portion of Jaunch. The C launcher invokes
  * the configurator program in a separate process, using the function:
  *
- *     int run_command(const char *command,
+ *     void run_command(const char *command,
  *         size_t numInput, const char *input[],
  *         size_t *numOutput, char ***output)
  *
@@ -368,10 +368,9 @@ int main(const int argc, const char *argv[]) {
     // Run external command to process the command line arguments.
     size_t out_argc;
     char **out_argv;
-    int run_result = run_command((const char *)command, extended_argc, extended_argv, &out_argc, &out_argv);
+    run_command((const char *)command, extended_argc, extended_argv, &out_argc, &out_argv);
     free(extended_argv);
     free(command);
-    if (run_result != SUCCESS) return run_result;
 
     CHECK_ARGS("JAUNCH", "out", out_argc, 1, 99999, out_argv);
     // Maximum # of lines to treat as valid. ^^^^^
