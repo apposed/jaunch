@@ -189,7 +189,7 @@ int execute_directive(const char *directive, size_t dir_argc, const char **dir_a
  * Process all directives in sequence. This function runs on a separate thread and
  * coordinates with the main thread for runloop management and directive execution.
  */
-int process_directives(void *unused) {
+void *process_directives(void *unused) {
     // Save directives thread ID for thread detection.
     ctx_lock();
     ctx()->thread_id_directives = pthread_self();
@@ -271,7 +271,7 @@ int process_directives(void *unused) {
     ctx_unlock();
 
     LOG_INFO("JAUNCH", "Directive thread returning with exit code %d", exit_code);
-    return exit_code;
+    return NULL;
 }
 
 /* result=$(dirname "$argv0")/$subdir$command */
@@ -394,7 +394,7 @@ int main(const int argc, const char *argv[]) {
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    pthread_create(&directive_thread, &attr, (void *(*)(void *))process_directives, NULL);
+    pthread_create(&directive_thread, &attr, process_directives, NULL);
     pthread_attr_destroy(&attr);
 
     // Main thread event loop - handle signals from directive thread.
