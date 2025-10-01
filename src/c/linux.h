@@ -7,8 +7,6 @@
 
 #define OS_NAME "linux"
 
-void (*xinit_threads_reference)();
-
 int is_command_available(const char *command) {
     return access(command, X_OK) == 0;
 }
@@ -46,20 +44,22 @@ void runloop_run(const char *mode) {}
 void runloop_stop() {}
 
 int init_threads() {
+    LOG_INFO("LINUX", "Running XInitThreads");
+
     void *libX11Handle = lib_open("libX11.so");
     if (libX11Handle == NULL) {
         FAIL(ERROR_MISSING_FUNCTION,
             "Could not find X11 library, not running XInitThreads.");
     }
 
-    LOG_INFO("LINUX", "Running XInitThreads");
-    xinit_threads_reference = lib_sym(libX11Handle, "XInitThreads");
-    if (xinit_threads_reference == NULL) {
+    void (*XInitThreads)() = lib_sym(libX11Handle, "XInitThreads");
+    if (XInitThreads == NULL) {
+        lib_close(libX11Handle);
         FAIL(ERROR_MISSING_FUNCTION,
             "Could not find XInitThreads in X11 library: %s", lib_error());
     }
 
-    xinit_threads_reference();
+    XInitThreads();
     return SUCCESS;
 }
 
