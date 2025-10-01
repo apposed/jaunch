@@ -44,7 +44,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     // for now, but it uses internal security framework functions.
 
     // Load Security framework
-    void *security_framework = dlopen("/System/Library/Frameworks/Security.framework/Security", RTLD_LAZY);
+    void *security_framework = lib_open("/System/Library/Frameworks/Security.framework/Security");
     if (!security_framework) {
         LOG_DEBUG("MACOS", "Failed to load Security framework");
         return 0; // Continue with normal execution
@@ -52,13 +52,13 @@ int handle_translocation(const int argc, const char *argv[]) {
 
     // Get function pointers
     Boolean (*isTranslocatedFunc)(CFURLRef, Boolean *, CFErrorRef *) =
-        dlsym(security_framework, "SecTranslocateIsTranslocatedURL");
+        lib_sym(security_framework, "SecTranslocateIsTranslocatedURL");
     CFURLRef (*getOriginalPathFunc)(CFURLRef, CFErrorRef *) =
-        dlsym(security_framework, "SecTranslocateCreateOriginalPathForURL");
+        lib_sym(security_framework, "SecTranslocateCreateOriginalPathForURL");
 
     if (!isTranslocatedFunc || !getOriginalPathFunc) {
         LOG_DEBUG("MACOS", "Failed to find translocation functions");
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0; // Continue with normal execution
     }
 
@@ -66,14 +66,14 @@ int handle_translocation(const int argc, const char *argv[]) {
     CFBundleRef mainBundle = CFBundleGetMainBundle();
     if (!mainBundle) {
         LOG_DEBUG("MACOS", "Failed to get main bundle");
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
     CFURLRef bundleURL = CFBundleCopyBundleURL(mainBundle);
     if (!bundleURL) {
         LOG_DEBUG("MACOS", "Failed to get bundle URL");
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
@@ -84,7 +84,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     if (!isTranslocated) {
         LOG_DEBUG("MACOS", "Application is not translocated");
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0; // Continue with normal execution
     }
 
@@ -95,7 +95,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     if (!originalURL) {
         LOG_DEBUG("MACOS", "Failed to get original path");
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
@@ -105,7 +105,7 @@ int handle_translocation(const int argc, const char *argv[]) {
         LOG_DEBUG("MACOS", "Failed to convert URL to path");
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
@@ -117,7 +117,7 @@ int handle_translocation(const int argc, const char *argv[]) {
         LOG_DEBUG("MACOS", "Failed to get executable URL");
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
@@ -127,7 +127,7 @@ int handle_translocation(const int argc, const char *argv[]) {
         CFRelease(executableURL);
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
@@ -138,7 +138,7 @@ int handle_translocation(const int argc, const char *argv[]) {
         CFRelease(executableURL);
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
@@ -170,7 +170,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     CFRelease(executableURL);
     CFRelease(originalURL);
     CFRelease(bundleURL);
-    dlclose(security_framework);
+    lib_close(security_framework);
 
     // Execute the original application
     LOG_DEBUG("MACOS", "Relaunching from original location");

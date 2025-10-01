@@ -46,16 +46,16 @@ void runloop_run(const char *mode) {}
 void runloop_stop() {}
 
 int init_threads() {
-    void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
+    void *libX11Handle = lib_open("libX11.so");
     if (libX11Handle != NULL) {
         LOG_INFO("LINUX", "Running XInitThreads");
-        xinit_threads_reference = dlsym(libX11Handle, "XInitThreads");
+        xinit_threads_reference = lib_sym(libX11Handle, "XInitThreads");
 
         if (xinit_threads_reference != NULL) {
             xinit_threads_reference();
             return SUCCESS;
         }
-        LOG_ERROR("Could not find XInitThreads in X11 library: %s", dlerror());
+        LOG_ERROR("Could not find XInitThreads in X11 library: %s", lib_error());
     }
     else {
         LOG_ERROR("Could not find X11 library, not running XInitThreads.");

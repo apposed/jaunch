@@ -21,7 +21,10 @@ int file_exists(const char *path) {
 // ===========================================================
 
 void *lib_open(const char *path) {
-  return dlopen(path, RTLD_NOW | RTLD_GLOBAL); /* TODO: or RTLD_LAZY? */
+  // We use here RTLD_NOW | RTLD_GLOBAL because:
+  // - We want to fail fast if runtime libraries are broken (RTLD_NOW).
+  // - Runtimes need their symbols globally available for plugins (RTLD_GLOBAL).
+  return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 }
 void *lib_sym(void *library, const char *symbol) { return dlsym(library, symbol); }
 void lib_close(void *library) { dlclose(library); }
