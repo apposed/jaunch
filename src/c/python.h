@@ -44,7 +44,7 @@ static int launch_python(const size_t argc, const char **argv) {
     if (Py_BytesMain == NULL) {
         LOG_ERROR("Failed to locate Py_BytesMain function: %s", lib_error());
         lib_close(python_library);
-        return 1;
+        return ERROR_DLSYM;
     }
 
     // Invoke Python main routine with the specified arguments.
