@@ -202,13 +202,13 @@ void teardown() {}
 void runloop_config(const char *directive) {
     if (directive && strcmp(directive, "JVM") == 0) {
         // JVM default: park main thread in event loop.
-        ctx()->runloop_mode = "park";
-        LOG_INFO("MACOS", "Setting runloop_mode to %s [auto]", ctx()->runloop_mode);
+        ctx_set_runloop_mode("park");
+        LOG_INFO("MACOS", "Setting runloop_mode to %s [auto]", "park");
     }
 }
 void runloop_run(const char *mode) {
-    ctx()->runloop_mode = mode;
-    LOG_INFO("MACOS", "Setting runloop_mode to %s", ctx()->runloop_mode);
+    ctx_set_runloop_mode(mode);
+    LOG_INFO("MACOS", "Setting runloop_mode to %s", mode);
 
     if (strcmp(mode, "park") == 0) {
         LOG_INFO("MACOS", "Initializing runloop (park mode)");
@@ -297,11 +297,18 @@ void runloop_stop() {
     const double timeout_seconds = 0.1;
     const double start_time = CFAbsoluteTimeGetCurrent();
 
-    while (ctx()->state == STATE_RUNLOOP) {
+    while (1) {
+        ctx_lock();
+        ThreadState current_state = ctx()->state;
+        int exit_code = ctx()->exit_code;
+        ctx_unlock();
+
+        if (current_state != STATE_RUNLOOP) break;
+
         double elapsed = CFAbsoluteTimeGetCurrent() - start_time;
         if (elapsed > timeout_seconds) {
             LOG_INFO("MACOS", "CFRunLoop failed to terminate; forcing process exit", timeout_seconds);
-            exit(ctx()->exit_code);
+            exit(exit_code);
         }
         usleep(1000);
     }
@@ -378,7 +385,8 @@ int launch(const LaunchFunc launch_runtime,
     // from the main thread. Therefore, we only need to differentiate between
     // "main" and "none" here.
 
-    int main_mode = ctx()->runloop_mode && strcmp(ctx()->runloop_mode, "main") == 0;
+    const char *runloop_mode = ctx_get_runloop_mode();
+    int main_mode = runloop_mode && strcmp(runloop_mode, "main") == 0;
     if (main_mode) {
         // GUI frameworks like SWT need the runtime to run on the main thread, but
         // might expect the following setup to have been performed. Needs testing!

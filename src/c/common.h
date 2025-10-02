@@ -24,6 +24,7 @@
 #define ERROR_UNKNOWN_DIRECTIVE 16
 #define ERROR_BAD_DIRECTIVE_SYNTAX 17
 #define ERROR_MISSING_FUNCTION 18
+#define ERROR_BAD_LOCKING 19
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
