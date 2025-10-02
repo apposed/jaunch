@@ -144,7 +144,7 @@ Each directive block is a sequence of lines, structured as follows:
    - `PYTHON` to launch a Python program using Python's [Stable ABI] ([`Py_BytesMain`]).
    - `SETCWD` to change the current working directory.
    - `INIT_THREADS` to enable X11 multithreading on [Linux].
-   - `RUNLOOP` to set the runloop mode for [macOS] event handling (main, park, none).
+   - `RUNLOOP` to set the runloop mode for [macOS] event handling (main, park, none, auto).
    - `ERROR` to display an error message.
    - `ABORT` to immediately terminate without parsing any further directives.
 
