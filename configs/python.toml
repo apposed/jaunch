@@ -119,7 +119,7 @@ python.recognized-args = [
 # - and so on.
 #
 # Of course, Python hints will only be set after a Python installation matches,
-# so they won't work here in python.root-paths, nor in python.lib-suffixes.
+# so they won't work here in python.root-paths, nor in python.exe-suffixes.
 # But they can be useful in the python.runtime-args section to ensure Jaunch
 # passes runtime args only to those versions of Python that support them,
 # such as the -P flag which was introduced in Python 3.11.
@@ -146,11 +146,13 @@ python.root-paths = [
     '!--system|OS:MACOSX|ARCH:X64|${app-dir}/python/macosx/*',                                    # bundled (macOS x86-64)
     '!--system|OS:WINDOWS|ARCH:X64|${app-dir}\python\win64\*',                                    # bundled (Windows x86-64)
     '!--system|OS:WINDOWS|ARCH:X86|${app-dir}\python\win32\*',                                    # bundled (Windows x86-32)
-    '${PYTHON_HOME}',                                                                             # PYTHON_HOME environment variable
+    '${pythonLocation}',                                                                          # GitHub Actions setup-python
+    '${Python3_ROOT_DIR}',                                                                        # CMake FindPython3 / GitHub Actions
+    '${Python_ROOT_DIR}',                                                                         # CMake FindPython / GitHub Actions
+    '${VIRTUAL_ENV}',                                                                             # activated virtualenv/venv/uv
     '${CONDA_PREFIX}',                                                                            # activated Conda/Mamba env
-    'OS:LINUX|/usr/lib/python*/*',                                                                # system (Linux)
-    'OS:LINUX|ARCH:X64|/usr/lib/x86_64-linux-gnu',                                                # system (Linux x86-64)
-    'OS:LINUX|ARCH:X86|/usr/lib/i386-linux-gnu',                                                  # system (Linux x86-32)
+    '${PYTHON_HOME}',                                                                             # informal convention
+    'OS:LINUX|/usr',                                                                              # system (Linux)
     'OS:MACOSX|${HOMEBREW_PREFIX}/Caskroom/miniforge/base',                                       # miniforge from Homebrew
     'OS:MACOSX|/opt/homebrew/Caskroom/miniforge/base',                                            # miniforge from Homebrew (arm64 default)
     'OS:MACOSX|/usr/local/Caskroom/miniforge/base',                                               # miniforge from Homebrew (x86-64 default)
@@ -160,6 +162,7 @@ python.root-paths = [
     'OS:MACOSX|${HOMEBREW_PREFIX}/Cellar/python*/*/Frameworks/Python.framework/Versions/*',       # python from Homebrew
     'OS:MACOSX|/opt/homebrew/Cellar/python*/*/Frameworks/Python.framework/Versions/*',            # python from Homebrew (arm64 default)
     'OS:MACOSX|/usr/local/Cellar/python*/*/Frameworks/Python.framework/Versions/*',               # python from Homebrew (x86-64 default)
+    'OS:MACOSX|/usr',                                                                             # system (macOS)
     'OS:WINDOWS|${LOCALAPPDATA}\Programs\Python\*',                                               # system (Windows)
     '${MAMBA_ROOT_PREFIX}/envs/*',                                                                # all Mamba envs
     '${CONDA_ROOT}/envs/*',                                                                       # all Conda envs
@@ -174,52 +177,23 @@ python.root-paths = [
 # But for now: YAGNI! File an issue or a pull request if you do need it.
 
 # ==============================================================================
-# python.lib-suffixes
+# python.exe-suffixes
 # ==============================================================================
-# List of places within a Python installation to look for the Python library.
+# List of places within a Python installation to look for the Python executable.
 #
 # For example, if the root directory currently being considered is
-# /the-best-python, and the current lib-suffixes line is lib/libpython3.so,
-# then Jaunch will check the path /the-best-python/lib/libpython3.so for the
+# /the-best-python, and the current exe-suffixes line is bin/python3,
+# then Jaunch will check the path /the-best-python/bin/python3 for the
 # library. If found, we have a winning Python installation!
 
 # TODO: Verify this list for all platforms.
-python.lib-suffixes = [
-    'OS:LINUX|lib/libpython3.so',
-    'OS:LINUX|lib/libpython3.13.so',
-    'OS:LINUX|lib/libpython3.12.so',
-    'OS:LINUX|lib/libpython3.11.so',
-    'OS:LINUX|lib/libpython3.10.so',
-    'OS:LINUX|lib/libpython3.9.so',
-    'OS:LINUX|lib/libpython3.8.so',
-    'OS:LINUX|libpython3.so',
-    'OS:LINUX|libpython3.13.so',
-    'OS:LINUX|libpython3.12.so',
-    'OS:LINUX|libpython3.11.so',
-    'OS:LINUX|libpython3.10.so',
-    'OS:LINUX|libpython3.9.so',
-    'OS:LINUX|libpython3.8.so',
-    'OS:MACOSX|lib/libpython3.dylib',
-    'OS:MACOSX|lib/libpython3.13.dylib',
-    'OS:MACOSX|lib/libpython3.12.dylib',
-    'OS:MACOSX|lib/libpython3.11.dylib',
-    'OS:MACOSX|lib/libpython3.10.dylib',
-    'OS:MACOSX|lib/libpython3.9.dylib',
-    'OS:MACOSX|lib/libpython3.8.dylib',
-    'OS:WINDOWS|python313.dll',
-    'OS:WINDOWS|python312.dll',
-    'OS:WINDOWS|python311.dll',
-    'OS:WINDOWS|python310.dll',
-    'OS:WINDOWS|python39.dll',
-    'OS:WINDOWS|python38.dll',
-    'OS:WINDOWS|python3.dll',
-    'OS:WINDOWS|lib\python313.dll',
-    'OS:WINDOWS|lib\python312.dll',
-    'OS:WINDOWS|lib\python311.dll',
-    'OS:WINDOWS|lib\python310.dll',
-    'OS:WINDOWS|lib\python39.dll',
-    'OS:WINDOWS|lib\python38.dll',
-    'OS:WINDOWS|lib\python3.dll',
+python.exe-suffixes = [
+    'OS:LINUX|bin/python',
+    'OS:LINUX|bin/python3',
+    'OS:MACOSX|bin/python',
+    'OS:MACOSX|bin/python3',
+    'OS:WINDOWS|python.exe',
+    'OS:WINDOWS|python3.exe',
 ]
 
 # ==============================================================================

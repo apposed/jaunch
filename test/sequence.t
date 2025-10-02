@@ -15,14 +15,18 @@ Detect current platform:
   $ echo "platform = $platform"
   platform = *-* (glob)
 
-Detect libjvm and libpython locations:
+Detect libjvm, libpython, and binpython locations:
 
   $ libjvm=$(jaunch/jaunch-"$platform" hi | head -n3 | tail -n1)
-  $ libpython=$(jaunch/jaunch-"$platform" hiss | head -n3 | tail -n1)
+  $ pythoninfo=$(jaunch/jaunch-"$platform" hiss | head -n4 | tail -n2)
+  $ libpython=$(echo "$pythoninfo" | head -n1)
+  $ binpython=$(echo "$pythoninfo" | tail -n1)
   $ echo "libjvm = $libjvm"
   libjvm = .*(libjvm|libjli|jvm.dll|JVM.DLL).* (re)
   $ echo "libpython = $libpython"
-  libpython = *python* (glob)
+  libpython = *ython* (glob)
+  $ echo "binpython = $binpython"
+  binpython = *python* (glob)
 
 Prepare for custom configurator:
 
@@ -31,7 +35,7 @@ Prepare for custom configurator:
 
 Test simple sequence of directives (no Java AWT):
 
-  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" ../test/sequence-simple.sh > jaunch/jaunch
+  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" -e "s:BINPYTHON:$binpython:g" ../test/sequence-simple.sh > jaunch/jaunch
   $ chmod +x jaunch/jaunch
   $ ./hi
   Hello, 1-JVM-main!
@@ -41,7 +45,7 @@ Test simple sequence of directives (no Java AWT):
 
 Test complex sequence of directives involving Java AWT:
 
-  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" ../test/sequence-awt.sh > jaunch/jaunch
+  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" -e "s:BINPYTHON:$binpython:g" ../test/sequence-awt.sh > jaunch/jaunch
   $ chmod +x jaunch/jaunch
   $ ./hi
   Hello, 1-JVM-main!

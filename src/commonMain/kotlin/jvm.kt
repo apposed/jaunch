@@ -277,12 +277,11 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
  *
  * The logic is coded so that less expensive techniques are tried first, and metadata
  * is cached, so that more expensive techniques only trigger when necessary.
- * TODO: Actually cache the metadata. ;-)
  */
 class JavaInstallation(
-    val rootPath: String,
+    rootPath: String,
     val constraints: JvmConstraints,
-) {
+) : RuntimeInstallation(rootPath) {
     val libjvmPath: String? by lazy { findLibjvm() }
     val binJava: String? by lazy { findBinJava(constraints.targetOS) }
     val version: String? by lazy { guessJavaVersion() }
@@ -290,8 +289,7 @@ class JavaInstallation(
     val osName: String? by lazy { guessOperatingSystemName() }
     val cpuArch: String? by lazy { guessCpuArchitecture() }
     val releaseInfo: Map<String, String>? by lazy { readReleaseInfo() }
-    val sysProps: Map<String, String>? by lazy { askJavaForSystemProperties() }
-    val conforms: Boolean by lazy { checkConstraints() }
+    val props: Map<String, String>? by lazy { askJavaForProperties() }
 
     /**
      * Gets the major version digit (i.e. "Java product version") of the Java installation.
@@ -325,91 +323,13 @@ class JavaInstallation(
             "OS name: $osName",
             "CPU arch: $cpuArch",
             "release file:${bulletList(releaseInfo)}",
-            "system properties:${bulletList(sysProps)}",
+            "properties:${bulletList(props)}",
         ).joinToString(NL)
     }
 
     // -- Lazy evaluation functions --
 
-    private fun findLibjvm(): String? {
-        return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
-    }
-
-    private fun findBinJava(targetOS: String): String? {
-        val extension = if (targetOS == "WINDOWS") ".exe" else ""
-        for (candidate in arrayOf("bin", "jre${SLASH}bin")) {
-            val javaFile = File("$rootPath$SLASH$candidate${SLASH}java$extension")
-            if (javaFile.exists) return javaFile.path
-        }
-        return null
-    }
-
-    private fun guessJavaVersion(): String? {
-        return guess("Java version") {
-            extractJavaVersion(File(rootPath).name) ?:
-            releaseInfo?.get("JAVA_VERSION") ?:
-            sysProps?.get("java.version")
-        }
-    }
-
-    private fun guessDistribution(): String? {
-        return guess("Java distribution") {
-            val distroMap = linesToMapOfLists(constraints.distrosAllowed + constraints.distrosBlocked)
-            guessDistro(distroMap, File(rootPath).name) ?:
-            guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR_VERSION")) ?:
-            guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR")) ?:
-            guessDistro(distroMap, sysProps?.get("java.vendor.version")) ?:
-            guessDistro(distroMap, sysProps?.get("java.vendor")) ?: sysProps?.get("java.vendor")
-        }
-    }
-
-    private fun guessOperatingSystemName(): String? {
-        return guess("OS name") {
-            guessAlias(constraints.osAliases, "OS_NAME", "os.name")
-        }
-    }
-
-    private fun guessCpuArchitecture(): String? {
-        return guess("CPU architecture") {
-            guessAlias(constraints.archAliases, "OS_ARCH", "os.arch")
-        }
-    }
-
-    private fun guess(label: String, doGuess: () -> String?): String? {
-        debug("Guessing $label...")
-        val result = doGuess()
-        debug("-> $label: $result")
-        return result
-    }
-
-    /** Reads metadata from the `release` file. */
-    private fun readReleaseInfo(): Map<String, String>? {
-        debug("Reading release file...")
-        val releaseFile = File("$rootPath/release")
-        if (!releaseFile.exists) return null
-        return linesToMap(releaseFile.lines(), "=", stripQuotes=true)
-    }
-
-    /** Calls `java Props` to harvest system properties from the horse's mouth. */
-    private fun askJavaForSystemProperties(): Map<String, String>? {
-        val javaExe = binJava
-        if (javaExe == null) {
-            debug("Java executable does not exist")
-            return null
-        }
-        debug("Invoking `\"", javaExe, "\" Props`...")
-        // NB: Temporarily change the current working directory to the one containing
-        // the Props.class helper program. This lets us invoke the java executable
-        // in a simpler way, without needing to pass something like `-cp $configDir`,
-        // which creates more quoting complexity, especially on Windows.
-        val cwd = getcwd()
-        setcwd(constraints.configDir.path)
-        val stdout = execute("\"$javaExe\" Props") ?: return null
-        setcwd(cwd)
-        return linesToMap(stdout, "=")
-    }
-
-    private fun checkConstraints(): Boolean {
+    override fun checkConstraints(): Boolean {
         val strict = !constraints.allowWeirdRuntimes
 
         // Ensure libjvm is present.
@@ -446,14 +366,86 @@ class JavaInstallation(
         return true
     }
 
+    private fun findLibjvm(): String? {
+        return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
+    }
+
+    private fun findBinJava(targetOS: String): String? {
+        val extension = if (targetOS == "WINDOWS") ".exe" else ""
+        for (candidate in arrayOf("bin", "jre${SLASH}bin")) {
+            val javaFile = File("$rootPath$SLASH$candidate${SLASH}java$extension")
+            if (javaFile.exists) return javaFile.path
+        }
+        return null
+    }
+
+    private fun guessJavaVersion(): String? {
+        return guess("Java version") {
+            extractJavaVersion(File(rootPath).name) ?:
+            releaseInfo?.get("JAVA_VERSION") ?:
+            props?.get("java.version")
+        }
+    }
+
+    private fun guessDistribution(): String? {
+        return guess("Java distribution") {
+            val distroMap = linesToMapOfLists(constraints.distrosAllowed + constraints.distrosBlocked)
+            guessDistro(distroMap, File(rootPath).name) ?:
+            guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR_VERSION")) ?:
+            guessDistro(distroMap, releaseInfo?.get("IMPLEMENTOR")) ?:
+            guessDistro(distroMap, props?.get("java.vendor.version")) ?:
+            guessDistro(distroMap, props?.get("java.vendor")) ?: props?.get("java.vendor")
+        }
+    }
+
+    private fun guessOperatingSystemName(): String? {
+        return guess("OS name") {
+            guessAlias(constraints.osAliases, "OS_NAME", "os.name")
+        }
+    }
+
+    private fun guessCpuArchitecture(): String? {
+        return guess("CPU architecture") {
+            guessAlias(constraints.archAliases, "OS_ARCH", "os.arch")
+        }
+    }
+
     // -- Helper methods --
 
-    private fun bulletList(map: Map<String, String>?, bullet: String = "* "): String {
-        return when {
-            map == null -> " <none>"
-            map.isEmpty() -> " <empty>"
-            else -> "$NL$bullet" + map.entries.joinToString("$NL$bullet")
+    /** Reads metadata from the `release` file. */
+    private fun readReleaseInfo(): Map<String, String>? {
+        debug("Reading release file...")
+        val releaseFile = File("$rootPath/release")
+        if (!releaseFile.exists) return null
+        return linesToMap(releaseFile.lines(), "=", stripQuotes=true)
+    }
+
+    /** Calls `java Props` to harvest system properties from the horse's mouth. */
+    private fun askJavaForProperties(): Map<String, String>? {
+        val javaExe = binJava
+        if (javaExe == null) {
+            debug("Java executable does not exist.")
+            return null
         }
+
+        // NB: Temporarily change the current working directory to the one containing
+        // the Props.class helper program. This lets us invoke the java executable
+        // in a simpler way, without needing to pass something like `-cp $configDir`,
+        // which creates more quoting complexity, especially on Windows.
+        val cwd = getcwd()
+        setcwd(constraints.configDir.path)
+
+        debug("Invoking `\"", javaExe, "\" Props`...")
+        val propsExists = File("Props.class").exists
+        if (!propsExists) warn("Props.class not found at: ", constraints.configDir.path)
+        val stdout: List<String>? =
+            if (propsExists) execute("\"$javaExe\" Props")
+            else null
+
+        // NB: Restore original working directory.
+        setcwd(cwd)
+
+        return if (stdout == null) null else linesToMap(stdout, "=")
     }
 
     private fun guessDistro(distroMap: Map<String, List<String>>, s: String?): String? {
@@ -472,17 +464,14 @@ class JavaInstallation(
             // Look for the field in the release file.
             releaseInfo?.get(releaseField)?.lowercase() ?:
             // Extract the field from Java's system properties.
-            sysProps?.get(propsField)?.lowercase() ?: return null
+            props?.get(propsField)?.lowercase() ?: return null
 
         // Find the canonical name of the extracted value.
         return aliasMap.entries.firstOrNull { (_, aliases) -> aliases.contains(alias) }?.key ?: alias
     }
-
-
-    private fun fail(vararg args: Any): Boolean { debug(*args); return false }
 }
 
-internal fun extractJavaVersion(root: String): String? {
+private fun extractJavaVersion(root: String): String? {
     // Many CPU architecture tokens are hard to distinguish from version digits.
     // So first, do some preprocessing to remove such tokens from the root path string.
     val confusingPatterns = arrayOf(
