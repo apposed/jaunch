@@ -77,8 +77,7 @@ private fun report(prefix: String, vararg args: Any) {
     if (path == null) {
         // Log file path is not yet known; save line to buffer.
         logLines += s
-    }
-    else {
+    } else {
         try {
             if (file == null) {
                 file = File(path)

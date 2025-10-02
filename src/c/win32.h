@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <tlhelp32.h>
 
+#include "logging.h"
 #include "common.h"
 
 #define OS_NAME "windows"
@@ -21,24 +22,20 @@
 //                      HELPER FUNCTIONS
 // ===========================================================
 
-void handle_error(const char* errorMessage) {
-    fprintf(stderr, "%s (error %lu)\n", errorMessage, GetLastError());
-    exit(1);
-}
-
 void write_line(HANDLE stdinWrite, const char *input) {
-    // Copy the input string and add a newline
+    // Copy the input string and add a newline.
     size_t inputLength = strlen(input);
-    char *line = (char *)malloc(inputLength + 2);  // +1 for newline, +1 for null terminator
+    char *line = (char *)malloc(inputLength + 2); // +1 for newline, +1 for null terminator
     strcpy(line, input);
     strcat(line, "\n");
 
-    // Write the string with newline to the pipe
+    // Write the string with newline to the pipe.
     DWORD bytesWritten;
-    if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL))
-        handle_error("Error writing to stdin");
+    if (!WriteFile(stdinWrite, line, inputLength + 1, &bytesWritten, NULL)) {
+        DIE(ERROR_PIPE, "Failed writing to stdin: %lu", GetLastError());
+    }
 
-    // Free allocated memory
+    // Free allocated memory.
     free(line);
 }
 
@@ -59,7 +56,7 @@ static ParentProcessType getParentProcessType() {
     DWORD parentPID = 0;
     ParentProcessType result = PARENT_UNKNOWN;
 
-    // Get the parent process ID
+    // Get the parent process ID.
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) return result;
 
@@ -73,37 +70,31 @@ static ParentProcessType getParentProcessType() {
                 parentPID = entry.th32ParentProcessID;
                 break;
             }
-        }
-        while (Process32NextW(snapshot, &entry));
+        } while (Process32NextW(snapshot, &entry));
     }
 
     if (parentPID) {
-        // Reset to start of process list
+        // Reset to start of process list.
         Process32FirstW(snapshot, &entry);
         do {
             if (entry.th32ProcessID == parentPID) {
-                debug("[JAUNCH-WIN32] PARENT PROCESS = %S", entry.szExeFile);
+                LOG_DEBUG("WIN32", "Parent process = %S", entry.szExeFile);
                 if (_wcsicmp(entry.szExeFile, L"cmd.exe") == 0) {
                     result = PARENT_CMD;
-                }
-                else if (_wcsicmp(entry.szExeFile, L"powershell.exe") == 0 ||
-                         _wcsicmp(entry.szExeFile, L"pwsh.exe") == 0)
+                } else if (_wcsicmp(entry.szExeFile, L"powershell.exe") == 0 ||
+                    _wcsicmp(entry.szExeFile, L"pwsh.exe") == 0)
                 {
                     result = PARENT_POWERSHELL;
-                }
-                else if (_wcsicmp(entry.szExeFile, L"bash.exe") == 0) {
+                } else if (_wcsicmp(entry.szExeFile, L"bash.exe") == 0) {
                     result = PARENT_BASH;
-                }
-                else if (_wcsicmp(entry.szExeFile, L"explorer.exe") == 0) {
+                } else if (_wcsicmp(entry.szExeFile, L"explorer.exe") == 0) {
                     result = PARENT_EXPLORER;
-                }
-                else {
+                } else {
                     result = PARENT_OTHER;
                 }
                 break;
             }
-        }
-        while (Process32NextW(snapshot, &entry));
+        } while (Process32NextW(snapshot, &entry));
     }
 
     CloseHandle(snapshot);
@@ -119,7 +110,7 @@ DWORD WINAPI ReadStderrThread(LPVOID param) {
     while (ReadFile(stderrRead, buffer, sizeof(buffer), &bytesRead, NULL)) {
         if (bytesRead <= 0) continue;
 
-        // Write directly to the main process stderr
+        // Write directly to the main process stderr.
         HANDLE parentStderr = GetStdHandle(STD_ERROR_HANDLE);
         WriteFile(parentStderr, buffer, bytesRead, NULL, NULL);
     }
@@ -134,11 +125,11 @@ void setup(const int argc, const char *argv[]) {
     // Ahh, the Windows console. Good times!
     // See doc/WINDOWS.md for why this logic is here.
 
-    debug("[JAUNCH-WIN32] CONFIGURING CONSOLE");
+    LOG_DEBUG("WIN32", "Configuring console");
 
-    // First, try to attach to an existing console
+    // First, try to attach to an existing console.
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        debug("[JAUNCH-WIN32] ATTACHED TO PARENT CONSOLE");
+        LOG_DEBUG("WIN32", "Attached to parent console");
 
         // Glean the parent process type.
         ParentProcessType parentType = getParentProcessType();
@@ -161,7 +152,7 @@ void setup(const int argc, const char *argv[]) {
             freopen("CONIN$", "r", stdin);
             freopen("CONOUT$", "w", stdout);
             freopen("CONOUT$", "w", stderr);
-            debug("[JAUNCH-WIN32] REOPENED CONSOLE STREAMS");
+            LOG_DEBUG("WIN32", "Reopened console streams");
 
             // NB: In debug mode, we call getParentProcessType() again so
             // that the name of the parent process gets emitted to stderr,
@@ -176,42 +167,42 @@ void setup(const int argc, const char *argv[]) {
         // case logic here wouldn't even be triggered. But this console
         // logic has many edge cases, so let's check anyway, just in case.
         DWORD binaryType;
-        const char* argv0 = argv[0];
+        const char *argv0 = argv[0];
         if (GetBinaryTypeA(argv0, &binaryType) && (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY)) {
             switch (parentType) {
                 case PARENT_CMD:
-                    error("");
-                    error("===========================================================");
-                    error("WARNING: GUI program launched from Command Prompt.");
-                    error("For proper console behavior, make sure to use:");
-                    error("    start /wait %s", argv0);
-                    error("Or launch from inside a batch script, or from Git Bash.");
-                    error("===========================================================");
+                    LOG_BLANK("");
+                    LOG_WARN("===========================================================");
+                    LOG_WARN("GUI program launched from Command Prompt.");
+                    LOG_WARN("For proper console behavior, make sure to use:");
+                    LOG_WARN("    start /wait %s", argv0);
+                    LOG_WARN("Or launch from inside a batch script, or from Git Bash.");
+                    LOG_WARN("===========================================================");
                     break;
                 case PARENT_POWERSHELL:
-                    error("");
-                    error("=======================================================");
-                    error("WARNING: GUI program launched from PowerShell.");
-                    error("For proper console behavior, make sure to use:");
-                    error("    Start-Process -Wait %s", argv0);
-                    error("Or launch from inside a batch script, or from Git Bash.");
-                    error("=======================================================");
+                    LOG_BLANK("");
+                    LOG_ERROR("=======================================================");
+                    LOG_ERROR("GUI program launched from PowerShell.");
+                    LOG_ERROR("For proper console behavior, make sure to use:");
+                    LOG_ERROR("    Start-Process -Wait %s", argv0);
+                    LOG_ERROR("Or launch from inside a batch script, or from Git Bash.");
+                    LOG_ERROR("=======================================================");
                     break;
                 case PARENT_BASH:
-                    debug("[JAUNCH-WIN32] Running from bash; all is well.");
+                    LOG_INFO("WIN32", "Running from bash; all is well.");
                     break;
                 case PARENT_EXPLORER:
-                    debug("[JAUNCH-WIN32] Running from Explorer; all is well.");
+                    LOG_INFO("WIN32", "Running from Explorer; all is well.");
                     break;
                 case PARENT_OTHER:
-                    error("");
-                    error("==========================================================");
-                    error("WARNING: GUI program launched from unknown parent process.");
-                    error("Console output may be unreliable.");
-                    error("==========================================================");
+                    LOG_BLANK("");
+                    LOG_WARN("==========================================================");
+                    LOG_WARN("GUI program launched from unknown parent process.");
+                    LOG_WARN("Console output may be unreliable.");
+                    LOG_WARN("==========================================================");
                     break;
                 case PARENT_UNKNOWN:
-                    debug("[JAUNCH-WIN32] Failed to detect parent process type.");
+                    LOG_INFO("WIN32", "Failed to detect parent process type.");
                     break;
             }
         }
@@ -221,9 +212,9 @@ void setup(const int argc, const char *argv[]) {
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
     HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE hStderr = GetStdHandle(STD_ERROR_HANDLE);
-    if (hStdin != NULL && hStdin != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDIN IS VALID");
-    if (hStdout != NULL && hStdout != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDOUT IS VALID");
-    if (hStderr != NULL && hStderr != INVALID_HANDLE_VALUE) debug("[JAUNCH-WIN32] STDERR IS VALID");
+    if (hStdin != NULL && hStdin != INVALID_HANDLE_VALUE) LOG_DEBUG("WIN32", "Stdin is valid");
+    if (hStdout != NULL && hStdout != INVALID_HANDLE_VALUE) LOG_DEBUG("WIN32", "Stdout is valid");
+    if (hStderr != NULL && hStderr != INVALID_HANDLE_VALUE) LOG_DEBUG("WIN32", "Stderr is valid");
 }
 
 void teardown() {
@@ -240,13 +231,13 @@ void *lib_open(const char *path) {
     char *dll_dir = strdup(path);
     char *last_slash = strrchr(dll_dir, '\\');
     if (last_slash != NULL) {
-        *last_slash = '\0';  // Truncate to get directory path
-        debug("[JAUNCH-WIN32] Adding directory to DLL search path: %s", dll_dir);
+        *last_slash = '\0'; // Truncate to get directory path
+        LOG_DEBUG("WIN32", "Adding directory to DLL search path: %s", dll_dir);
 
-        // Use SetDllDirectory to add the Python directory to the search path
+        // Use SetDllDirectory to add the Python directory to the search path.
         if (!SetDllDirectoryA(dll_dir)) {
-            debug("[JAUNCH-WIN32] Warning: Failed to set DLL directory: %s", lib_error());
-            // Continue anyway - this is not fatal, just falls back to PATH dependency
+            LOG_DEBUG("WIN32", "Warning: Failed to set DLL directory: %s", lib_error());
+            // Continue anyway - this is not fatal, just falls back to PATH dependency.
         }
     }
     free(dll_dir);
@@ -276,40 +267,39 @@ char *lib_error() {
  *
  * As opposed to the POSIX (Linux and macOS) implementation in posix.h.
  */
-int run_command(const char *command,
+void run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output)
 {
-    // Create pipes for stdin and stdout
+    // Create pipes for stdin and stdout.
     HANDLE stdinRead, stdinWrite, stdoutRead, stdoutWrite, stderrRead, stderrWrite;
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
-    debug("[JAUNCH-WIN32] OPENING STREAMS TO/FROM SUBPROCESS");
+    LOG_DEBUG("WIN32", "Opening streams to/from subprocess");
     if (!CreatePipe(&stdinRead, &stdinWrite, &sa, 0) ||
         !CreatePipe(&stdoutRead, &stdoutWrite, &sa, 0) ||
         !CreatePipe(&stderrRead, &stderrWrite, &sa, 0))
     {
-        handle_error("Error creating pipes");
+        DIE(ERROR_PIPE, "Error creating pipes: %lu", GetLastError());
     }
 
-    // Set the properties of the process to start
+    // Set the properties of the process to start.
     STARTUPINFO si = { sizeof(STARTUPINFO) };
     PROCESS_INFORMATION pi;
 
-    // Specify that the process should inherit the handles
+    // Specify that the process should inherit the handles.
     si.hStdInput = stdinRead;
     si.hStdOutput = stdoutWrite;
     si.hStdError = stderrWrite;
     si.dwFlags |= STARTF_USESTDHANDLES;
 
-    // Create the subprocess
+    // Create the subprocess.
 
-    // Add CREATE_NO_WINDOW flag to prevent console window from appearing
+    // Add CREATE_NO_WINDOW flag to prevent console window from appearing.
     DWORD createFlags = CREATE_NO_WINDOW;
     char *commandPlusDash = malloc(strlen(command) + 3);
     if (commandPlusDash == NULL) {
-        error("Failed to allocate memory (command plus dash)");
-        return ERROR_MALLOC;
+        DIE(ERROR_MALLOC, "Failed to allocate memory (command plus dash)");
     }
     strcpy(commandPlusDash, command);
     // NB: We pass a single "-" argument to indicate to the jaunch
@@ -320,24 +310,23 @@ int run_command(const char *command,
         createFlags, NULL, NULL, &si, &pi))
     {
         free(commandPlusDash);
-        handle_error("Error creating process");
+        DIE(ERROR_EXEC, "Failed to create process: %lu", GetLastError());
     }
     free(commandPlusDash);
 
-    // Close unnecessary handles
+    // Close unnecessary handles.
     CloseHandle(stdinRead);
     CloseHandle(stdoutWrite);
     CloseHandle(stderrWrite);
 
-    // Write to the child process's stdin
-    debug("[JAUNCH-WIN32] WRITING TO SUBPROCESS STDIN");
+    // Write to the child process's stdin.
+    LOG_DEBUG("WIN32", "Writing to subprocess stdin");
     // Passing the input line count as the first line tells the child process what
     // to expect, so that it can stop reading from stdin once it has received
     // those lines, even though the pipe is not yet closed. This avoids deadlocks.
     char *numInputString = (char *)malloc(21);
     if (numInputString == NULL) {
-        error("Failed to allocate memory (input line count)");
-        return ERROR_MALLOC;
+        DIE(ERROR_MALLOC, "Failed to allocate memory (input line count)");
     }
     snprintf(numInputString, 21, "%zu", numInput);
     write_line(stdinWrite, numInputString);
@@ -345,65 +334,67 @@ int run_command(const char *command,
     for (size_t i = 0; i < numInput; i++)
         write_line(stdinWrite, input[i]);
 
-    // Close the stdin write handle to signal end of input
+    // Close the stdin write handle to signal end of input.
     CloseHandle(stdinWrite);
-    debug("[JAUNCH-WIN32] CLOSED SUBPROCESS STDIN STREAM");
+    LOG_DEBUG("WIN32", "Closed subprocess stdin stream");
 
-    // Read from the child process's stderr in its own thread
+    // Read from the child process's stderr in its own thread.
     HANDLE hThread = CreateThread(NULL, 0, ReadStderrThread, stderrRead, 0, NULL);
 
-    // Read from the child process's stdout
+    // Read from the child process's stdout.
     char buffer[1024];
     DWORD bytesRead;
     DWORD totalBytesRead = 0;
     size_t bufferSize = 1024;
     char *outputBuffer = malloc(bufferSize);
-
     if (outputBuffer == NULL) {
-        error("Failed to allocate memory (output buffer)");
-        return ERROR_MALLOC;
+        DIE(ERROR_MALLOC, "Failed to allocate memory (output buffer)");
     }
 
     while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
-        if (totalBytesRead + bytesRead > bufferSize) {
+        if (totalBytesRead + bytesRead >= bufferSize) {
             bufferSize *= 2;
             outputBuffer = realloc(outputBuffer, bufferSize);
             if (outputBuffer == NULL) {
-                error("Failed to reallocate memory (output buffer)");
-                return ERROR_REALLOC;
+                DIE(ERROR_REALLOC, "Failed to reallocate memory (output buffer)");
             }
         }
         memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
         totalBytesRead += bytesRead;
     }
 
-    // Wait for stderr thread to terminate
-    if (hThread) {
-        debug("[JAUNCH-WIN32] WAITING FOR STDERR THREAD");
+    // Wait for stderr thread to terminate.
+    if (hThread != NULL) {
+        LOG_DEBUG("WIN32", "Waiting for stderr thread");
         WaitForSingleObject(hThread, INFINITE);
         CloseHandle(hThread);
-        debug("[JAUNCH-WIN32] STDERR THREAD COMPLETE");
+        LOG_DEBUG("WIN32", "Stderr thread complete");
     }
 
-    // Close handles
-    debug("[JAUNCH-WIN32] CLOSING OUTPUT STREAM HANDLES");
+    // Close handles.
+    LOG_DEBUG("WIN32", "Closing output stream handles");
     CloseHandle(stdoutRead);
     CloseHandle(stderrRead);
-    debug("[JAUNCH-WIN32] CLOSING SUBPROCESS HANDLES");
+    LOG_DEBUG("WIN32", "Closing subprocess handles");
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-    debug("[JAUNCH-WIN32] ALL HANDLES CLOSED");
+    LOG_DEBUG("WIN32", "All handles closed");
 
-    // Return the output buffer and the number of lines
+    // Return the output buffer and the number of lines.
     *output = NULL;
     *numOutput = 0;
-    int split_result = SUCCESS;
-    if (totalBytesRead > 0) split_result = split_lines(outputBuffer, "\r\n", output, numOutput);
+    if (totalBytesRead > 0) {
+        outputBuffer[totalBytesRead] = '\0'; // Null-terminate before parsing.
+        split_lines(outputBuffer, "\r\n", output, numOutput);
+    }
     free(outputBuffer);
-    return split_result;
 }
 
-void init_threads() {}
+void runloop_config(const char *directive) {}
+void runloop_run(const char *mode) {}
+void runloop_stop() {}
+
+int init_threads() { return SUCCESS; }
 
 /*
  * The Windows way of displaying a graphical error message.

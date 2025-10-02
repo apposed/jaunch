@@ -1,12 +1,11 @@
-#include <string.h>
+#include <string.h>   // for strcat, strcpy, strdup, strlen, strtok
 #include <dlfcn.h>
-#include <limits.h>
+#include <limits.h>   // for PATH_MAX
 
+#include "logging.h"
 #include "common.h"
 
 #define OS_NAME "linux"
-
-void (*xinit_threads_reference)();
 
 int is_command_available(const char *command) {
     return access(command, X_OK) == 0;
@@ -14,10 +13,10 @@ int is_command_available(const char *command) {
 
 int find_executable(const char *name, char *path_buf, size_t buf_size) {
     char *path_env = getenv("PATH");
-    if (!path_env) return 0;
+    if (path_env == NULL) return 0;
 
     char *path_copy = strdup(path_env);
-    if (!path_copy) return 0;
+    if (path_copy == NULL) return 0;
 
     char *dir = strtok(path_copy, ":");
     while (dir) {
@@ -40,22 +39,28 @@ int find_executable(const char *name, char *path_buf, size_t buf_size) {
 void setup(const int argc, const char *argv[]) {}
 void teardown() {}
 
-void init_threads() {
-    void *libX11Handle = dlopen("libX11.so", RTLD_LAZY);
-    if (libX11Handle != NULL) {
-        debug("[JAUNCH-LINUX] Running XInitThreads");
-        xinit_threads_reference = dlsym(libX11Handle, "XInitThreads");
+void runloop_config(const char *directive) {}
+void runloop_run(const char *mode) {}
+void runloop_stop() {}
 
-        if (xinit_threads_reference != NULL) {
-            xinit_threads_reference();
-        }
-        else {
-            error("Could not find XInitThreads in X11 library: %s\n", dlerror());
-        }
+int init_threads() {
+    LOG_INFO("LINUX", "Running XInitThreads");
+
+    void *libX11Handle = lib_open("libX11.so");
+    if (libX11Handle == NULL) {
+        FAIL(ERROR_MISSING_FUNCTION,
+            "Could not find X11 library, not running XInitThreads.");
     }
-    else {
-        error("Could not find X11 library, not running XInitThreads.\n");
+
+    void (*XInitThreads)() = lib_sym(libX11Handle, "XInitThreads");
+    if (XInitThreads == NULL) {
+        lib_close(libX11Handle);
+        FAIL(ERROR_MISSING_FUNCTION,
+            "Could not find XInitThreads in X11 library: %s", lib_error());
     }
+
+    XInitThreads();
+    return SUCCESS;
 }
 
 /*
@@ -70,40 +75,36 @@ void show_alert(const char *title, const char *message) {
     char exe[PATH_MAX];
 
     if (find_executable("zenity", exe, sizeof(exe))) {
-        char *titleArg = malloc(strlen(title) + 9);  // --title={message}
+        char *titleArg = malloc(strlen(title) + 9); // --title={message}
         strcpy(titleArg, "--title=");
         strcat(titleArg, title);
-        char *textArg = malloc(strlen(message) + 8);  // --text={message}
+        char *textArg = malloc(strlen(message) + 8); // --text={message}
         strcpy(textArg, "--text=");
         strcat(textArg, message);
-        debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s'\n", exe, "--error", titleArg, textArg);
+        LOG_INFO("LINUX", "'%s' '%s' '%s' '%s'", exe, "--error", titleArg, textArg);
         execlp(exe, "zenity", "--error", titleArg, textArg, (char *)NULL);
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
         free(textArg);
-    }
-    else if (find_executable("kdialog", exe, sizeof(exe))) {
-        char *titleArg = malloc(strlen(title) + 9);  // --title={message}
+    } else if (find_executable("kdialog", exe, sizeof(exe))) {
+        char *titleArg = malloc(strlen(title) + 9); // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
-        debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s'\n", exe, "--sorry", titleArg, message);
+        LOG_INFO("LINUX", "'%s' '%s' '%s' '%s'", exe, "--sorry", titleArg, message);
         execlp(exe, "kdialog", "--sorry", titleArg, message, (char *)NULL);
         // Note: execlp replaces the process, so the free calls are orphaned.
         free(titleArg);
-    }
-    else if (find_executable("xmessage", exe, sizeof(exe))) {
-      debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s' '%s'\n", exe,
+    } else if (find_executable("xmessage", exe, sizeof(exe))) {
+      LOG_INFO("LINUX", "'%s' '%s' '%s' '%s' '%s'", exe,
           "-buttons", "OK:0", "-nearmouse", message);
       execlp(exe, "xmessage",
           "-buttons", "OK:0", "-nearmouse", message, (char *)NULL);
-    }
-    else if (find_executable("notify-send", exe, sizeof(exe))) {
-        debug("[JAUNCH-LINUX] '%s' '%s' '%s' '%s' '%s' '%s'\n", exe,
+    } else if (find_executable("notify-send", exe, sizeof(exe))) {
+        LOG_INFO("LINUX", "'%s' '%s' '%s' '%s' '%s' '%s'", exe,
             "-a", title, "-c", "im.error", message);
         execlp(exe, "notify-send",
             "-a", title, "-c", "im.error", message, (char *)NULL);
-    }
-    else {
+    } else {
         printf("%s\n", message);
     }
 }

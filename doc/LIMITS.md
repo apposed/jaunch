@@ -6,7 +6,7 @@
 * Jaunch requires at least Python 3.8, because it uses the Python [Stable ABI]'s [`Py_BytesMain`] function, which was added in Python 3.8.
 
 **Java:**
-* Jaunch has been designed for, and tested with, OpenJDK 8, 11, 17, and 21.
+* Jaunch has been designed for, and tested with, OpenJDK 8, 11, 17, 21, and 25.
 * It might work with earlier versions of Java, but it hasn't been tested.
 * Jaunch has been tested with a variety of OpenJDK flavors; see `jvm.distros-allowed` in [jvm.toml](../configs/jvm.toml) for a list.
 

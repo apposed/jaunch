@@ -2,182 +2,78 @@
 #include <objc/objc.h>
 #include <objc/runtime.h>
 #include <objc/message.h>
-#include <sys/xattr.h>
 #include <dlfcn.h>
-#include <pthread.h>
 #include <spawn.h>
 #include <stdlib.h>
+#include <limits.h>   // for PATH_MAX
+#include <string.h>   // for strcmp, strerror, strlen
+#include <stdio.h>    // for snprintf
+#include <unistd.h>   // for usleep, exit
+
+#include "logging.h"
+#include "common.h"
+#include "thread.h"
+
+#define OS_NAME "macos"
 
 // Declare needed AppKit function without including AppKit,
 // to avoid difficulties with Objective-C versus pure C.
 extern void NSApplicationLoad(void);
 
-#include "common.h"
-
-#define OS_NAME "macos"
+/*
+ * ===========================================================================
+ * MACOS LAUNCHER IMPLEMENTATION NOTES
+ * ===========================================================================
+ *
+ * This file implements macOS-specific runtime launching with careful handling
+ * of CoreFoundation runloop management for both GUI and non-GUI applications.
+ *
+ * RUNLOOP MODES SUPPORTED:
+ * - "main": Runtime runs on main thread (for -XstartOnFirstThread behavior)
+ * - "park": Runtime runs on pthread, main thread runs the event loop
+ * - "none": Runtime runs on main thread, no event loop management
+ * ===========================================================================
+ */
 
 extern char **environ;
 
-struct LaunchConfiguration {
-    LaunchFunc launch_runtime;
-    size_t argc;
-    const char **argv;
-    int exit_code;
-};
-
-static struct LaunchConfiguration config = {
-    .launch_runtime = NULL,
-    .argc = 0,
-    .argv = NULL,
-    .exit_code = 0
-};
-
 static void dummy_call_back(void *info) { }
-
-static void *launch_call_back(void *dummy) {
-    config.exit_code = config.launch_runtime(config.argc, config.argv);
-    CFRunLoopStop(CFRunLoopGetMain());
-    return NULL;
-}
-
-/*
- * Launch runtime on main thread (like OpenJDK's -XstartOnFirstThread), using a
- * simplified but functional equivalent of OpenJDK's NSBlockOperation approach.
- * GUI frameworks like SWT need the runtime to run on the main thread.
- */
-int launch_on_main_thread(const LaunchFunc launch_runtime,
-    const size_t argc, const char **argv)
-{
-    debug("[JAUNCH-MACOS] Launching runtime on main thread "
-        "after NSApplicationLoad (-XstartOnFirstThread style)");
-
-    // Ensure we're actually on the main thread.
-    if (!CFEqual(CFRunLoopGetCurrent(), CFRunLoopGetMain())) {
-        error("[JAUNCH-MACOS] launch_on_main_thread called from non-main thread!");
-        return ERROR_WRONG_THREAD;
-    }
-
-    // Initialize NSApplication if needed (like OpenJDK does).
-    // This ensures AppKit is properly set up for GUI applications.
-    // It does *not* start the event loop, though; that will be the
-    // responsibility of the launched program within the runtime.
-    NSApplicationLoad();
-
-    // Use NSAutoreleasePool for proper Objective-C memory management.
-    Class NSAutoreleasePool = objc_getClass("NSAutoreleasePool");
-    id pool = ((id (*)(id, SEL))objc_msgSend)((id)NSAutoreleasePool, sel_registerName("alloc"));
-    pool = ((id (*)(id, SEL))objc_msgSend)(pool, sel_registerName("init"));
-
-    debug("[JAUNCH-MACOS] Launching runtime directly on main thread");
-    int runtime_result = launch_runtime(argc, argv);
-    debug("[JAUNCH-MACOS] Runtime finished with exit code: %d", runtime_result);
-
-    // Clean up autorelease pool
-    ((void (*)(id, SEL))objc_msgSend)(pool, sel_registerName("drain"));
-
-    return runtime_result;
-}
-
-/*
- * Launch runtime on a new thread, parking the main thread in the event loop.
- */
-int launch_on_pthread(const LaunchFunc launch_runtime,
-    const size_t argc, const char **argv)
-{
-    // Save arguments into global struct, for later retrieval.
-    config.launch_runtime = launch_runtime;
-    config.argc = argc;
-    config.argv = argv;
-
-    // Call the launch function on a dedicated thread.
-    pthread_t thread;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&thread, &attr, launch_call_back, NULL);
-    pthread_attr_destroy(&attr);
-
-    // Run the CoreFoundation event loop here on the main thread.
-
-    debug("[JAUNCH-MACOS] Parking main thread in event loop (OpenJDK style)");
-
-    // Create a far-future timer to keep the run loop active.
-    CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault,
-        1.0e20, 0.0, 0, 0, (CFRunLoopTimerCallBack)dummy_call_back, NULL);
-    CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, kCFRunLoopDefaultMode);
-    CFRelease(timer);
-
-    // Park this thread in the main run loop.
-    int32_t result;
-    do {
-        result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0e20, false);
-        debug("[JAUNCH-MACOS] CFRunLoopRunInMode result: %d", result);
-
-        if (result == kCFRunLoopRunFinished) {
-            debug("[JAUNCH-MACOS] Run loop finished - no sources or timers");
-            break;
-        }
-        else if (result == kCFRunLoopRunStopped) {
-            debug("[JAUNCH-MACOS] Run loop stopped via CFRunLoopStop()");
-            break;
-        }
-        else if (result == kCFRunLoopRunTimedOut) {
-            debug("[JAUNCH-MACOS] Run loop timed out");
-            break;
-        }
-        else if (result == kCFRunLoopRunHandledSource) {
-            debug("[JAUNCH-MACOS] Run loop handled a source, continuing");
-            // Continue running - this is normal operation.
-        }
-        else {
-            debug("[JAUNCH-MACOS] Run loop "
-                "returned unexpected result %d, continuing", result);
-            // Continue for unknown results - be conservative.
-        }
-    } while (true);
-
-    // Wait for application thread to terminate.
-    pthread_join(thread, NULL);
-
-    return config.exit_code;
-}
 
 int handle_translocation(const int argc, const char *argv[]) {
     // Note: This function was generated by Claude.ai. It works
     // for now, but it uses internal security framework functions.
 
     // Load Security framework
-    void *security_framework = dlopen("/System/Library/Frameworks/Security.framework/Security", RTLD_LAZY);
-    if (!security_framework) {
-        debug("[JAUNCH-MACOS] Failed to load Security framework");
+    void *security_framework = lib_open("/System/Library/Frameworks/Security.framework/Security");
+    if (security_framework == NULL) {
+        LOG_DEBUG("MACOS", "Failed to load Security framework");
         return 0; // Continue with normal execution
     }
 
     // Get function pointers
     Boolean (*isTranslocatedFunc)(CFURLRef, Boolean *, CFErrorRef *) =
-        dlsym(security_framework, "SecTranslocateIsTranslocatedURL");
+        lib_sym(security_framework, "SecTranslocateIsTranslocatedURL");
     CFURLRef (*getOriginalPathFunc)(CFURLRef, CFErrorRef *) =
-        dlsym(security_framework, "SecTranslocateCreateOriginalPathForURL");
+        lib_sym(security_framework, "SecTranslocateCreateOriginalPathForURL");
 
-    if (!isTranslocatedFunc || !getOriginalPathFunc) {
-        debug("[JAUNCH-MACOS] Failed to find translocation functions");
-        dlclose(security_framework);
+    if (isTranslocatedFunc == NULL || getOriginalPathFunc == NULL) {
+        LOG_DEBUG("MACOS", "Failed to find translocation functions");
+        lib_close(security_framework);
         return 0; // Continue with normal execution
     }
 
     // Get bundle path
     CFBundleRef mainBundle = CFBundleGetMainBundle();
-    if (!mainBundle) {
-        debug("[JAUNCH-MACOS] Failed to get main bundle");
-        dlclose(security_framework);
+    if (mainBundle == NULL) {
+        LOG_DEBUG("MACOS", "Failed to get main bundle");
+        lib_close(security_framework);
         return 0;
     }
 
     CFURLRef bundleURL = CFBundleCopyBundleURL(mainBundle);
-    if (!bundleURL) {
-        debug("[JAUNCH-MACOS] Failed to get bundle URL");
-        dlclose(security_framework);
+    if (bundleURL == NULL) {
+        LOG_DEBUG("MACOS", "Failed to get bundle URL");
+        lib_close(security_framework);
         return 0;
     }
 
@@ -186,63 +82,63 @@ int handle_translocation(const int argc, const char *argv[]) {
     isTranslocatedFunc(bundleURL, &isTranslocated, NULL);
 
     if (!isTranslocated) {
-        debug("[JAUNCH-MACOS] Application is not translocated");
+        LOG_DEBUG("MACOS", "Application is not translocated");
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0; // Continue with normal execution
     }
 
-    debug("[JAUNCH-MACOS] Application is translocated, finding original path");
+    LOG_DEBUG("MACOS", "Application is translocated, finding original path");
 
     // Get the original path
     CFURLRef originalURL = getOriginalPathFunc(bundleURL, NULL);
-    if (!originalURL) {
-        debug("[JAUNCH-MACOS] Failed to get original path");
+    if (originalURL == NULL) {
+        LOG_DEBUG("MACOS", "Failed to get original path");
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
     // Convert the URL to a filesystem path
     char originalPath[PATH_MAX];
     if (!CFURLGetFileSystemRepresentation(originalURL, TRUE, (UInt8*)originalPath, PATH_MAX)) {
-        debug("[JAUNCH-MACOS] Failed to convert URL to path");
+        LOG_DEBUG("MACOS", "Failed to convert URL to path");
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
-    debug("[JAUNCH-MACOS] Original path: %s", originalPath);
+    LOG_DEBUG("MACOS", "Original path: %s", originalPath);
 
     // Get path to the executable within the bundle
     CFURLRef executableURL = CFBundleCopyExecutableURL(mainBundle);
-    if (!executableURL) {
-        debug("[JAUNCH-MACOS] Failed to get executable URL");
+    if (executableURL == NULL) {
+        LOG_DEBUG("MACOS", "Failed to get executable URL");
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
     char executablePath[PATH_MAX];
     if (!CFURLGetFileSystemRepresentation(executableURL, TRUE, (UInt8*)executablePath, PATH_MAX)) {
-        debug("[JAUNCH-MACOS] Failed to convert executable URL to path");
+        LOG_DEBUG("MACOS", "Failed to convert executable URL to path");
         CFRelease(executableURL);
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
     // Get relative path of executable within bundle
     char bundlePath[PATH_MAX];
     if (!CFURLGetFileSystemRepresentation(bundleURL, TRUE, (UInt8*)bundlePath, PATH_MAX)) {
-        debug("[JAUNCH-MACOS] Failed to convert bundle URL to path");
+        LOG_DEBUG("MACOS", "Failed to convert bundle URL to path");
         CFRelease(executableURL);
         CFRelease(originalURL);
         CFRelease(bundleURL);
-        dlclose(security_framework);
+        lib_close(security_framework);
         return 0;
     }
 
@@ -252,12 +148,12 @@ int handle_translocation(const int argc, const char *argv[]) {
     char originalExecPath[PATH_MAX];
     snprintf(originalExecPath, PATH_MAX, "%s%s", originalPath, relativeExecPath);
 
-    debug("[JAUNCH-MACOS] Original executable path: %s", originalExecPath);
+    LOG_DEBUG("MACOS", "Original executable path: %s", originalExecPath);
 
     // Remove quarantine attribute from the original bundle
     char xattrCmd[PATH_MAX * 2];
     snprintf(xattrCmd, PATH_MAX * 2, "xattr -dr com.apple.quarantine \"%s\"", originalPath);
-    debug("[JAUNCH-MACOS] Removing quarantine attribute: %s", xattrCmd);
+    LOG_DEBUG("MACOS", "Removing quarantine attribute: %s", xattrCmd);
     system(xattrCmd);
 
     // Prepare to relaunch from original location
@@ -274,20 +170,19 @@ int handle_translocation(const int argc, const char *argv[]) {
     CFRelease(executableURL);
     CFRelease(originalURL);
     CFRelease(bundleURL);
-    dlclose(security_framework);
+    lib_close(security_framework);
 
     // Execute the original application
-    debug("[JAUNCH-MACOS] Relaunching from original location");
+    LOG_DEBUG("MACOS", "Relaunching from original location");
     pid_t pid;
     int status = posix_spawn(&pid, originalExecPath, NULL, NULL, args, environ);
 
     if (status == 0) {
-        debug("[JAUNCH-MACOS] Successfully relaunched, exiting translocated instance");
+        LOG_DEBUG("MACOS", "Successfully relaunched, exiting translocated instance");
         free(args);
         exit(0); // Exit this translocated instance
-    }
-    else {
-        debug("[JAUNCH-MACOS] Failed to relaunch: %s", strerror(status));
+    } else {
+        LOG_DEBUG("MACOS", "Failed to relaunch: %s", strerror(status));
         free(args);
         return 0; // Continue with normal execution as fallback
     }
@@ -300,11 +195,128 @@ int handle_translocation(const int argc, const char *argv[]) {
 void setup(const int argc, const char *argv[]) {
     // Thanks to https://objective-see.org/blog/blog_0x15.html.
     // See doc/MACOS.md for why we have to do this.
-  handle_translocation(argc, argv);
+    handle_translocation(argc, argv);
 }
 void teardown() {}
 
-void init_threads() {}
+void runloop_config(const char *directive) {
+    if (directive && strcmp(directive, "JVM") == 0) {
+        // JVM default: park main thread in event loop.
+        ctx_set_runloop_mode("park");
+        LOG_INFO("MACOS", "Setting runloop_mode to %s [auto]", "park");
+    }
+}
+void runloop_run(const char *mode) {
+    ctx_set_runloop_mode(mode);
+    LOG_INFO("MACOS", "Setting runloop_mode to %s", mode);
+
+    if (strcmp(mode, "park") == 0) {
+        LOG_INFO("MACOS", "Initializing runloop (park mode)");
+
+        // Signal early completion, transitioning to runloop state. This
+        // releases the directive thread while we block the main thread with
+        // this runloop.
+        LOG_DEBUG("MACOS", "Invoking ctx_signal_early_completion");
+        ctx_lock();
+        ctx_signal_early_completion(STATE_RUNLOOP);
+        ctx_unlock();
+        LOG_DEBUG("MACOS", "ctx_signal_early_completion invoked");
+
+        // Create a far-future timer to keep the runloop active.
+        // This timer is necessary to prevent the runloop from exiting immediately
+        // when there are no other sources/timers scheduled.
+        LOG_DEBUG("MACOS", "Creating far-future timer");
+        CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault,
+            1.0e20, 0.0, 0, 0, (CFRunLoopTimerCallBack)dummy_call_back, NULL);
+        CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopDefaultMode);
+        CFRelease(timer);
+        LOG_DEBUG("MACOS", "Timer created");
+
+        // Run the main runloop.
+        LOG_DEBUG("MACOS", "Invoking CFRunLoopRun");
+        CFRunLoopRun();
+        LOG_DEBUG("MACOS", "CFRunLoopRun completed");
+
+        // Now that the runloop has exited, transition back to WAITING state.
+        ctx_lock();
+        if (ctx()->state == STATE_RUNLOOP) {
+            LOG_DEBUG("MACOS", "Transitioning from RUNLOOP to WAITING after CFRunLoopRun returned");
+            ctx_set_state(STATE_WAITING);
+            ctx_signal_main();
+        }
+        ctx_unlock();
+    } else {
+        LOG_INFO("MACOS", "Runloop mode '%s' - no event loop needed", mode);
+        // For non-park modes, just return normally - no early completion needed
+    }
+}
+void runloop_stop() {
+    // First, try to stop the runloop directly.
+    LOG_DEBUG("MACOS", "Invoking CFRunLoopStop");
+    CFRunLoopStop(CFRunLoopGetMain());
+    LOG_DEBUG("MACOS", "CFRunLoopStop completed");
+
+    // Note: On macOS, GUI frameworks like Java AWT/Swing fundamentally
+    // alter the CoreFoundation runloop state during initialization, making
+    // clean shutdown extremely difficult. When AWT initializes, it:
+    //
+    // 1. Adds 15+ runloop modes (vs. 1 for non-GUI apps):
+    //    - AWTRunLoopMode
+    //    - NSEventTrackingRunLoopMode
+    //    - NSModalPanelRunLoopMode
+    //    - NSGraphicsRunLoopMode
+    //    - And 11+ others...
+    //
+    // 2. Installs event sources and timers that keep the runloop active.
+    //
+    // Once AWT has made these changes, the CFRunLoopStop function can no
+    // longer stop the runloop. Here are some things we tried to make it work:
+    //
+    // 1. Custom CFRunLoopSource with callbacks:
+    //    - Created custom runloop source to signal shutdown
+    //    - Added to default mode and signaled via CFRunLoopSourceSignal()
+    //    - Callback never gets invoked when AWT modes dominate
+    //
+    // 2. Short polling intervals with volatile flags:
+    //    - Used CFRunLoopRunInMode() with 0.1s timeouts
+    //    - Checked volatile sig_atomic_t flag between iterations
+    //    - But CFRunLoopRunInMode() NEVER RETURNS after AWT init
+    //    - Pre-AWT: returns normally with kCFRunLoopRunTimedOut every 0.1s
+    //    - Post-AWT: never returns, not even after minutes of waiting
+    //    - AWT sources/timers/observers might keep runloop perpetually busy?
+    //
+    // 3. CFRunLoopWakeUp + CFRunLoopStop approach:
+    //    - Attempted to wake up the runloop before stopping it
+    //    - Still fails because CFRunLoopRunInMode never processes the signals
+    //    - Main thread polling loop remains stuck in the never-returning call
+    //
+    // Therefore, as a fallback, we implement a timeout mechanism to detect
+    // when the runloop fails to shut down cleanly and force-exit if needed.
+
+    // Give the runloop a brief period to shut down gracefully.
+    const double timeout_seconds = 0.1;
+    const double start_time = CFAbsoluteTimeGetCurrent();
+
+    while (1) {
+        ctx_lock();
+        ThreadState current_state = ctx()->state;
+        int exit_code = ctx()->exit_code;
+        ctx_unlock();
+
+        if (current_state != STATE_RUNLOOP) break;
+
+        double elapsed = CFAbsoluteTimeGetCurrent() - start_time;
+        if (elapsed > timeout_seconds) {
+            LOG_INFO("MACOS", "CFRunLoop failed to terminate; forcing process exit", timeout_seconds);
+            exit(exit_code);
+        }
+        usleep(1000);
+    }
+
+    LOG_INFO("MACOS", "CFRunLoop has successfully terminated! ^_^");
+}
+
+int init_threads() { return SUCCESS; }
 
 /*
  * The macOS way of displaying a graphical error message.
@@ -333,13 +345,13 @@ void show_alert(const char *title, const char *message) {
     pool = ((id (*)(id, SEL))objc_msgSend)(pool, sel_registerName("init"));
 
     // Initialize application
-    ((void(*)(void))NSApplicationLoad)();  // Cast the function pointer
+    ((void(*)(void))NSApplicationLoad)(); // Cast the function pointer
     id app = ((id (*)(id, SEL))objc_msgSend)((id)NSApplication, sel_registerName("sharedApplication"));
 
     // Create strings
-    id nsTitle = ((id (*)(id, SEL, const char*))objc_msgSend)((id)NSString,
+    id nsTitle = ((id (*)(id, SEL, const char *))objc_msgSend)((id)NSString,
         sel_registerName("stringWithUTF8String:"), title);
-    id nsMessage = ((id (*)(id, SEL, const char*))objc_msgSend)((id)NSString,
+    id nsMessage = ((id (*)(id, SEL, const char *))objc_msgSend)((id)NSString,
         sel_registerName("stringWithUTF8String:"), message);
 
     // Create and configure alert
@@ -360,24 +372,50 @@ void show_alert(const char *title, const char *message) {
  *
  * The behavior depends on the runloop mode:
  * - "main": Launch on main thread with event loop (like Java's -XstartOnFirstThread flag)
- * - "park": Launch on pthread, park main thread in event loop (like OpenJDK's default behavior)
+ * - "park": Launch on pthread, main thread runs the event loop (like OpenJDK's default behavior)
  * - "none": Launch on main thread, no event loop (e.g. Python Qt apps)
  */
 int launch(const LaunchFunc launch_runtime,
     const size_t argc, const char **argv)
 {
-    const int mode = effective_runloop_mode();
+    int runtime_result = SUCCESS;
 
-    if (mode == RUNLOOP_MAIN) {
-        debug("[JAUNCH-MACOS] Launching on main thread with NSApplicationLoad");
-        return launch_on_main_thread(launch_runtime, argc, argv);
-    }
-    if (mode == RUNLOOP_PARK) {
-        debug("[JAUNCH-MACOS] Launching on pthread, parking main thread in event loop");
-        return launch_on_pthread(launch_runtime, argc, argv);
+    // Note: For "park" mode, this function will be invoked from the already
+    // active thread, whereas for "main" and "none" modes, it will be invoked
+    // from the main thread. Therefore, we only need to differentiate between
+    // "main" and "none" here.
+
+    const char *runloop_mode = ctx_get_runloop_mode();
+    int main_mode = runloop_mode && strcmp(runloop_mode, "main") == 0;
+    if (main_mode) {
+        // GUI frameworks like SWT need the runtime to run on the main thread, but
+        // might expect the following setup to have been performed. Needs testing!
+
+        // Initialize NSApplication if needed (like OpenJDK does).
+        // This ensures AppKit is properly set up for GUI applications.
+        // It does *not* start the event loop, though; that will be the
+        // responsibility of the launched program within the runtime.
+        LOG_DEBUG("MACOS", "Invoking NSApplicationLoad (-XstartOnFirstThread style)");
+        NSApplicationLoad();
+
+        // Use NSAutoreleasePool for proper Objective-C memory management.
+        LOG_DEBUG("MACOS", "Configuring autorelease pool (-XstartOnFirstThread style)");
+        Class NSAutoreleasePool = objc_getClass("NSAutoreleasePool");
+        id pool = ((id (*)(id, SEL))objc_msgSend)((id)NSAutoreleasePool, sel_registerName("alloc"));
+        pool = ((id (*)(id, SEL))objc_msgSend)(pool, sel_registerName("init"));
+
+        LOG_INFO("MACOS", "Launching runtime (\"main\" mode)");
+        runtime_result = launch_runtime(argc, argv);
+        LOG_INFO("MACOS", "Runtime finished with code: %d", runtime_result);
+
+        LOG_DEBUG("MACOS", "Cleaning up autorelease pool (-XstartOnFirstThread style)");
+        ((void (*)(id, SEL))objc_msgSend)(pool, sel_registerName("drain"));
+    } else {
+        // Either "none" or "park" mode, depending on the current thread.
+        LOG_INFO("MACOS", "Launching runtime");
+        runtime_result = launch_runtime(argc, argv);
+        LOG_INFO("MACOS", "Runtime finished with code: %d", runtime_result);
     }
 
-    // mode == RUNLOOP_NONE
-    debug("[JAUNCH-MACOS] Launching directly on main thread, no event loop");
-    return launch_runtime(argc, argv);
+    return runtime_result;
 }

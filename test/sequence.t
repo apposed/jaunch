@@ -24,20 +24,32 @@ Detect libjvm and libpython locations:
   $ echo "libpython = $libpython"
   libpython = *python* (glob)
 
-Set up custom configurator:
+Prepare for custom configurator:
 
   $ cp -rp jaunch jaunch.original
   $ rm jaunch/jaunch*
-  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" ../test/sequence.sh > jaunch/jaunch
+
+Test simple sequence of directives (no Java AWT):
+
+  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" ../test/sequence-simple.sh > jaunch/jaunch
   $ chmod +x jaunch/jaunch
-
-Test complex sequence of hardcoded directives involving Java AWT:
-
   $ ./hi
   Hello, 1-JVM-main!
   Hello, 2-PYTHON-main!
-  Error creating Java Virtual Machine
-  [3]
+  Hello, 3-PYTHON-main!
+  Hello, 4-JVM-main!
+
+Test complex sequence of directives involving Java AWT:
+
+  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" ../test/sequence-awt.sh > jaunch/jaunch
+  $ chmod +x jaunch/jaunch
+  $ ./hi
+  Hello, 1-JVM-main!
+  Hello, 2-PYTHON-main!
+  Hello, 3-JVM-EDT!
+  Hello, 4-PYTHON-main!
+  Hello, 5-JVM-main!
+  Hello, 6-JVM-EDT!
 
 Cleanup:
 

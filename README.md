@@ -86,11 +86,11 @@ necessarily *bundling* Python.
 
 ### Support runtime customization of runtime launch parameters
 
-* Customize at runtime which arguments are passed to the runtime itself.
-* Customize at runtime which arguments are passed to the main class.
-* Customize at runtime which program (Java main class or Python script) is run.
+* Customize dynamically which arguments are passed to the runtime itself.
+* Customize dynamically which arguments are passed to the main class or script.
+* Customize dynamically which program (Java main class or Python script) is run.
 
-### Customize launcher behavior without recompiling native binaries
+### Customize launcher behavior without rebuilding native binaries
 
 * Editable TOML files let users customize launcher behavior,
   e.g. adding shortcuts for common command line operations.
@@ -109,6 +109,12 @@ necessarily *bundling* Python.
   besides standard platform libraries.
 * Where feasible, compress native binaries using [upx].
 
+### Support portable applications
+
+* Jaunch is designed to be especially useful for creating [portable applications].
+* No installation needed; ship launchers for all supported platforms.
+* Update the application without needing to re-sign launcher binaries.
+
 ## Architecture
 
 Jaunch consists of two parts:
@@ -117,12 +123,12 @@ Jaunch consists of two parts:
 
 2. A "configurator" executable written in [Kotlin Native], which does the heavy lifting.
 
-The native launcher (1) will be named after your particular application, it is placed in
-the base directory of your application. For example, for an application called Fizzbuzz,
-the launcher could be named `fizzbuzz.exe`.
+The native launcher (1) will be named after your particular application, and is
+placed in the base directory of your application. For example, for an application
+called Fizzbuzz, the launcher could be named `fizzbuzz.exe`.
 
 The configurator (2) is named `jaunch-<os>-<arch>.exe`, and placed in the `jaunch`
-subdirectory of your application. Examples: for ARM64 Linux it would be named
+subdirectory of your application. Examples: for arm64 Linux it would be named
 `jaunch/jaunch-linux-arm64`, whereas for x86-64 Windows it would be named
 `jaunch/jaunch-windows-x64.exe`. The reason for the `<os>-<arch>` suffix is so that
 portable applications can ship with all needed jaunch configurator executables in
@@ -135,7 +141,7 @@ Each directive block is a sequence of lines, structured as follows:
 
 1. The directive for the native launcher to perform:
    - `JVM` to launch a JVM program using [JNI] functions (e.g. [`JNI_CreateJavaVM`]).
-   - `PYTHON` to launch a Python program using Python's [Stable ABI] (e.g. [`Py_BytesMain`]).
+   - `PYTHON` to launch a Python program using Python's [Stable ABI] ([`Py_BytesMain`]).
    - `SETCWD` to change the current working directory.
    - `INIT_THREADS` to enable X11 multithreading on [Linux].
    - `RUNLOOP` to set the runloop mode for [macOS] event handling (main, park, none, auto).
@@ -151,11 +157,16 @@ Each directive block is a sequence of lines, structured as follows:
      2. Number of subsequent lines with arguments to the JVM;
      3. Arguments to the JVM, one per line;
      4. The main class to execute;
-     5. Arguments to the main program, one per line. The number of main program arguments is calculated from the total number of directive block lines minus the number of already-parsed lines.
+     5. Arguments to the main program, one per line. The number of main program
+        arguments is calculated from the total number of directive block lines
+        minus the number of already-parsed lines.
 
    - For `PYTHON`:
      1. Path to the python native library;
-     2. Arguments to Python, one per line, including Python runtime arguments if any, main script if any, and main script arguments if any. The number of arguments is calculated from the total number of directive block lines minus the number of already-parsed lines (which is always only 1: the python native library path).
+     2. Arguments to Python, one per line, including Python runtime arguments if any,
+        main script if any, and main script arguments if any. The number of arguments is
+        calculated from the total number of directive block lines minus the number of
+        already-parsed lines (which is always only 1: the python native library path).
 
    - For `SETCWD`:
      1. The path to set as the new current working directory.
@@ -163,11 +174,21 @@ Each directive block is a sequence of lines, structured as follows:
    - For `INIT_THREADS`: no further lines; this directive has no parameters.
 
    - For `RUNLOOP`:
-     1. The runloop mode: `main` (run on main thread with `NSApplication` initialization to support toolkits like SWT), `park` (event loop on main thread, launch on separate thread, to support toolkits like AWT/Swing), `none` (run on main thread with no event loop handling, to avoid clashing with toolkits like Qt), or `auto` (automatic selection based on the runtime being launched: `park` for JVM, `none` otherwise).
+     1. The runloop mode:
+        - `main`: run on main thread with `NSApplication` initialization to support
+          toolkits like SWT, modeled after Java's `-XstartOnFirstThread` flag;
+        - `park`: event loop on main thread, launch on separate thread, to support
+          toolkits like AWT/Swing, modeled after Java's default behavior;
+        - `none`: run on main thread with no event loop handling, to avoid clashing with
+          toolkits like Qt;
+        - `auto`: automatic selection based on the runtime being launched:
+          `park` for JVM, `none` otherwise.
 
    - For `ERROR`:
      1. The exit code to use when the launcher terminates.
-     2. Error message lines. The number of error message lines is calculated from the total number of directive block lines minus the number of already-parsed lines (which is always only 1: the exit code).
+     2. Error message lines. The number of error message lines is calculated from the
+        total number of directive block lines minus the number of already-parsed lines
+        (which is always only 1: the exit code).
 
    - For `ABORT`: no further lines; parsing stops here.
 
@@ -194,7 +215,8 @@ jaunch configurator native binaries with different TOML configurations.
 
 ## Alternatives
 
-As so often in technology, there are so many. And yet nothing that does what this program does!
+As so often in technology, there are so many. And yet nothing that does what this
+program does!
 
 ### Other Java launching approaches
 
@@ -211,14 +233,19 @@ As so often in technology, there are so many. And yet nothing that does what thi
 #### jpackage
 
 * Pros:
-  * [Official tooling](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jpackage.html) supported by the OpenJDK project.
+  * [Official
+    tooling](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jpackage.html)
+    supported by the OpenJDK project.
 * Cons:
-  * Imposes its opinions on the application directory structure (e.g. jars must go in `libs` folder).
-  * Standalone executable launcher does not support passing JVM arguments (e.g. `-Xmx5g` to override max heap size).
+  * Imposes its opinions on the application directory structure
+    (e.g. jars must go in `libs` folder).
+  * Standalone executable launcher does not support passing JVM arguments
+    (e.g. `-Xmx5g` to override max heap size).
   * Always bundles a Java runtime, rather than discovering existing Java installations.
 * Example:
   * The [QuPath] project uses jpackage for its launcher.
-    * QuPath provides a configuration dialog to modify the Java maximum heap size, which it handles by editing the jpackage .cfg file on the user's behalf.
+    * QuPath provides a configuration dialog to modify the Java maximum heap size,
+      which it handles by editing the jpackage .cfg file on the user's behalf.
 
 You can use [jpackage] to generate one for every platform you want to support: typically
 Linux, macOS, and Windows. The jpackage tool is part of the Java Development Kit (JDK),
@@ -275,8 +302,9 @@ But jpackage is inflexible:
   [bug](https://en.wikipedia.org/wiki/Gatekeeper_%28macOS%29#Implications) or a
   [feature](https://news.ycombinator.com/item?id=26946297)...
 
-All of that said, jpackage is a very nice tool, and if it works for you, use it! But if you
-want more flexibility&mdash;if you want to launch Java ***Your** Way*&mdash;then try Jaunch.
+All of that said, jpackage is a very nice tool, and if it works for you, use it!
+But if you want more flexibility&mdash;if you want to
+launch Java ***Your** Way*&mdash;then try Jaunch.
 
 #### Call `java` in its own separate process
 
@@ -285,12 +313,17 @@ E.g., via shell scripts such as `Contents/MacOS/JavaApplicationStub`.
 * Pros:
   * Very flexible and easy to code.
 * Cons:
-  * Needs OpenJDK already installed and available on the system `PATH`, and/or pointed at by `JAVA_HOME`, and/or known to `/usr/libexec/java_home` on macOS, `/usr/bin/update-java-alternatives` on Linux, etc. In a nutshell: you are doing your own discovery of OpenJDK installations.
+  * Needs OpenJDK already installed and available on the system `PATH`, and/or pointed
+    at by `JAVA_HOME`, and/or known to `/usr/libexec/java_home` on macOS,
+    `/usr/bin/update-java-alternatives` on Linux, etc. In a nutshell: you are doing
+    your own discovery of OpenJDK installations.
 * Example:
-  * The [Icy](https://icy.bioimageanalysis.org/) project uses shell script launchers on macOS and Linux, and a mystery meat (AFAICT) .exe launcher on Windows.
+  * The [Icy](https://icy.bioimageanalysis.org/) project uses shell script launchers
+    on macOS and Linux, and a mystery meat (AFAICT) .exe launcher on Windows.
     * For Linux, the `java` on the system path is used.
     * For macOS, the `java` given by `/usr/libexec/java_home -v 1.8` is used.
-    * In both cases, no arguments can be passed to the program (neither to the JVM nor to the Icy application).
+    * In both cases, no arguments can be passed to the program (neither to the JVM
+      nor to the Icy application).
 
 #### Lean on command-line tools
 
@@ -303,18 +336,22 @@ E.g.
 * Pros:
   * Leave it to dedicated external code to install and manage your JDKs.
 * Cons:
-  * Unfriendly to require non-technical users to run terminal commands to launch a GUI-based application.
+  * Unfriendly to require non-technical users to run terminal commands
+    to launch a GUI-based application.
 
 #### Use a general-purpose Java launcher
 
-[install4j](https://www.ej-technologies.com/products/install4j/overview.html) by ej Technologies.
-* You can pass parameters to the JVM at runtime [via the `-J` argument prefix](https://stackoverflow.com/a/63318626/1207769).
+[install4j](https://www.ej-technologies.com/products/install4j/overview.html)
+by ej Technologies.
+* You can pass parameters to the JVM at runtime
+  [via the `-J` argument prefix](https://stackoverflow.com/a/63318626/1207769).
 * Closed source.
 
 [launch4j](https://launch4j.sourceforge.net/)
 * Must choose console or GUI a priori for Windows flavor.
 * Still hosted on SourceForge.
-* Can customize JVM options at runtime, but only by editing the application's `.l4j.ini` file.
+* Can customize JVM options at runtime, but only
+  by editing the application's `.l4j.ini` file.
 
 [WinRun4J](https://github.com/poidasmith/winrun4j)
 * Windows only.
@@ -332,7 +369,8 @@ E.g.
 * Written in Kotlin (Native/KMP application).
 * Proof of concept for loading libjvm to launch Java code from a Kotlin program.
 * Built binary is 518K.
-* Does not use `dlopen`/`dlsym`, but rather links to libjvm. See my [post on Kotlin Discuss](https://discuss.kotlinlang.org/t/27756).
+* Does not use `dlopen`/`dlsym`, but rather links to libjvm. See my
+  [post on Kotlin Discuss](https://discuss.kotlinlang.org/t/27756).
 * Also links to libpthread, unlike other native launchers on this list.
 
 #### Example Java launchers
@@ -342,7 +380,8 @@ E.g.
 * Built binary is 91K.
 * More lines of C code than Jaunch's C and Kotlin pieces combined.
 * Supports custom runtime arguments to both ImageJ/Fiji and the JVM.
-* Sometimes needs to re-exec with `execvp`, either itself with changes to environment variables, or the system Java.
+* Sometimes needs to re-exec with `execvp`, either itself with changes
+  to environment variables, or the system Java.
 
 [ijp-imagej-launcher](https://github.com/ij-plugins/ijp-imagej-launcher)
 * Written in Scala.
@@ -352,10 +391,12 @@ E.g.
 
 [Why](https://github.com/AstroImageJ/Why) (AstroImageJ)
 * Written in Rust.
-* Uses [jni-rs](https://github.com/jni-rs/jni-rs) crate, which leans on the intelligent Java discovery of [java-locator](https://crates.io/crates/java-locator).
+* Uses [jni-rs](https://github.com/jni-rs/jni-rs) crate, which leans on the intelligent
+  Java discovery of [java-locator](https://crates.io/crates/java-locator).
 * Built binary is 51M.
 * Minimal dynamic library dependencies.
-* Project clearly targets Windows only; I had to modify the `Cargo.toml` and `file_handler.rs` in order to compile it for Linux.
+* Project clearly targets Windows only; I had to modify the
+  `Cargo.toml` and `file_handler.rs` in order to compile it for Linux.
 * No stated license.
 
 ### Other Python launching approaches
@@ -363,17 +404,21 @@ E.g.
 #### PyInstaller
 
 From [the PyInstaller website](https://pyinstaller.org/):
-> PyInstaller bundles a Python application and all its dependencies into a single package. The user can run the packaged app without installing a Python interpreter or any modules.
+> PyInstaller bundles a Python application and all its dependencies into
+> a single package. The user can run the packaged app without installing
+> a Python interpreter or any modules.
 
 #### Briefcase
 
 From [the Briefcase website](https://beeware.org/project/projects/tools/briefcase/):
-> Briefcase is a tool for converting a Python project into a standalone native application."
+> Briefcase is a tool for converting a Python project
+> into a standalone native application.
 
 #### constructor
 
 From [the constructor website](https://conda.github.io/constructor/):
-> `constructor` is a tool which allows constructing an installer for a collection of conda packages.
+> `constructor` is a tool which allows constructing
+> an installer for a collection of conda packages.
 
 ------------------------------------------------------------------------------
 
@@ -395,4 +440,5 @@ From [the constructor website](https://conda.github.io/constructor/):
 [`Py_BytesMain`]: https://docs.python.org/3/c-api/veryhigh.html#c.Py_BytesMain
 [jpackage]: https://docs.oracle.com/en/java/javase/21/docs/specs/jni/invocation.html#creating-the-vm
 [macOS]: doc/MACOS.md
+[portable applications]: https://en.wikipedia.org/wiki/Portable_application
 [upx]: https://upx.github.io/

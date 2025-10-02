@@ -319,8 +319,7 @@ fun readConfig(
             for (p in glob(includeFile.path)) {
                 theConfig = readConfig(File(p), config = theConfig, visited = theVisited)
             }
-        }
-        else {
+        } else {
             theConfig = readConfig(includeFile, config = theConfig, visited = theVisited)
         }
     }

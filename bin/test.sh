@@ -14,4 +14,9 @@ then
   exit 2
 fi
 
-prysk -v test
+if [ "$#" -gt 0 ]
+then
+  prysk -v "$@"
+else
+  prysk -v test
+fi

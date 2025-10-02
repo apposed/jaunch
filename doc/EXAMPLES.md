@@ -11,7 +11,7 @@ includes several demo applications powered by Jaunch:
   An entry point into the [Jython](https://jython.org/) console.
 
 * REPL -
-  A dual-platform app capable of launching both the Python REPL
+  A dual-runtime app capable of launching both the Python REPL
   and Java's JShell, depending on which flag you pass at launch.
 
 * Paunch -

@@ -1,10 +1,10 @@
 #ifndef _JAUNCH_COMMON_H
 #define _JAUNCH_COMMON_H
 
-#include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string.h>   // for strcat, strdup, strlen, strtok
+
+#include "logging.h"
 
 #define SUCCESS 0
 #define ERROR_DLOPEN 1
@@ -14,20 +14,17 @@
 #define ERROR_GET_STATIC_METHOD_ID 5
 #define ERROR_PIPE 6
 #define ERROR_FORK 7
-#define ERROR_EXECLP 8
+#define ERROR_EXEC 8
 #define ERROR_MALLOC 9
 #define ERROR_REALLOC 10
 #define ERROR_WAITPID 11
 #define ERROR_STRDUP 12
 #define ERROR_COMMAND_PATH 13
-#define ERROR_OUTPUT 14
 #define ERROR_ARGC_OUT_OF_BOUNDS 15
 #define ERROR_UNKNOWN_DIRECTIVE 16
-#define ERROR_WRONG_THREAD 17
-
-#define RUNLOOP_NONE 0
-#define RUNLOOP_MAIN 1
-#define RUNLOOP_PARK 2
+#define ERROR_BAD_DIRECTIVE_SYNTAX 17
+#define ERROR_MISSING_FUNCTION 18
+#define ERROR_BAD_LOCKING 19
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -39,79 +36,53 @@ void *lib_open(const char *path);
 void *lib_sym(void *library, const char *symbol);
 void lib_close(void *library);
 char *lib_error();
-int run_command(const char *command,
+void run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output);
 
 // Implementations in linux.h, macos.h, win32.h
 void setup(const int argc, const char *argv[]);
 void teardown();
-void init_threads();                                     // INIT_THREADS
+void runloop_config(const char *directive);
+void runloop_run(const char *mode);
+void runloop_stop();
+int init_threads();                                      // INIT_THREADS
 void show_alert(const char *title, const char *message); // ERROR
 typedef int (*LaunchFunc)(const size_t, const char **);
 int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
     const size_t argc, const char **argv);
 
-// ============
-// GLOBAL STATE
-// ============
-int debug_mode = 0;
-int headless_mode = 0;
-char *runloop_mode = "auto";
-char *directive = NULL;
-
 // =================
 // UTILITY FUNCTIONS
 // =================
 
-void print_at_level(int verbosity, const char *fmt, ...) {
-    if (debug_mode < verbosity) return;
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    fputc('\n', stderr);
-    fflush(stderr);
-}
-
-#define error(fmt, ...) print_at_level(0, fmt, ##__VA_ARGS__)
-#define debug(fmt, ...) print_at_level(1, fmt, ##__VA_ARGS__)
-#define debug_verbose(fmt, ...) print_at_level(2, fmt, ##__VA_ARGS__)
-
-#define CHECK_ARGS(prefix, name, argc, min, max, argv) \
-    do { \
-        debug_verbose("[%s] %s_argc = %zu", (prefix), (name), (argc)); \
-        if ((argc) < (min) || (argc) > (max)) { \
-            error("Error: %s_argc value %d is out of bounds [%d, %d]\n", \
-                name, (argc), (min), (max)); \
-            return ERROR_ARGC_OUT_OF_BOUNDS; \
-        } \
-        for (size_t a = 0; a < (argc); a++) { \
-            debug_verbose("[%s] %s_argv[%zu] = %s", (prefix), (name), a, argv[a]); \
-        } \
-    } \
-    while(0)
+#define CHECK_ARGS(component, name, argc, min, max, argv) do { \
+    LOG_DEBUG(component, "%s_argc = %zu", (name), (argc)); \
+    if ((argc) < (min) || (argc) > (max)) \
+        DIE(ERROR_ARGC_OUT_OF_BOUNDS, \
+            "Error: %s_argc value %d is out of bounds [%d, %d]", \
+            (name), (argc), (min), (max)); \
+    for (size_t a = 0; a < (argc); a++) \
+        LOG_DEBUG(component, "%s_argv[%zu] = %s", (name), a, (argv)[a]); \
+} while (0)
 
 /* Splits an output buffer into lines. */
-int split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
+void split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     size_t lineCount = 0;
     char *token = strtok(buffer, delim);
     while (token != NULL) {
         *output = realloc(*output, (lineCount + 1) * sizeof(char *));
         if (*output == NULL) {
-          error("Failed to reallocate memory (split lines)");
-          return ERROR_REALLOC;
+            DIE(ERROR_REALLOC, "Failed to reallocate memory (split lines)");
         }
         (*output)[lineCount] = strdup(token);
         if ((*output)[lineCount] == NULL) {
-          error("Failed to duplicate string");
-          return ERROR_STRDUP;
+            DIE(ERROR_STRDUP, "Failed to duplicate string");
         }
         lineCount++;
         token = strtok(NULL, delim);
     }
     *numOutput = lineCount;
-    return SUCCESS;
 }
 
 /* Joins strings with the given delimiter. Returns newly allocated string. */
@@ -137,23 +108,6 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
     }
 
     return result;
-}
-
-/*
- * Determine the effective runloop mode based on the current directive and runloop_mode.
- * If runloop_mode is "auto", use smart defaults based on the runtime type.
- */
-const int effective_runloop_mode() {
-    if (strcmp(runloop_mode, "none") == 0) return RUNLOOP_NONE;
-    if (strcmp(runloop_mode, "main") == 0) return RUNLOOP_MAIN;
-    if (strcmp(runloop_mode, "park") == 0) return RUNLOOP_PARK;
-
-    if (strcmp(runloop_mode, "auto") != 0) {
-        error("WARNING: Unknown runloop mode '%s' will behave as 'auto'", runloop_mode);
-    }
-    return directive && strcmp(directive, "JVM") == 0
-        ? RUNLOOP_PARK   // JVM default: park main thread in event loop.
-        : RUNLOOP_NONE;  // Non-JVM runtime: don't handle the event loop.
 }
 
 #endif

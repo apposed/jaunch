@@ -85,8 +85,7 @@ actual class File actual constructor(rawPath: String) {
                             if (readCount > 0) {
                                 content.append(buffer.decodeToString(0, readCount))
                             }
-                        }
-                        else {
+                        } else {
                             printlnErr("Error reading file '$this': ${lastError()}")
                         }
                     }
@@ -119,7 +118,7 @@ actual class File actual constructor(rawPath: String) {
                         null
                     )
 
-                    if (result == 0) {  // 0 indicates failure in Windows
+                    if (result == 0) { // 0 indicates failure in Windows
                         throw RuntimeException("Error writing to file '$this': ${lastError()}")
                     }
                 }

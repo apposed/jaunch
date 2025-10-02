@@ -72,7 +72,8 @@
 
 8. Copy your application code (Python scripts, Java JAR files, etc.)
    into the `Fizzbuzz` directory structure into locations of your
-   choice. For example, Java JAR files might live in `lib` or `jars`.
+   choice. For example, Java JAR files might live in `lib` or `jars`,
+   depending how you configure the `jvm.classpath` in your `fizzbuzz.toml`.
 
 9. Test your application by executing the appropriate launcher in debug mode:
    - Linux: `Fizzbuzz/fizzbuzz --debug`

@@ -62,7 +62,7 @@ Memory tests: Try running the app using percents with each alias
 Memory tests: Run the app to verify the invalid heap size
   $ ./hi --memory -2g
   Invalid maximum heap size: -Xmx-2g
-  Error creating Java Virtual Machine
+  [ERROR] Failed to create the Java Virtual Machine
   [3]
 
 Memory tests: use a .cfg file to override memory settings
@@ -83,7 +83,7 @@ Memory tests: use a .cfg file to override memory settings
 Classpath tests: move our .class file and verify we broke things
   $ mv HelloWorld.class ..
   $ ./hi
-  Error finding class HelloWorld
+  [ERROR] Failed to locate class HelloWorld
   [4]
 
 Make sure each alias works now

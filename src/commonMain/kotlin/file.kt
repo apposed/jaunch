@@ -81,8 +81,7 @@ private fun glob(prefixes: List<String>, remaining: String?): List<String> {
                 if (re.matches(file.name)) hits += file.path
             }
         }
-    }
-    else {
+    } else {
         // It's a normal path fragment.
         for (prefix in prefixes) {
             val file = File("$prefix$SLASH$name")

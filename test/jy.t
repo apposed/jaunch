@@ -80,4 +80,4 @@ Test divider symbol handling.
   after
 
   $ ./jy --headless bad -- good 2>&1 | head -n1
-  Unrecognized runtime argument: bad
+  [ERROR] Unrecognized runtime argument: bad
