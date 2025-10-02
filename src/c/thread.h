@@ -1,10 +1,11 @@
 #ifndef _JAUNCH_THREAD_H
 #define _JAUNCH_THREAD_H
 
-#include <pthread.h>
-#include <stdlib.h>
+#include <stdlib.h>   // for exit, NULL, size_t, free, malloc
+#include <pthread.h>  // for pthread_mutex, pthread_cond, etc.
 
 #include "logging.h"
+#include "common.h"   // for ERROR_MALLOC
 
 // ===============
 // DATA STRUCTURES
