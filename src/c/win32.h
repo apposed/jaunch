@@ -352,7 +352,7 @@ void run_command(const char *command,
     }
 
     while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
-        if (totalBytesRead + bytesRead > bufferSize) {
+        if (totalBytesRead + bytesRead >= bufferSize) {
             bufferSize *= 2;
             outputBuffer = realloc(outputBuffer, bufferSize);
             if (outputBuffer == NULL) {
@@ -383,7 +383,10 @@ void run_command(const char *command,
     // Return the output buffer and the number of lines.
     *output = NULL;
     *numOutput = 0;
-    if (totalBytesRead > 0) split_lines(outputBuffer, "\r\n", output, numOutput);
+    if (totalBytesRead > 0) {
+        outputBuffer[totalBytesRead] = '\0'; // Null-terminate before parsing.
+        split_lines(outputBuffer, "\r\n", output, numOutput);
+    }
     free(outputBuffer);
 }
 
