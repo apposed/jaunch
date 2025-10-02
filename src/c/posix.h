@@ -108,15 +108,7 @@ void run_command(const char *command,
         }
 
         while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
-            if (totalBytesRead + bytesRead >= bufferSize) {
-                bufferSize *= 2;
-                outputBuffer = realloc(outputBuffer, bufferSize);
-                if (outputBuffer == NULL) {
-                    DIE(ERROR_REALLOC, "Failed to reallocate memory (run_command)");
-                }
-            }
-            memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
-            totalBytesRead += bytesRead;
+            append_to_buffer(&outputBuffer, &bufferSize, &totalBytesRead, buffer, bytesRead);
         }
 
         // Close the read end of stdout.
