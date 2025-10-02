@@ -18,6 +18,14 @@ typedef enum {
     STATE_COMPLETE     // All directive processing is complete
 } ThreadState;
 
+static inline char *thread_state(ThreadState state) {
+  if (state == STATE_WAITING) return "WAITING";
+  if (state == STATE_EXECUTING) return "EXECUTING";
+  if (state == STATE_RUNLOOP) return "RUNLOOP";
+  if (state == STATE_COMPLETE) return "COMPLETE";
+  return "UNKNOWN";
+}
+
 // Structure for thread communication and directive processing.
 typedef struct {
     pthread_mutex_t mutex;
@@ -167,10 +175,10 @@ static inline void ctx_signal_main() {
  * The main thread must hold the mutex when calling this function.
  */
 void ctx_signal_early_completion(ThreadState new_state) {
-    LOG_DEBUG("JAUNCH", "Signaling early completion with new state=%d", new_state);
+    LOG_DEBUG("JAUNCH", "Signaling early completion with new state=%s", thread_state(new_state));
 
     if (ctx()->state != STATE_EXECUTING) {
-        LOG_ERROR("Cannot signal early completion - not in EXECUTING state (current: %d)", ctx()->state);
+        LOG_ERROR("Cannot signal early completion - not in EXECUTING state (current: %s)", thread_state(ctx()->state));
         return;
     }
 
@@ -206,7 +214,7 @@ int ctx_request_main_execution(const char *directive, size_t dir_argc, const cha
     LOG_DEBUG("JAUNCH", "Waiting for %s directive to complete", directive);
     ctx_wait_for_state_change(STATE_EXECUTING);
 
-    LOG_DEBUG("JAUNCH", "%s directive completed with state %d", directive, ctx()->state);
+    LOG_DEBUG("JAUNCH", "%s directive completed with state %s", directive, thread_state(ctx()->state));
 
     int result = ctx()->directive_result;
     ctx_unlock();
