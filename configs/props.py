@@ -63,5 +63,22 @@ props = {
 props.update({f"paths.{k}": v for k, v in sysconfig.get_paths().items()})
 props.update({f"cvars.{k}": v for k, v in sysconfig.get_config_vars().items()})
 
+if len(sys.argv) > 1:
+    # Generalize machine-specific paths.
+    prefix = sys.prefix
+    home = str(Path().home())
+    version = props["cvars.py_version"]
+    vshort = props["cvars.py_version_short"]
+    vnodot = props["cvars.py_version_nodot"]
+    for k, v in props.items():
+        if not isinstance(v, str): continue
+        v = v.replace(prefix, "${PREFIX}")
+        v = v.replace(home, "${HOME}")
+        if not k.startswith("cvars.py_version"):
+            if version: v = v.replace(version, "${VERSION}")
+            if vshort: v = v.replace(vshort, "${SPEC}")
+            if vnodot: v = v.replace(vnodot, "${NODOT}")
+        props[k] = v
+
 for k, v in props.items():
     print(f"{k}={v}")
