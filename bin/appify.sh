@@ -101,7 +101,7 @@ copy_toml() {
 }
 copy_toml "$jaunch_toml" "$cfg_outdir"
 same_file "$distdir"/jaunch "$cfg_outdir" ||
-  cp -pv "$distdir"/jaunch/Props.class "$cfg_outdir/"
+  cp -pv "$distdir"/jaunch/Props.class "$distdir"/jaunch/props.py "$cfg_outdir/"
 
 # Perform platform-specific actions.
 "$script_dir/appify-linux.sh" "$out_dir" "$app_title" "$app_exe" "$app_icon_linux"

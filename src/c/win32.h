@@ -344,7 +344,7 @@ void run_command(const char *command,
     // Read from the child process's stdout.
     char buffer[1024];
     DWORD bytesRead;
-    DWORD totalBytesRead = 0;
+    size_t totalBytesRead = 0;
     size_t bufferSize = 1024;
     char *outputBuffer = malloc(bufferSize);
     if (outputBuffer == NULL) {
@@ -352,15 +352,7 @@ void run_command(const char *command,
     }
 
     while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
-        if (totalBytesRead + bytesRead >= bufferSize) {
-            bufferSize *= 2;
-            outputBuffer = realloc(outputBuffer, bufferSize);
-            if (outputBuffer == NULL) {
-                DIE(ERROR_REALLOC, "Failed to reallocate memory (output buffer)");
-            }
-        }
-        memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
-        totalBytesRead += bytesRead;
+        append_to_buffer(&outputBuffer, &bufferSize, &totalBytesRead, buffer, bytesRead);
     }
 
     // Wait for stderr thread to terminate.

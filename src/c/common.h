@@ -66,6 +66,21 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
         LOG_DEBUG(component, "%s_argv[%zu] = %s", (name), a, (argv)[a]); \
 } while (0)
 
+/* Appends data to a dynamically growing buffer, reallocating as needed. */
+void append_to_buffer(char **buffer, size_t *bufferSize, size_t *totalBytes,
+    const char *data, size_t dataSize)
+{
+    if (*totalBytes + dataSize >= *bufferSize) {
+        *bufferSize *= 2;
+        *buffer = realloc(*buffer, *bufferSize);
+        if (*buffer == NULL) {
+            DIE(ERROR_REALLOC, "Failed to reallocate memory (append_to_buffer)");
+        }
+    }
+    memcpy(*buffer + *totalBytes, data, dataSize);
+    *totalBytes += dataSize;
+}
+
 /* Splits an output buffer into lines. */
 void split_lines(char *buffer, char *delim, char ***output, size_t *numOutput) {
     size_t lineCount = 0;

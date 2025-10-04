@@ -57,7 +57,7 @@ data class JaunchConfig (
     val pythonRootPaths: Array<String> = emptyArray(),
 
     /** List of places within a Python installation to look for the Python library. */
-    val pythonLibSuffixes: Array<String> = emptyArray(),
+    val pythonExeSuffixes: Array<String> = emptyArray(),
 
     /** Minimum acceptable Python version to match. */
     val pythonVersionMin: String? = null,
@@ -161,7 +161,7 @@ data class JaunchConfig (
             pythonEnabled = config.pythonEnabled ?: pythonEnabled,
             pythonRecognizedArgs = merge(config.pythonRecognizedArgs, pythonRecognizedArgs),
             pythonRootPaths = merge(config.pythonRootPaths, pythonRootPaths),
-            pythonLibSuffixes = merge(config.pythonLibSuffixes, pythonLibSuffixes),
+            pythonExeSuffixes = merge(config.pythonExeSuffixes, pythonExeSuffixes),
             pythonVersionMin = config.pythonVersionMin ?: pythonVersionMin,
             pythonVersionMax = config.pythonVersionMax ?: pythonVersionMax,
             pythonPackages = merge(config.pythonPackages, pythonPackages),
@@ -221,7 +221,7 @@ fun readConfig(
     var pythonEnabled: Boolean? = null
     var pythonRecognizedArgs: List<String>? = null
     var pythonRootPaths: List<String>? = null
-    var pythonLibSuffixes: List<String>? = null
+    var pythonExeSuffixes: List<String>? = null
     var pythonVersionMin: String? = null
     var pythonVersionMax: String? = null
     var pythonPackages: List<String>? = null
@@ -278,7 +278,7 @@ fun readConfig(
                     "python.enabled" -> pythonEnabled = asBoolean(value)
                     "python.recognized-args" -> pythonRecognizedArgs = asList(value)
                     "python.root-paths" -> pythonRootPaths = asList(value)
-                    "python.lib-suffixes" -> pythonLibSuffixes = asList(value)
+                    "python.exe-suffixes" -> pythonExeSuffixes = asList(value)
                     "python.version-min" -> pythonVersionMin = asString(value)
                     "python.version-max" -> pythonVersionMax = asString(value)
                     "python.packages" -> pythonPackages = asList(value)
@@ -338,7 +338,7 @@ fun readConfig(
         pythonEnabled = pythonEnabled,
         pythonRecognizedArgs = asArray(pythonRecognizedArgs),
         pythonRootPaths = asArray(pythonRootPaths),
-        pythonLibSuffixes = asArray(pythonLibSuffixes),
+        pythonExeSuffixes = asArray(pythonExeSuffixes),
         pythonVersionMin = pythonVersionMin,
         pythonVersionMax = pythonVersionMax,
         pythonPackages = asArray(pythonPackages),

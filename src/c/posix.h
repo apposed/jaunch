@@ -13,7 +13,7 @@
 // -- Helper functions --
 
 int file_exists(const char *path) {
-  return access(path, F_OK) == 0;
+    return access(path, F_OK) == 0;
 }
 
 // ===========================================================
@@ -21,10 +21,10 @@ int file_exists(const char *path) {
 // ===========================================================
 
 void *lib_open(const char *path) {
-  // We use here RTLD_NOW | RTLD_GLOBAL because:
-  // - We want to fail fast if runtime libraries are broken (RTLD_NOW).
-  // - Runtimes need their symbols globally available for plugins (RTLD_GLOBAL).
-  return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+    // We use here RTLD_NOW | RTLD_GLOBAL because:
+    // - We want to fail fast if runtime libraries are broken (RTLD_NOW).
+    // - Runtimes need their symbols globally available for plugins (RTLD_GLOBAL).
+    return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 }
 void *lib_sym(void *library, const char *symbol) { return dlsym(library, symbol); }
 void lib_close(void *library) { dlclose(library); }
@@ -46,7 +46,7 @@ void run_command(const char *command,
 
     LOG_DEBUG("POSIX", "run_command: opening pipes to/from configurator");
     if (pipe(stdinPipe) == -1 || pipe(stdoutPipe) == -1) {
-      DIE(ERROR_PIPE, "Failed to open pipes to/from configurator");
+        DIE(ERROR_PIPE, "Failed to open pipes to/from configurator");
     }
 
     // Fork to create a child process.
@@ -104,19 +104,11 @@ void run_command(const char *command,
         char *outputBuffer = malloc(bufferSize);
 
         if (outputBuffer == NULL) {
-          DIE(ERROR_MALLOC, "Failed to allocate memory (initial buffer)");
+            DIE(ERROR_MALLOC, "Failed to allocate memory (initial buffer)");
         }
 
         while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
-            if (totalBytesRead + bytesRead >= bufferSize) {
-                bufferSize *= 2;
-                outputBuffer = realloc(outputBuffer, bufferSize);
-                if (outputBuffer == NULL) {
-                  DIE(ERROR_REALLOC, "Failed to reallocate memory (run_command)");
-                }
-            }
-            memcpy(outputBuffer + totalBytesRead, buffer, bytesRead);
-            totalBytesRead += bytesRead;
+            append_to_buffer(&outputBuffer, &bufferSize, &totalBytesRead, buffer, bytesRead);
         }
 
         // Close the read end of stdout.
@@ -125,7 +117,7 @@ void run_command(const char *command,
 
         // Wait for the child process to finish.
         if (waitpid(pid, NULL, 0) == -1) {
-          DIE(ERROR_WAITPID, "Failed waiting for Jaunch termination");
+            DIE(ERROR_WAITPID, "Failed waiting for Jaunch termination");
         }
 
         // Return the output buffer and the number of lines.

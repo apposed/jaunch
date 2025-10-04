@@ -47,12 +47,9 @@ Tests:
   $ ./paunch --print-python-home
   /* (glob)
 
-  $ ./paunch --print-python-info 2>&1 | head -n4
+  $ ./paunch --print-python-info 2>&1 | head -n5
   root: /* (glob)
-  libPython: .*(libpython[0-9\.]*\.so|libpython[0-9\.]*\.dylib|python[0-9\.]*\.dll) (re)
+  binPython: .*(bin/python3?|python3?.exe) (re)
+  libPython: .*(libpython[0-9.]*\.so|libpython[0-9.]*\.dylib|Python\.framework/Versions/[^/]*/Python|python[0-9.]*\.dll) (re)
   version: * (glob)
   packages:* (glob)
-
-  $ ./paunch --debug --python-home . 2>&1 | grep -m 1 -A1 "Analyzing candidate Python"
-  [DEBUG] Analyzing candidate Python directory: '.'
-  [DEBUG] No Python library found.

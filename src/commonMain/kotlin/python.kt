@@ -4,7 +4,7 @@ import kotlin.math.min
 
 data class PythonConstraints(
     val configDir: File,
-    val libSuffixes: List<String>,
+    val exeSuffixes: List<String>,
     val versionMin: String?,
     val versionMax: String?,
     val targetOS: String,
@@ -43,17 +43,17 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         debug("Root paths to search for Python:")
         pythonRootPaths.forEach { debug("* ", it) }
 
-        // Calculate all the places to look for the Python library.
-        val libPythonSuffixes = vars.calculate(config.pythonLibSuffixes, hints)
+        // Calculate all the places to look for the Python executable.
+        val pythonSuffixes = vars.calculate(config.pythonExeSuffixes, hints)
 
         debug()
-        debug("Suffixes to check for libpython:")
-        libPythonSuffixes.forEach { debug("* ", it) }
+        debug("Suffixes to check for Python executable:")
+        pythonSuffixes.forEach { debug("* ", it) }
 
         // Calculate Python distro and version constraints.
         val constraints = PythonConstraints(
             configDir,
-            libPythonSuffixes,
+            pythonSuffixes,
             config.pythonVersionMin, config.pythonVersionMax,
             config.targetOS, config.targetArch,
         )
@@ -77,8 +77,8 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         }
         debug("Successfully discovered Python installation:")
         debug("* rootPath -> ", python.rootPath)
-        debug("* libPythonPath -> ", python.libPythonPath ?: "<null>")
         debug("* binPython -> ", python.binPython ?: "<null>")
+        debug("* libPythonPath -> ", python.libPythonPath ?: "<null>")
 
         // Apply PYTHON: hints.
         val majorMinor = python.majorMinorVersion
@@ -112,8 +112,8 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     override fun injectInto(vars: Vars) {
         maybeAssign(vars, "scriptPath", mainProgram)
         maybeAssign(vars, "rootPath", python?.rootPath)
-        maybeAssign(vars, "libPythonPath", python?.libPythonPath)
         maybeAssign(vars, "binPython", python?.binPython)
+        maybeAssign(vars, "libPythonPath", python?.libPythonPath)
         maybeAssign(vars, "version", python?.version)
     }
 
@@ -124,7 +124,8 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
     override fun launch(args: ProgramArgs, directiveArg: String?): Pair<String, List<String>> {
         if (directiveArg != null) error("Ignoring invalid $directive directive argument $directiveArg")
 
-        val libPythonPath = python?.libPythonPath ?: fail("No matching Python installations found.")
+        val binPython = python?.binPython ?: fail("No matching Python installations found.")
+        val libPythonPath = python?.libPythonPath ?: fail("No shared library found for Python: $binPython")
 
         val dryRun = buildString {
             append(python?.binPython ?: "python")
@@ -135,6 +136,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
 
         val lines = buildList {
             add(libPythonPath)
+            add(binPython)
             addAll(args.runtime)
             if (mainProgram != null) add(mainProgram!!)
             addAll(args.main)
@@ -162,14 +164,14 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
  * and installed packages, by invoking the Python binary and reading the output.
  */
 class PythonInstallation(
-    val rootPath: String,
+    rootPath: String,
     val constraints: PythonConstraints,
-) {
-    val libPythonPath: String? by lazy { findLibPython() }
-    val binPython: String? by lazy { findBinPython(constraints.targetOS) }
+) : RuntimeInstallation(rootPath) {
+    val binPython: String? by lazy { findBinPython() }
+    val libPythonPath: String? by lazy { guessLibPython() }
     val version: String? by lazy { guessPythonVersion() }
     val packages: Map<String, String> by lazy { guessInstalledPackages() }
-    val conforms: Boolean by lazy { checkConstraints() }
+    val props: Map<String, String>? by lazy { askPythonForProperties() }
 
     /** Gets the major.minor version digits of the Python installation. */
     val majorMinorVersion: Pair<Int, Int>?
@@ -181,6 +183,7 @@ class PythonInstallation(
     override fun toString(): String {
         return listOf(
             "root: $rootPath",
+            "binPython: $binPython",
             "libPython: $libPythonPath",
             "version: $version",
             "packages:${bulletList(packages)}",
@@ -189,107 +192,7 @@ class PythonInstallation(
 
     // -- Lazy evaluation functions --
 
-    private fun findLibPython(): String? {
-        return constraints.libSuffixes.map { File("$rootPath$SLASH$it") }.firstOrNull { it.exists }?.path
-    }
-
-    private fun findBinPython(targetOS: String): String? {
-        val extension = if (targetOS == "WINDOWS") ".exe" else ""
-
-        // Note: The order below matters! In particular, on macOS,
-        // Homebrew Python will be installed somewhere like:
-        //
-        //     /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/Current
-        //
-        // Beneath that is something like:
-        //
-        //     $ tree -L 1 . bin lib
-        //     .
-        //     |-- _CodeSignature
-        //     |-- bin
-        //     |-- Headers -> include/python3.13
-        //     |-- include
-        //     |-- lib
-        //     |-- Python
-        //     |-- Resources
-        //     \-- share
-        //     bin
-        //     |-- idle3 -> idle3.13
-        //     |-- idle3.13
-        //     |-- pip3
-        //     |-- pip3.13
-        //     |-- pydoc3 -> pydoc3.13
-        //     |-- pydoc3.13
-        //     |-- python3 -> python3.13
-        //     |-- python3-config -> python3.13-config
-        //     |-- python3.13
-        //     \-- python3.13-config
-        //     lib
-        //     |-- libpython3.13.dylib -> ../Python
-        //     |-- pkgconfig
-        //     \-- python3.13
-        //
-        // So we have this bizarre situation where `${root}/lib/libpython*.dylib`
-        // is symlinked to `${root}/Python`. But because macOS filesystems are
-        // typically case-insensitive, the candidate check for `${root}/python`
-        // will match this `${root}/Python`, Jaunch will attempt to execute it,
-        // and the execution will fail with an error like:
-        //
-        //     sh: .../Python.framework/Versions/3.13/python: cannot execute binary file
-        //
-        // To sidestep this headache, we check for `bin/python` and `bin/python3`
-        // before `python` and `python3`.
-
-        for (candidate in arrayOf("bin${SLASH}python", "bin${SLASH}python3", "python", "python3")) {
-            val pythonFile = File("$rootPath$SLASH$candidate$extension")
-            if (pythonFile.exists) return pythonFile.path
-        }
-        return null
-    }
-
-    private fun guessPythonVersion(): String {
-        return guess("Python version") { askPythonForVersion() ?: "<unknown>" }
-    }
-
-    private fun guessInstalledPackages(): Map<String, String> {
-        return guess("installed packages") { askPipForPackages() }
-    }
-
-    private fun <T> guess(label: String, doGuess: () -> T): T {
-        debug("Guessing $label...")
-        val result = doGuess()
-        debug("-> $label: $result")
-        return result
-    }
-
-    /** Calls `python --version` to be told the Python version from the boss. */
-    private fun askPythonForVersion(): String? {
-        val pythonExe = binPython
-        if (pythonExe == null) {
-            debug("Python executable does not exist")
-            return null
-        }
-        debug("Invoking `\"", pythonExe, "\" --version`...")
-        val line = execute("\"$pythonExe\" --version")?.get(0) ?: return null
-        val versionPattern = Regex("(\\d+\\.\\d+\\.\\d+[^ ]*)")
-        return versionPattern.find(line)?.value
-    }
-
-    private fun askPipForPackages(): Map<String, String> {
-        val pythonExe = binPython
-        if (pythonExe == null) {
-            debug("Python executable does not exist")
-            return emptyMap()
-        }
-        debug("Invoking `\"", pythonExe, "\" -m pip list`...")
-        val lines = execute("\"$pythonExe\" -m pip list") ?: emptyList()
-        // Start at index 2 to skip the table headers.
-        return lines.subList(min(2, lines.size), lines.size)
-            .map { it.split(Regex("\\s+")) }
-            .associate { it[0] to if (it.isEmpty()) "" else it[1] }
-    }
-
-    private fun checkConstraints(): Boolean {
+    override fun checkConstraints(): Boolean {
         // Ensure libpython is present.
         if (libPythonPath == null) return fail("No Python library found.")
 
@@ -313,15 +216,71 @@ class PythonInstallation(
         return true
     }
 
-    // -- Helper methods --
+    private fun findBinPython(): String? {
+        for (candidate in constraints.exeSuffixes) {
+            val pythonFile = File("$rootPath$SLASH$candidate")
+            if (pythonFile.exists) return pythonFile.path
+        }
+        return null
+    }
 
-    private fun bulletList(map: Map<String, String>?, bullet: String = "* "): String {
-        return when {
-            map == null -> " <none>"
-            map.isEmpty() -> " <empty>"
-            else -> "$NL$bullet" + map.entries.joinToString("$NL$bullet")
+    private fun guessLibPython(): String? {
+        return guess("Python library") {
+            props?.get("jaunch.libpython_path")
         }
     }
 
-    private fun fail(vararg args: Any): Boolean { debug(*args); return false }
+    private fun guessPythonVersion(): String? {
+        return guess("Python version") {
+            props?.get("cvars.py_version") ?:
+            extractPythonVersion(props?.get("sys.version"))
+        }
+    }
+
+    private fun guessInstalledPackages(): Map<String, String> {
+        return guess("installed packages") { askPipForPackages() }
+    }
+
+    // -- Helper methods --
+
+    /** Calls `python props.py` to receive Python environment details from the boss. */
+    private fun askPythonForProperties(): Map<String, String>? {
+        val pythonExe = binPython
+        if (pythonExe == null) {
+            debug("Python executable does not exist.")
+            return null
+        }
+
+        // Use props.py to discover the libpython location.
+        // See doc/PYTHON.md for details on the platform-specific logic.
+        val propsScript = constraints.configDir / "props.py"
+        if (!propsScript.exists) {
+            warn("props.py not found at: ", propsScript.path)
+            return null
+        }
+
+        debug("Invoking `\"", pythonExe, "\" props.py`...")
+        val stdout = execute("\"$pythonExe\" \"${propsScript.path}\"") ?: return null
+        return linesToMap(stdout, "=")
+    }
+
+    private fun askPipForPackages(): Map<String, String> {
+        val pythonExe = binPython
+        if (pythonExe == null) {
+            debug("Python executable does not exist.")
+            return emptyMap()
+        }
+        debug("Invoking `\"", pythonExe, "\" -m pip list`...")
+        val lines = execute("\"$pythonExe\" -m pip list") ?: emptyList()
+        // Start at index 2 to skip the table headers.
+        return lines.subList(min(2, lines.size), lines.size)
+            .map { it.split(Regex("\\s+")) }
+            .associate { it[0] to if (it.isEmpty()) "" else it[1] }
+    }
+}
+
+private fun extractPythonVersion(sysVersion: String?): String? {
+    if (sysVersion == null) return null
+    val versionPattern = Regex("(\\d+\\.\\d+\\.\\d+[^ ]*)")
+    return versionPattern.find(sysVersion)?.value
 }

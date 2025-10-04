@@ -36,6 +36,10 @@ static int launch_jvm(const size_t argc, const char **argv) {
     // not needed because it can be computed from argc.
     // =======================================================================
 
+    if (argc < 3) {
+      FAIL(ERROR_ARGC_OUT_OF_BOUNDS, "Too few JVM directive arguments: %d", argc);
+    }
+
     char **ptr = (char **)argv;
  
     const char *libjvm_path = *ptr++;
