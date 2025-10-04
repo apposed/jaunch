@@ -68,6 +68,16 @@ jobs:
       with:
         python-version: '3.13'
 
+    - name: Print runtime properties
+      shell: bash
+      run: |
+        cd configs
+        echo '== Java =='
+        java Props5 x
+        echo
+        echo '== Python =='
+        python props.py x
+
     - name: Cache the .cache folder
       id: cache-cache
       uses: actions/cache@v4
@@ -77,6 +87,16 @@ jobs:
 
     - name: Build demo apps
       run: make demo
+
+    - name: Print runtime discovery details
+      shell: bash
+      run: |
+        cd demo
+        echo '== Java =='
+        ./hi --debug --debug
+        echo
+        echo '== Python =='
+        ./hiss --debug --debug
 
     - name: Install prysk
       run: pip install prysk

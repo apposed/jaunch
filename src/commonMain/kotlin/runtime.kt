@@ -94,3 +94,28 @@ abstract class RuntimeConfig(
         }
     }
 }
+
+abstract class RuntimeInstallation(
+    val rootPath: String
+) {
+    val conforms: Boolean by lazy { checkConstraints() }
+
+    protected fun <T> guess(label: String, doGuess: () -> T): T {
+        debug("Guessing $label...")
+        val result = doGuess()
+        debug("-> $label: $result")
+        return result
+    }
+
+    protected abstract fun checkConstraints(): Boolean
+
+    protected fun fail(vararg args: Any): Boolean { debug(*args); return false }
+
+    protected fun bulletList(map: Map<String, String>?, bullet: String = "* "): String {
+        return when {
+            map == null -> " <none>"
+            map.isEmpty() -> " <empty>"
+            else -> "$NL$bullet" + map.entries.joinToString("$NL$bullet")
+        }
+    }
+}

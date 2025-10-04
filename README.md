@@ -13,10 +13,10 @@ To build Jaunch's demo apps from source, see [EXAMPLES.md](doc/EXAMPLES.md).
 
 ## Minimum requirements
 
-| Runtime | Minimum |
-|---------|---------|
-| Java    | 1.8     |
-| Python  | 3.8     |
+| Runtime  | Minimum |
+|----------|---------|
+| [Java]   | 1.8     |
+| [Python] | 3.8     |
 
 | Operating system | Minimum      |
 |------------------|--------------|
@@ -35,6 +35,7 @@ See [Limitations](doc/LIMITS.md) for more details.
 * [Building from source](doc/BUILD.md)
 * [How to launch your app with Jaunch](doc/SETUP.md)
 * OS-specific concerns: [Linux], [macOS], [Windows]
+* Runtime-specific concerns: [JVM], [Python]
 
 ## License
 
@@ -428,9 +429,11 @@ From [the constructor website](https://conda.github.io/constructor/):
 [Gatekeeper]: https://en.wikipedia.org/wiki/Gatekeeper_(macOS)
 [JNI]: https://en.wikipedia.org/wiki/Java_Native_Interface
 [JPype]: https://jpype.readthedocs.io/
+[JVM]: doc/JVM.md
 [Kotlin Native]: https://kotlinlang.org/docs/native-overview.html
 [Linux]: doc/LINUX.md
 [OpenMoji]: https://openmoji.org/
+[Python]: doc/PYTHON.md
 [QuPath]: https://qupath.readthedocs.io/
 [SmartScreen]: https://en.wikipedia.org/wiki/Microsoft_SmartScreen#Windows_malware_protection
 [Stable ABI]: https://docs.python.org/3/c-api/stable.html#stable-abi

@@ -44,8 +44,9 @@ copyFile build/bin/macosUniversal/releaseExecutable/jaunch.kexe dist/jaunch jaun
 copyFile build/bin/windowsArm64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-arm64.exe
 copyFile build/bin/windowsX64/releaseExecutable/jaunch.exe dist/jaunch jaunch-windows-x64.exe
 
-# Copy Props.class helper program and TOML configuration files.
+# Copy property extractor helper programs and TOML configuration files.
 copyFile configs/Props.class dist/jaunch
+copyFile configs/props.py dist/jaunch
 copyFile configs/common.toml dist/jaunch
 copyFile configs/jvm.toml dist/jaunch
 copyFile configs/python.toml dist/jaunch
