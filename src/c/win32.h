@@ -261,6 +261,23 @@ char *lib_error() {
     return message;
 }
 
+char *canonical_path(const char *path) {
+    if (path == NULL) return NULL;
+
+    // Allocate buffer for the resolved path.
+    char *resolved = (char *)malloc_or_die(MAX_PATH, "resolved path");
+
+    // Get the full path of the executable.
+    DWORD result = GetFullPathNameA(path, MAX_PATH, resolved, NULL);
+    if (result == 0 || result >= MAX_PATH) {
+        // If GetFullPathName fails, fall back to using path as-is
+        free(resolved);
+        return strdup(path);
+    }
+
+    return resolved;
+}
+
 /*
  * Windows-style function to launch a command in a separate process,
  * and harvest its output from the standard output stream.

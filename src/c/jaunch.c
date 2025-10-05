@@ -311,12 +311,14 @@ int main(const int argc, const char *argv[]) {
     // * On macOS, untranslocate Gatekeeper-mangled apps.
     setup(argc, argv);
 
+    // Resolve argv[0] to canonical path (following symlinks).
+    char *exe_path = argc == 0 ? NULL : canonical_path(argv[0]);
+
     char *command = NULL;
     size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
     for (size_t i = 0; i < search_path_count; i++) {
         // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
-        command = path(
-            argc == 0 ? NULL : argv[0],
+        command = path(exe_path,
             JAUNCH_SEARCH_PATHS[i],
             "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX
         );
@@ -326,8 +328,7 @@ int main(const int argc, const char *argv[]) {
 
         // If not found, look for jaunch configurator with fallback suffix.
         if (SUFFIX_FALLBACK[0] != '\0') {
-            command = path(
-                argc == 0 ? NULL : argv[0],
+            command = path(exe_path,
                 JAUNCH_SEARCH_PATHS[i],
                 "jaunch-" SUFFIX_FALLBACK EXE_SUFFIX
             );
@@ -337,8 +338,7 @@ int main(const int argc, const char *argv[]) {
         }
 
         // If not found, look for plain jaunch configurator with no suffix.
-        command = path(
-            argc == 0 ? NULL : argv[0],
+        command = path(exe_path,
             JAUNCH_SEARCH_PATHS[i],
             "jaunch" EXE_SUFFIX
         );
@@ -361,7 +361,7 @@ int main(const int argc, const char *argv[]) {
     const int internal_argc = 1;
     const int extended_argc = internal_argc + argc;
     const char **extended_argv = malloc_or_die(extended_argc * sizeof(char *), "extended argv");
-    extended_argv[0] = argv[0]; // executable path
+    extended_argv[0] = exe_path;
     extended_argv[1] = "--jaunch-target-arch=" OS_ARCH;
     for (int i = 1; i < argc; i++) {
         extended_argv[internal_argc + i] = argv[i];
@@ -371,6 +371,7 @@ int main(const int argc, const char *argv[]) {
     size_t out_argc;
     char **out_argv;
     run_command((const char *)command, extended_argc, extended_argv, &out_argc, &out_argv);
+    if (exe_path != NULL) free(exe_path);
     free(extended_argv);
     free(command);
 

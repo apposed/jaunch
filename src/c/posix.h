@@ -2,6 +2,7 @@
 #include <string.h>   // for memcpy
 #include <dlfcn.h>
 #include <sys/wait.h>
+#include <limits.h>   // for PATH_MAX
 
 #include "logging.h"
 #include "common.h"
@@ -29,6 +30,23 @@ void *lib_open(const char *path) {
 void *lib_sym(void *library, const char *symbol) { return dlsym(library, symbol); }
 void lib_close(void *library) { dlclose(library); }
 char *lib_error() { return dlerror(); }
+
+char *canonical_path(const char *path) {
+    if (path == NULL) return NULL;
+
+    // Allocate buffer for the resolved path.
+    char *resolved = (char *)malloc_or_die(PATH_MAX, "resolved path");
+
+    // Use realpath to resolve symlinks and get canonical path.
+    char *result = realpath(path, resolved);
+    if (result == NULL) {
+        // If realpath fails, fall back to using path as-is.
+        free(resolved);
+        return strdup(path);
+    }
+
+    return resolved;
+}
 
 /*
  * POSIX-style function to launch a command in a separate process,

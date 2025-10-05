@@ -36,6 +36,7 @@ void *lib_open(const char *path);
 void *lib_sym(void *library, const char *symbol);
 void lib_close(void *library);
 char *lib_error();
+char *canonical_path(const char *path);
 void run_command(const char *command,
     size_t numInput, const char *input[],
     size_t *numOutput, char ***output);
