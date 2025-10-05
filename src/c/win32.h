@@ -325,8 +325,9 @@ void run_command(const char *command,
     snprintf(numInputString, 21, "%zu", numInput);
     write_line(stdinWrite, numInputString);
     free(numInputString);
-    for (size_t i = 0; i < numInput; i++)
+    for (size_t i = 0; i < numInput; i++) {
         write_line(stdinWrite, input[i]);
+    }
 
     // Close the stdin write handle to signal end of input.
     CloseHandle(stdinWrite);
