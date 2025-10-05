@@ -95,10 +95,7 @@ extern ThreadContext *context;
 // since it is always initialized straight away in jaunch.c's main,
 // but it's here anyway, "just in case", to avoid SIGSEGVs.
 static inline ThreadContext *ctx() {
-  if (context == NULL) {
-    LOG_ERROR("FATAL: Internal error - context not initialized");
-    exit(255);
-  }
+  if (context == NULL) DIE(255, "Internal error: context not initialized");
   return context;
 }
 
