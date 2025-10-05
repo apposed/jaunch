@@ -44,7 +44,7 @@
  */
 
 #include <stdio.h>    // for NULL, size_t
-#include <stdlib.h>   // for malloc, free, atoi
+#include <stdlib.h>   // for free, atoi
 #include <unistd.h>   // for chdir
 #include <string.h>   // for strcat, strcmp, strlen, strncpy, strrchr
 #include <pthread.h>  // for pthread_create, pthread_join, etc.
@@ -288,8 +288,7 @@ char *path(const char *argv0, const char *subdir, const char *command) {
     size_t result_len = dir_len + 1 + subdir_len + command_len;
 
     // Allocate the result string.
-    char *result = (char *)malloc(result_len + 1);
-    if (result == NULL) return NULL;
+    char *result = (char *)malloc_or_die(result_len + 1, "path");
 
     // Build the result string.
     if (last_slash == NULL) result[0] = '.';
@@ -361,11 +360,7 @@ int main(const int argc, const char *argv[]) {
     // windows-arm64 can launch in emulated x86-64 mode as appropriate.
     const int internal_argc = 1;
     const int extended_argc = internal_argc + argc;
-    const char **extended_argv = malloc(extended_argc * sizeof(char *));
-    if (extended_argv == NULL) {
-        free(command);
-        DIE(ERROR_MALLOC, "Failed to allocate memory (extended argv)");
-    }
+    const char **extended_argv = malloc_or_die(extended_argc * sizeof(char *), "extended argv");
     extended_argv[0] = argv[0]; // executable path
     extended_argv[1] = "--jaunch-target-arch=" OS_ARCH;
     for (int i = 1; i < argc; i++) {

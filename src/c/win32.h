@@ -25,7 +25,7 @@
 void write_line(HANDLE stdinWrite, const char *input) {
     // Copy the input string and add a newline.
     size_t inputLength = strlen(input);
-    char *line = (char *)malloc(inputLength + 2); // +1 for newline, +1 for null terminator
+    char *line = (char *)malloc_or_die(inputLength + 2, "line buffer"); // +1 for newline, +1 for null terminator
     strcpy(line, input);
     strcat(line, "\n");
 
@@ -297,10 +297,7 @@ void run_command(const char *command,
 
     // Add CREATE_NO_WINDOW flag to prevent console window from appearing.
     DWORD createFlags = CREATE_NO_WINDOW;
-    char *commandPlusDash = malloc(strlen(command) + 3);
-    if (commandPlusDash == NULL) {
-        DIE(ERROR_MALLOC, "Failed to allocate memory (command plus dash)");
-    }
+    char *commandPlusDash = malloc_or_die(strlen(command) + 3, "command plus dash");
     strcpy(commandPlusDash, command);
     // NB: We pass a single "-" argument to indicate to the jaunch
     // configurator that it should harvest the actual input arguments
@@ -324,10 +321,7 @@ void run_command(const char *command,
     // Passing the input line count as the first line tells the child process what
     // to expect, so that it can stop reading from stdin once it has received
     // those lines, even though the pipe is not yet closed. This avoids deadlocks.
-    char *numInputString = (char *)malloc(21);
-    if (numInputString == NULL) {
-        DIE(ERROR_MALLOC, "Failed to allocate memory (input line count)");
-    }
+    char *numInputString = (char *)malloc_or_die(21, "input line count");
     snprintf(numInputString, 21, "%zu", numInput);
     write_line(stdinWrite, numInputString);
     free(numInputString);
@@ -346,10 +340,7 @@ void run_command(const char *command,
     DWORD bytesRead;
     size_t totalBytesRead = 0;
     size_t bufferSize = 1024;
-    char *outputBuffer = malloc(bufferSize);
-    if (outputBuffer == NULL) {
-        DIE(ERROR_MALLOC, "Failed to allocate memory (output buffer)");
-    }
+    char *outputBuffer = malloc_or_die(bufferSize, "output buffer");
 
     while (ReadFile(stdoutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
         append_to_buffer(&outputBuffer, &bufferSize, &totalBytesRead, buffer, bytesRead);

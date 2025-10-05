@@ -66,6 +66,12 @@ int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
         LOG_DEBUG(component, "%s_argv[%zu] = %s", (name), a, (argv)[a]); \
 } while (0)
 
+void *malloc_or_die(size_t length, const char *where) {
+    void *result = malloc(length);
+    if (result == NULL) DIE(ERROR_MALLOC, "Failed to allocate memory (%s)", where);
+    return result;
+}
+
 /* Appends data to a dynamically growing buffer, reallocating as needed. */
 void append_to_buffer(char **buffer, size_t *bufferSize, size_t *totalBytes,
     const char *data, size_t dataSize)
@@ -113,8 +119,7 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
     }
 
     // Allocate and build the joined string.
-    char *result = (char *)malloc(total_len + 1); // +1 for null terminator
-    if (result == NULL) return NULL;
+    char *result = (char *)malloc_or_die(total_len + 1, "join_strings"); // +1 for null terminator
 
     result[0] = '\0'; // Start with empty string.
     for (size_t i = 0; i < count; i++) {

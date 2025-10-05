@@ -75,10 +75,10 @@ void show_alert(const char *title, const char *message) {
     char exe[PATH_MAX];
 
     if (find_executable("zenity", exe, sizeof(exe))) {
-        char *titleArg = malloc(strlen(title) + 9); // --title={message}
+        char *titleArg = malloc_or_die(strlen(title) + 9, "zenity title"); // --title={message}
         strcpy(titleArg, "--title=");
         strcat(titleArg, title);
-        char *textArg = malloc(strlen(message) + 8); // --text={message}
+        char *textArg = malloc_or_die(strlen(message) + 8, "zenity text"); // --text={message}
         strcpy(textArg, "--text=");
         strcat(textArg, message);
         LOG_INFO("LINUX", "'%s' '%s' '%s' '%s'", exe, "--error", titleArg, textArg);
@@ -87,7 +87,7 @@ void show_alert(const char *title, const char *message) {
         free(titleArg);
         free(textArg);
     } else if (find_executable("kdialog", exe, sizeof(exe))) {
-        char *titleArg = malloc(strlen(title) + 9); // --title={message}
+        char *titleArg = malloc_or_die(strlen(title) + 9, "kdialog title"); // --title={message}
         strcpy("--title=", titleArg);
         strcat((char *)title, titleArg);
         LOG_INFO("LINUX", "'%s' '%s' '%s' '%s'", exe, "--sorry", titleArg, message);

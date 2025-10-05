@@ -101,11 +101,7 @@ void run_command(const char *command,
         size_t bytesRead;
         size_t totalBytesRead = 0;
         size_t bufferSize = 1024;
-        char *outputBuffer = malloc(bufferSize);
-
-        if (outputBuffer == NULL) {
-            DIE(ERROR_MALLOC, "Failed to allocate memory (initial buffer)");
-        }
+        char *outputBuffer = malloc_or_die(bufferSize, "initial buffer");
 
         while ((bytesRead = read(stdoutPipe[0], buffer, sizeof(buffer))) > 0) {
             append_to_buffer(&outputBuffer, &bufferSize, &totalBytesRead, buffer, bytesRead);

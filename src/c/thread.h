@@ -1,12 +1,12 @@
 #ifndef _JAUNCH_THREAD_H
 #define _JAUNCH_THREAD_H
 
-#include <stdlib.h>   // for exit, NULL, size_t, free, malloc
+#include <stdlib.h>   // for exit, NULL, size_t, free
 #include <pthread.h>  // for pthread_mutex, pthread_cond, etc.
 #include <errno.h>    // for EDEADLK, EPERM
 
 #include "logging.h"
-#include "common.h"   // for ERROR_MALLOC
+#include "common.h"
 
 // ===============
 // DATA STRUCTURES
@@ -125,10 +125,7 @@ const char *current_thread_name() {
 
 /** Initialize thread context for directive processing. */
 static inline void ctx_create() {
-    ThreadContext *ctx = (ThreadContext *)malloc(sizeof(ThreadContext));
-    if (ctx == NULL) {
-        DIE(ERROR_MALLOC, "Failed to allocate memory (thread context)");
-    }
+    ThreadContext *ctx = (ThreadContext *)malloc_or_die(sizeof(ThreadContext), "thread context");
 
     // Initialize mutex with error checking
     // to catch double-locks and invalid unlocks.

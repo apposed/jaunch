@@ -157,7 +157,7 @@ int handle_translocation(const int argc, const char *argv[]) {
     system(xattrCmd);
 
     // Prepare to relaunch from original location
-    char **args = (char **)malloc((argc + 1) * sizeof(char *));
+    char **args = (char **)malloc_or_die((argc + 1) * sizeof(char *), "untranslocated args");
     args[0] = originalExecPath;
 
     // Copy all arguments
