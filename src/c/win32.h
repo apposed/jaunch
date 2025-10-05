@@ -1,3 +1,6 @@
+#include <stdlib.h>   // for NULL, size_t, free
+#include <string.h>   // for strcat, strcpy, strdup, strlen, strrchr
+
 #include <windows.h>
 #include <tlhelp32.h>
 

@@ -1,6 +1,8 @@
-#include <string.h>   // for strcat, strcpy, strdup, strlen, strtok
-#include <dlfcn.h>
 #include <limits.h>   // for PATH_MAX
+#include <stdio.h>    // for snprintf
+#include <stdlib.h>   // for NULL, size_t, free
+#include <string.h>   // for strcat, strcpy, strdup, strlen, strtok
+#include <unistd.h>   // for access
 
 #include "logging.h"
 #include "common.h"

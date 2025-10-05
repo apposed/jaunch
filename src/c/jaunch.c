@@ -43,11 +43,10 @@
  * can be flexibly configured to decide how arguments are transformed.
  */
 
-#include <stdio.h>    // for NULL, size_t
-#include <stdlib.h>   // for free, atoi
-#include <unistd.h>   // for chdir
-#include <string.h>   // for strcat, strcmp, strlen, strncpy, strrchr
 #include <pthread.h>  // for pthread_create, pthread_join, etc.
+#include <stdlib.h>   // for NULL, size_t, atoi, free
+#include <string.h>   // for strcat, strcmp, strlen, strncpy, strrchr
+#include <unistd.h>   // for chdir
 
 #include "logging.h"
 #include "common.h"

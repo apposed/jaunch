@@ -1,8 +1,11 @@
-#include <unistd.h>   // for access
-#include <string.h>   // for memcpy
-#include <dlfcn.h>
-#include <sys/wait.h>
+#include <dlfcn.h>    // for dlclose, dlopen, dlsym
 #include <limits.h>   // for PATH_MAX
+#include <stdio.h>    // for dprintf
+#include <stdlib.h>   // for NULL, size_t, free
+#include <string.h>   // for strdup
+#include <unistd.h>   // for access
+
+#include <sys/wait.h>
 
 #include "logging.h"
 #include "common.h"

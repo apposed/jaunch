@@ -1,8 +1,10 @@
 #ifndef _JAUNCH_LOGGING_H
 #define _JAUNCH_LOGGING_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <stdarg.h>  // for va_end, va_list, va_start
+#include <stdio.h>   // for size_t, stderr, fflush, fputc, vfprintf
+#include <string.h>  // strcmp
+#include <unistd.h>  // for exit
 
 // =========================
 // GLOBAL STATE DECLARATIONS

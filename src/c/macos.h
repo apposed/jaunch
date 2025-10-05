@@ -1,14 +1,14 @@
+#include <limits.h>   // for PATH_MAX
+#include <spawn.h>
+#include <stdio.h>    // for snprintf
+#include <stdlib.h>   // for NULL, size_t, free
+#include <string.h>   // for strcmp, strerror, strlen
+#include <unistd.h>   // for usleep, exit
+
 #include <CoreFoundation/CoreFoundation.h>
+#include <objc/message.h>
 #include <objc/objc.h>
 #include <objc/runtime.h>
-#include <objc/message.h>
-#include <dlfcn.h>
-#include <spawn.h>
-#include <stdlib.h>
-#include <limits.h>   // for PATH_MAX
-#include <string.h>   // for strcmp, strerror, strlen
-#include <stdio.h>    // for snprintf
-#include <unistd.h>   // for usleep, exit
 
 #include "logging.h"
 #include "common.h"

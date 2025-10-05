@@ -1,9 +1,9 @@
 #ifndef _JAUNCH_THREAD_H
 #define _JAUNCH_THREAD_H
 
-#include <stdlib.h>   // for exit, NULL, size_t, free
-#include <pthread.h>  // for pthread_mutex, pthread_cond, etc.
 #include <errno.h>    // for EDEADLK, EPERM
+#include <pthread.h>  // for pthread_mutex, pthread_cond, etc.
+#include <stdlib.h>   // for NULL, size_t, free
 
 #include "logging.h"
 #include "common.h"

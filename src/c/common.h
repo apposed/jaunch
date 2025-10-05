@@ -1,7 +1,7 @@
 #ifndef _JAUNCH_COMMON_H
 #define _JAUNCH_COMMON_H
 
-#include <stdlib.h>
+#include <stdlib.h>   // for NULL, size_t
 #include <string.h>   // for strcat, strdup, strlen, strtok
 
 #include "logging.h"

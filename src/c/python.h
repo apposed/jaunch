@@ -1,7 +1,7 @@
 #ifndef _JAUNCH_PYTHON_H
 #define _JAUNCH_PYTHON_H
 
-#include <stddef.h>   // for size_t
+#include <stddef.h>   // for NULL, size_t
 
 #include "logging.h"
 #include "common.h"
