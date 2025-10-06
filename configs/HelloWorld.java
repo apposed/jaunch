@@ -1,5 +1,5 @@
 public class HelloWorld {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		// Parse arguments.
 		StringBuilder sb = new StringBuilder();
 		boolean edt = false;
@@ -13,7 +13,7 @@ public class HelloWorld {
 		// Print the greeting.
 		if (edt) {
 			// Use the AWT Event Dispatch Thread (EDT).
-			java.awt.EventQueue.invokeLater(() -> System.out.println(greeting));
+			java.awt.EventQueue.invokeAndWait(() -> System.out.println(greeting));
 		}
 		else {
 			// Emit the message directly.
