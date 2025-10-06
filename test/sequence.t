@@ -34,8 +34,9 @@ Detect libjvm, libpython, and binpython locations:
 Prepare for custom configurator:
 
   $ cp -rp jaunch jaunch.original
+  $ rm jaunch/jaunch*
   $ cp -rp Hi.app Hi.app.original
-  $ rm jaunch/jaunch* Hi.app/Contents/MacOS/jaunch*
+  $ test ! -e Hi.app/Contents/MacOS/jaunch-macos || rm Hi.app/Contents/MacOS/jaunch*
 
 Test simple sequence of directives (no Java AWT):
 
