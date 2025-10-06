@@ -107,3 +107,9 @@ echo
 for f in "$demoDir"/*.sh; do
   mv -v "$f" "${f%.sh}"
 done
+
+# Remove any extraneous jaunch/jaunch-macos* binaries.
+# Find them in the Contents/MacOS folder of each .app.
+find "$demoDir/jaunch" -name 'jaunch-macos*' | while read f; do (
+  set -x; rm "$f"
+) done
