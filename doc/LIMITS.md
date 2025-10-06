@@ -19,30 +19,36 @@ The minimum operating system versions are:
 * [macOS](MACOS.md) 11 "Big Sur"
 * [Windows](WINDOWS.md) 10
 
-Here are some Linux distributions that use glibc 2.34 or later:
+See the operating system documentation links above for additional quirks and limitations relating to each specific platform.
+
+#### Linux distributions
+
+Here are some Linux distributions that use glibc 2.34 or later.
+
+**Red Hat Family:**
 
 | Distro         | Release       |
-|----------------|---------------|
-| Red Hat Family |               |
 |----------------|---------------|
 | RHEL           | 9.0           |
 | CentOS         | Stream 9      |
 | Rocky Linux    | 9.0           |
 | AlmaLinux      | 9.0           |
 | Fedora         | 35            |
-|----------------|---------------|
-| Debian Family  |               |
+
+**Debian Family:**
+
+| Distro         | Release       |
 |----------------|---------------|
 | Ubuntu         | 22.04 LTS     |
 | Debian         | 12 "Bookworm" |
 | Linux Mint     | 21            |
-|----------------|---------------|
-| SUSE Family    |               |
+
+**SUSE Family:**
+
+| Distro         | Release       |
 |----------------|---------------|
 | openSUSE       | Leap 15.5     |
 | SLES           | 15 SP5        |
-
-See the operating system documentation links above for additional quirks and limitations relating to each specific platform.
 
 ------------------------------------------------------------------------------
 
