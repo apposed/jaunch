@@ -429,7 +429,7 @@ From [the constructor website](https://conda.github.io/constructor/):
 [Gatekeeper]: https://en.wikipedia.org/wiki/Gatekeeper_(macOS)
 [JNI]: https://en.wikipedia.org/wiki/Java_Native_Interface
 [JPype]: https://jpype.readthedocs.io/
-[JVM]: doc/JVM.md
+[Java]: doc/JVM.md
 [Kotlin Native]: https://kotlinlang.org/docs/native-overview.html
 [Linux]: doc/LINUX.md
 [OpenMoji]: https://openmoji.org/
