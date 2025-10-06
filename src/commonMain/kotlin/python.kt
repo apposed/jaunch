@@ -251,17 +251,23 @@ class PythonInstallation(
             return null
         }
 
-        // Use props.py to discover the libpython location.
-        // See doc/PYTHON.md for details on the platform-specific logic.
-        val propsScript = constraints.configDir / "props.py"
-        if (!propsScript.exists) {
-            warn("props.py not found at: ", propsScript.path)
-            return null
-        }
+        // NB: Temporarily change the current working directory to the one containing
+        // the props.py helper program. This lets us invoke the python executable
+        // in a simpler way, avoiding quoting complexity, especially on Windows.
+        val cwd = getcwd()
+        setcwd(constraints.configDir.path)
 
         debug("Invoking `\"", pythonExe, "\" props.py`...")
-        val stdout = execute("\"$pythonExe\" \"${propsScript.path}\"") ?: return null
-        return linesToMap(stdout, "=")
+        val propsExists = File("props.py").exists
+        if (!propsExists) warn("props.py not found at: ", constraints.configDir.path)
+        val stdout: List<String>? =
+            if (propsExists) execute("\"$pythonExe\" props.py")
+            else null
+
+        // NB: Restore original working directory.
+        setcwd(cwd)
+
+        return if (stdout == null) null else linesToMap(stdout, "=")
     }
 
     private fun askPipForPackages(): Map<String, String> {
