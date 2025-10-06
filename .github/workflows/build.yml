@@ -127,12 +127,8 @@ jobs:
       run: |
         for tar in jaunch-*/jaunch.tar*; do tar xf "$tar"; done
 
-    - name: Assemble distribution
-      run: |
-        bash -c "tar czf jaunch.tar.gz dist"
-
     - name: Upload merged distribution
       uses: actions/upload-artifact@v4
       with:
         name: jaunch
-        path: jaunch.tar.gz
+        path: dist
