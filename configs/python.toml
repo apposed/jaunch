@@ -194,6 +194,8 @@ python.exe-suffixes = [
     'OS:MACOSX|bin/python3',
     'OS:WINDOWS|python.exe',
     'OS:WINDOWS|python3.exe',
+    'OS:WINDOWS|Scripts\python.exe',
+    'OS:WINDOWS|Scripts\python3.exe',
 ]
 
 # ==============================================================================
