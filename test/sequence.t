@@ -12,8 +12,11 @@ Detect current platform:
   $ case "$arch" in arm64|aarch64) arch=arm64 ;; x86_64|amd64) arch=x64 ;; esac
   $ os=$(uname -s 2>/dev/null)
   $ case "$os" in Linux) platform="linux-$arch" ;; Darwin) platform="macos-$arch" ;; MINGW*|MSYS*) platform="windows-$arch.exe" ;; esac
+  $ case "$os" in Linux) jaunch="jaunch/jaunch" ;; Darwin) jaunch="Hi.app/Contents/MacOS/jaunch" ;; MINGW*|MSYS*) jaunch="jaunch/jaunch" ;; esac
   $ echo "platform = $platform"
   platform = *-* (glob)
+  $ echo "jaunch = $jaunch"
+  jaunch = */jaunch (glob)
 
 Detect libjvm, libpython, and binpython locations:
 
@@ -31,12 +34,13 @@ Detect libjvm, libpython, and binpython locations:
 Prepare for custom configurator:
 
   $ cp -rp jaunch jaunch.original
-  $ rm jaunch/jaunch*
+  $ cp -rp Hi.app Hi.app.original
+  $ rm jaunch/jaunch* Hi.app/Contents/MacOS/jaunch*
 
 Test simple sequence of directives (no Java AWT):
 
-  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" -e "s:BINPYTHON:$binpython:g" ../test/sequence-simple.sh > jaunch/jaunch
-  $ chmod +x jaunch/jaunch
+  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" -e "s:BINPYTHON:$binpython:g" ../test/sequence-simple.sh > "$jaunch"
+  $ chmod +x "$jaunch"
   $ ./hi
   Hello, 1-JVM-main!
   Hello, 2-PYTHON-main!
@@ -45,8 +49,8 @@ Test simple sequence of directives (no Java AWT):
 
 Test complex sequence of directives involving Java AWT:
 
-  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" -e "s:BINPYTHON:$binpython:g" ../test/sequence-awt.sh > jaunch/jaunch
-  $ chmod +x jaunch/jaunch
+  $ sed -e "s:LIBJVM:$libjvm:g" -e "s:LIBPYTHON:$libpython:g" -e "s:BINPYTHON:$binpython:g" ../test/sequence-awt.sh > "$jaunch"
+  $ chmod +x "$jaunch"
   $ ./hi
   Hello, 1-JVM-main!
   Hello, 2-PYTHON-main!
@@ -57,5 +61,6 @@ Test complex sequence of directives involving Java AWT:
 
 Cleanup:
 
-  $ rm -rf jaunch
+  $ rm -rf jaunch Hi.app
   $ mv jaunch.original jaunch
+  $ mv Hi.app.original Hi.app
