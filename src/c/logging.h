@@ -12,6 +12,7 @@
 
 extern int log_level;
 extern int headless_mode;
+extern int do_console_check;
 
 // =================
 // LOGGING FUNCTIONS
@@ -38,6 +39,7 @@ const char *current_thread_name();
     for (size_t i = 0; i < argc; i++) \
         if (strcmp(argv[i], "--debug") == 0) log_level++; \
         else if (strcmp(argv[i], "--headless") == 0) headless_mode++; \
+        else if (strcmp(argv[i], "--jaunch-skip-console-check") == 0) do_console_check = 0; \
 } while (0)
 
 #define LOG_DEBUG(component, fmt, ...) \

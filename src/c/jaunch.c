@@ -81,6 +81,7 @@
 
 int log_level = 0;             // see logging.h
 int headless_mode = 0;         // see logging.h
+int do_console_check = 1;      // see logging.h, win32.h
 ThreadContext *context = NULL; // see thread.h
 
 // -- CONSTANTS --

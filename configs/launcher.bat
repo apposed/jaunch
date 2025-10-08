@@ -47,4 +47,4 @@ if not exist "%launcher%" (
 )
 
 rem # Launch with the discovered executable.
-@"%launcher%" %*
+@"%launcher%" --jaunch-skip-console-check %*
