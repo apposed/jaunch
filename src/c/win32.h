@@ -184,12 +184,12 @@ void setup(const int argc, const char *argv[]) {
                     break;
                 case PARENT_POWERSHELL:
                     LOG_BLANK("");
-                    LOG_ERROR("=======================================================");
-                    LOG_ERROR("GUI program launched from PowerShell.");
-                    LOG_ERROR("For proper console behavior, make sure to use:");
-                    LOG_ERROR("    Start-Process -Wait %s", argv0);
-                    LOG_ERROR("Or launch from inside a batch script, or from Git Bash.");
-                    LOG_ERROR("=======================================================");
+                    LOG_WARN("=======================================================");
+                    LOG_WARN("GUI program launched from PowerShell.");
+                    LOG_WARN("For proper console behavior, make sure to use:");
+                    LOG_WARN("    Start-Process -Wait %s", argv0);
+                    LOG_WARN("Or launch from inside a batch script, or from Git Bash.");
+                    LOG_WARN("=======================================================");
                     break;
                 case PARENT_BASH:
                     LOG_INFO("WIN32", "Running from bash; all is well.");
