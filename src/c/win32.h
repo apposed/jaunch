@@ -161,7 +161,7 @@ void setup(const int argc, const char *argv[]) {
             // that the name of the parent process gets emitted to stderr,
             // because we probably didn't see it last time due to the console
             // not yet being fully connected.
-            if (debug_mode) getParentProcessType();
+            if (log_level >= 2) getParentProcessType();
         }
 
         // Warn if we're a GUI app running directly from a Windows shell.

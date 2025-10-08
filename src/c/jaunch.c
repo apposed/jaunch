@@ -79,7 +79,7 @@
 
 // -- GLOBAL STATE DEFINITIONS --
 
-int debug_mode = 0;            // see logging.h
+int log_level = 0;             // see logging.h
 int headless_mode = 0;         // see logging.h
 ThreadContext *context = NULL; // see thread.h
 

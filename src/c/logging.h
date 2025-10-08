@@ -10,7 +10,7 @@
 // GLOBAL STATE DECLARATIONS
 // =========================
 
-extern int debug_mode;
+extern int log_level;
 extern int headless_mode;
 
 // =================
@@ -18,7 +18,7 @@ extern int headless_mode;
 // =================
 
 void log_at_level(int verbosity, const char *fmt, ...) {
-    if (debug_mode < verbosity) return;
+    if (log_level < verbosity) return;
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
@@ -36,7 +36,7 @@ const char *current_thread_name();
 
 #define LOG_SET_LEVEL(argc, argv) do { \
     for (size_t i = 0; i < argc; i++) \
-        if (strcmp(argv[i], "--debug") == 0) debug_mode++; \
+        if (strcmp(argv[i], "--debug") == 0) log_level++; \
         else if (strcmp(argv[i], "--headless") == 0) headless_mode++; \
 } while (0)
 
