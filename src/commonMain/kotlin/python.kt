@@ -50,10 +50,9 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         debug("Suffixes to check for Python executable:")
         pythonSuffixes.forEach { debug("* ", it) }
 
-        // Calculate Python distro and version constraints.
+        // Calculate Python installation constraints.
         val constraints = PythonConstraints(
-            configDir,
-            pythonSuffixes,
+            configDir, pythonSuffixes,
             config.pythonVersionMin, config.pythonVersionMax,
             config.targetOS, config.targetArch,
         )
@@ -241,8 +240,6 @@ class PythonInstallation(
         return guess("installed packages") { askPipForPackages() }
     }
 
-    // -- Helper methods --
-
     /** Calls `python props.py` to receive Python environment details from the boss. */
     private fun askPythonForProperties(): Map<String, String>? {
         val pythonExe = binPython
@@ -269,6 +266,8 @@ class PythonInstallation(
 
         return if (stdout == null) null else linesToMap(stdout, "=")
     }
+
+    // -- Helper methods --
 
     private fun askPipForPackages(): Map<String, String> {
         val pythonExe = binPython

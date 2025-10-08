@@ -59,7 +59,7 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         debug("Suffixes to check for libjvm:")
         libjvmSuffixes.forEach { debug("* ", it) }
 
-        // Calculate Java distro and version constraints.
+        // Calculate Java installation constraints.
         val allowWeirdJvms = config.jvmAllowWeirdRuntimes ?: false
         val distrosAllowed = vars.calculate(config.jvmDistrosAllowed, hints)
         val distrosBlocked = vars.calculate(config.jvmDistrosBlocked, hints)
@@ -410,8 +410,6 @@ class JavaInstallation(
         }
     }
 
-    // -- Helper methods --
-
     /** Reads metadata from the `release` file. */
     private fun readReleaseInfo(): Map<String, String>? {
         debug("Reading release file...")
@@ -447,6 +445,8 @@ class JavaInstallation(
 
         return if (stdout == null) null else linesToMap(stdout, "=")
     }
+
+    // -- Helper methods --
 
     private fun guessDistro(distroMap: Map<String, List<String>>, s: String?): String? {
         if (s == null) return null
