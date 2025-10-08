@@ -125,7 +125,25 @@ jobs:
 
     - name: Merge platform distributions
       run: |
-        for tar in jaunch-*/jaunch.tar*; do tar xf "$tar"; done
+        # The order here matters, because the platforms have overlapping binaries.
+        # We unpack Windows first, so that the launcher-windows-*.exe binaries that
+        # were natively built on Windows get overwritten by the (arguably) better
+        # binaries that were cross-compiled on the other platforms.
+        #
+        # Why are the cross-compiled native launcher EXEs arguably better?
+        #
+        # File sizes are approximately as follows:
+        # - 363K - Cross-compiled, with debug symbols
+        # - 102K - Cross-compiled, debug symbols stripped
+        # - 132K - Natively compiled, with debug symbols
+        # - 121K - Natively compiled, debug symbols stripped
+        #
+        # So the thinking is that the cross-compiled EXEs have better-optimized
+        # (smaller) code thanks to llvm-mingw's clang, as well as richer debug
+        # symbols. At least that's what my LLM thinks, and it is never wrong.
+        for os in windows macos ubuntu; do
+          tar xf jaunch-"$os"-latest/jaunch.tar.gz
+        done
 
     - name: Upload merged distribution
       uses: actions/upload-artifact@v4
