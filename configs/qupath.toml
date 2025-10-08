@@ -9,7 +9,7 @@
 #
 # See the common.toml file for more details about Jaunch configuration.
 
-jaunch-version = 1
+jaunch-version = 2
 
 program-name = 'QuPath'
 

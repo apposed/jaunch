@@ -1,7 +1,7 @@
 # This configuration file exists to test the passing
 # of JVM configuration args to a Python launch.
 
-jaunch-version = 1
+jaunch-version = 2
 
 program-name = 'Hybrid'
 

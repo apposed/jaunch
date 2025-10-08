@@ -32,7 +32,7 @@
 # The version of Jaunch with which this configuration file is intended to work.
 # Leave this value be, unless you are upgrading from an older version of Jaunch.
 
-jaunch-version = 1
+jaunch-version = 2
 
 # ==============================================================================
 # program-name
