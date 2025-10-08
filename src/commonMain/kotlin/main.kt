@@ -60,6 +60,13 @@ fun main(args: Array<String>) {
     if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
     val config = readConfig(configFile, internalFlags)
 
+    val configVersion = config.jaunchVersion
+    val jaunchVersion = versionDigits(JAUNCH_VERSION)[0]
+    if (configVersion != jaunchVersion) {
+        warn("TOML config version $configVersion != Jaunch version $jaunchVersion")
+        warn("Launch behavior may not function as configured!")
+    }
+
     val programName = config.programName ?: exeFile?.base?.name ?: "Jaunch"
     debug("programName -> ", programName)
 
