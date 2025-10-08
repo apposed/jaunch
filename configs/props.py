@@ -6,6 +6,7 @@ Outputs configuration values that Jaunch uses to reason about the Python
 installation, including the Python shared library path and other metadata.
 """
 
+import platform
 import sys
 import sysconfig
 
@@ -56,6 +57,8 @@ def guess_libpython_path():
 
 props = {
     "jaunch.libpython_path": guess_libpython_path(),
+    "platform.machine": platform.machine(),
+    "platform.system": platform.system(),
     "sys.executable": sys.executable,
     "sys.version": sys.version,
     "sys.prefix": sys.prefix,

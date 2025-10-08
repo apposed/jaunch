@@ -7,6 +7,8 @@ data class PythonConstraints(
     val exeSuffixes: List<String>,
     val versionMin: String?,
     val versionMax: String?,
+    val osAliases: List<String>,
+    val archAliases: List<String>,
     val targetOS: String,
     val targetArch: String,
 )
@@ -51,10 +53,12 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         pythonSuffixes.forEach { debug("* ", it) }
 
         // Calculate Python installation constraints.
+        val osAliases = vars.calculate(config.osAliases, hints)
+        val archAliases = vars.calculate(config.archAliases, hints)
         val constraints = PythonConstraints(
             configDir, pythonSuffixes,
             config.pythonVersionMin, config.pythonVersionMax,
-            config.targetOS, config.targetArch,
+            osAliases, archAliases, config.targetOS, config.targetArch,
         )
 
         // Discover Python.
@@ -169,6 +173,8 @@ class PythonInstallation(
     val binPython: String? by lazy { findBinPython() }
     val libPythonPath: String? by lazy { guessLibPython() }
     val version: String? by lazy { guessPythonVersion() }
+    val osName: String? by lazy { guessOperatingSystemName() }
+    val cpuArch: String? by lazy { guessCpuArchitecture() }
     val packages: Map<String, String> by lazy { guessInstalledPackages() }
     val props: Map<String, String>? by lazy { askPythonForProperties() }
 
@@ -194,6 +200,16 @@ class PythonInstallation(
     override fun checkConstraints(): Boolean {
         // Ensure libpython is present.
         if (libPythonPath == null) return fail("No Python library found.")
+
+        // Check OS name and CPU architecture constraints.
+        if (osName == null)
+            return fail("Unknown operating system.")
+        if (osName != constraints.targetOS)
+            return fail("Operating system '$osName' does not match current platform ${constraints.targetOS}")
+        if (cpuArch == null)
+            return fail("Unknown CPU architecture.")
+        if (cpuArch != constraints.targetArch)
+            return fail("CPU architecture '$cpuArch' does not match target architecture ${constraints.targetArch}")
 
         // Check Python version constraints.
         if (constraints.versionMin != null || constraints.versionMax != null) {
@@ -233,6 +249,18 @@ class PythonInstallation(
         return guess("Python version") {
             props?.get("cvars.py_version") ?:
             extractPythonVersion(props?.get("sys.version"))
+        }
+    }
+
+    private fun guessOperatingSystemName(): String? {
+        return guess("OS name") {
+            guessAlias(constraints.osAliases, "platform.system")
+        }
+    }
+
+    private fun guessCpuArchitecture(): String? {
+        return guess("CPU architecture") {
+            guessAlias(constraints.archAliases, "platform.machine")
         }
     }
 
@@ -281,6 +309,17 @@ class PythonInstallation(
         return lines.subList(min(2, lines.size), lines.size)
             .map { it.split(Regex("\\s+")) }
             .associate { it[0] to if (it.isEmpty()) "" else it[1] }
+    }
+
+    private fun guessAlias(aliasLines: Iterable<String>, propsField: String): String? {
+        val aliasMap = linesToMapOfLists(aliasLines)
+
+        val alias =
+            // Extract the field from the Python properties.
+            props?.get(propsField)?.lowercase() ?: return null
+
+        // Find the canonical name of the extracted value.
+        return aliasMap.entries.firstOrNull { (_, aliases) -> aliases.contains(alias) }?.key ?: alias
     }
 }
 
