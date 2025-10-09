@@ -2,8 +2,8 @@
 
 1. OPTION 1: Download and unpack the
    [latest Jaunch release](https://github.com/apposed/jaunch/releases).
-   The rest of this guide will assume you unpacked the Jaunch v1.0.4
-   release into your home directory at `~/jaunch-1.0.4`.
+   The rest of this guide will assume you unpacked the Jaunch v2.0.0
+   release into your home directory at `~/jaunch-2.0.0`.
 
 2. OPTION 2: You can [build Jaunch from source](BUILD.md). But if you
    want launchers for all supported platforms (Linux, macOS, and Windows),
@@ -51,7 +51,7 @@
 7. Use Jaunch's app-generation script to copy Jaunch's various bits
    into the correct places within your application base directory:
    ```shell
-   ~/jaunch-1.0.4/bin/appify.sh \
+   ~/jaunch-2.0.0/bin/appify.sh \
      --app-exe fizzbuzz \
      --app-icon-linux fizzbuzz.svg \
      --app-icon-macos fizzbuzz.icns \
@@ -88,7 +88,7 @@ Or maybe you don't, in which case you can ask for help on the
 Next steps:
 
 1. Optionally, compress the launcher executables using
-   `~/jaunch-1.0.4/bin/pack.sh`, which uses [UPX](https://upx.github.io/) to
+   `~/jaunch-2.0.0/bin/pack.sh`, which uses [UPX](https://upx.github.io/) to
    reduce their file sizes. Be warned that while it is nice to reduce Jaunch
    to the smallest possible size, we have received reports of Windows
    anti-malware tools misidentifying Jaunch binaries as infected by
@@ -96,6 +96,6 @@ Next steps:
    So caveat emptor on the binary shrinking!
 
 2. Code-sign your macOS and/or Windows binaries using
-   `~/jaunch-1.0.4/bin/sign.sh`. See these guides for detailed instructions:
+   `~/jaunch-2.0.0/bin/sign.sh`. See these guides for detailed instructions:
    - [Code-signing on macOS](MACOS.md#code-signing)
    - [Code-signing on Windows](WINDOWS.md#code-signing)
