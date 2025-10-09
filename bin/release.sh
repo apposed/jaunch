@@ -65,8 +65,9 @@ read answer ||
 
 # Unpack the jaunch artifact.
 step 'Unpacking the Jaunch build artifact' &&
-unzip jaunch.zip &&
-tar xvf jaunch.tar.gz &&
+mkdir "$distdir" && cd "$distdir" &&
+unzip ../jaunch.zip &&
+cd .. &&
 test -d "$distdir" ||
   die 'Failed to unpack Jaunch artifact.'
 
