@@ -15,7 +15,7 @@ To build Jaunch's demo apps from source, see [EXAMPLES.md](doc/EXAMPLES.md).
 
 | Runtime  | Minimum |
 |----------|---------|
-| [Java]   | 1.8     |
+| [JVM]    | 1.8     |
 | [Python] | 3.8     |
 
 | Operating system | Minimum      |
@@ -429,7 +429,7 @@ From [the constructor website](https://conda.github.io/constructor/):
 [Gatekeeper]: https://en.wikipedia.org/wiki/Gatekeeper_(macOS)
 [JNI]: https://en.wikipedia.org/wiki/Java_Native_Interface
 [JPype]: https://jpype.readthedocs.io/
-[Java]: doc/JVM.md
+[JVM]: doc/JVM.md
 [Kotlin Native]: https://kotlinlang.org/docs/native-overview.html
 [Linux]: doc/LINUX.md
 [OpenMoji]: https://openmoji.org/
