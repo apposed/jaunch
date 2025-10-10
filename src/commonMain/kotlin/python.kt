@@ -191,7 +191,10 @@ class PythonInstallation(
             "binPython: $binPython",
             "libPython: $libPythonPath",
             "version: $version",
+            "OS name: $osName",
+            "CPU arch: $cpuArch",
             "packages:${bulletList(packages)}",
+            "properties:${bulletList(props)}",
         ).joinToString(NL)
     }
 
