@@ -327,7 +327,7 @@ jvm.allow-weird-runtimes = true
 # As of this writing, the following Java distributions have been tested:
 #
 # Distribution       | IMPLEMENTOR              | IMPLEMENTOR_VERSION prefix             | root folder slug
-# -------------------| -------------------------|----------------------------------------|-----------------
+# -------------------|--------------------------|----------------------------------------|-----------------
 # AdoptOpenJDK       | AdoptOpenJDK             | AdoptOpenJDK                           | adopt
 # Alibaba Dragonwell | Alibaba                  | (Alibaba Dragonwell Extended Edition)* | dragonwell
 # Amazon Corretto    | Amazon.com Inc.*         | Corretto*                              | corretto or amazon-corretto*
