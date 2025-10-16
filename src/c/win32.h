@@ -92,10 +92,9 @@ static int is_in_path(const char *dir, const char *path_value) {
 }
 
 /**
- * Prepend directories to PATH environment variable.
- * Takes a NULL-terminated array of directory paths.
+ * Prepend a directory to the PATH environment variable if not already present.
  */
-static void prepend_to_path(const char **dirs, int count) {
+static void prepend_to_path(const char *dir) {
     // Get current PATH.
     DWORD path_len = GetEnvironmentVariableA("PATH", NULL, 0);
     if (path_len == 0) {
@@ -106,33 +105,19 @@ static void prepend_to_path(const char **dirs, int count) {
     char *old_path = malloc_or_die(path_len, "old PATH");
     GetEnvironmentVariableA("PATH", old_path, path_len);
 
-    // Calculate new PATH length and build it.
-    size_t new_path_len = path_len;
-    for (int i = 0; i < count; i++) {
-        if (!is_in_path(dirs[i], old_path)) {
-            new_path_len += strlen(dirs[i]) + 1; // +1 for semicolon
-        }
+    // Check if already in PATH.
+    if (is_in_path(dir, old_path)) {
+        LOG_DEBUG("WIN32", "Already in PATH: %s", dir);
+        free(old_path);
+        return;
     }
 
-    char *new_path = malloc_or_die(new_path_len + 1, "new PATH");
-    new_path[0] = '\0';
+    // Prepend directory to PATH.
+    LOG_DEBUG("WIN32", "Prepending to PATH: %s", dir);
+    size_t new_path_len = strlen(dir) + path_len + 2; // +2 for semicolon and null
+    char *new_path = malloc_or_die(new_path_len, "new PATH");
+    snprintf(new_path, new_path_len, "%s;%s", dir, old_path);
 
-    // Prepend directories not already in PATH.
-    for (int i = 0; i < count; i++) {
-        if (!is_in_path(dirs[i], old_path)) {
-            LOG_DEBUG("WIN32", "Prepending to PATH: %s", dirs[i]);
-            if (new_path[0] != '\0') strcat(new_path, ";");
-            strcat(new_path, dirs[i]);
-        } else {
-            LOG_DEBUG("WIN32", "Already in PATH: %s", dirs[i]);
-        }
-    }
-
-    // Append original PATH.
-    if (new_path[0] != '\0') strcat(new_path, ";");
-    strcat(new_path, old_path);
-
-    // Set the new PATH.
     if (!SetEnvironmentVariableA("PATH", new_path)) {
         LOG_DEBUG("WIN32", "Warning: Failed to set PATH: %s", lib_error());
     }
@@ -337,6 +322,9 @@ void *lib_open(const char *path) {
     if (dll_dir != NULL) {
         LOG_DEBUG("WIN32", "DLL directory: %s", dll_dir);
 
+        // Add the DLL's directory to PATH.
+        prepend_to_path(dll_dir);
+
         // Check if we're loading from a subdirectory of "bin".
         // This pattern occurs with JVM:
         //   - JDK 9+:  $JDK/bin/server/jvm.dll or $JDK/bin/client/jvm.dll
@@ -346,14 +334,9 @@ void *lib_open(const char *path) {
         char *parent_dir = get_parent_dir(dll_dir);
         if (parent_dir != NULL && strcmp(get_basename(parent_dir), "bin") == 0) {
             LOG_DEBUG("WIN32", "Detected bin subdirectory structure at: %s", parent_dir);
-            const char *dirs[] = { dll_dir, parent_dir };
-            prepend_to_path(dirs, 2);
-            free(parent_dir);
-        } else {
-            const char *dirs[] = { dll_dir };
-            prepend_to_path(dirs, 1);
-            if (parent_dir != NULL) free(parent_dir);
+            prepend_to_path(parent_dir);
         }
+        if (parent_dir != NULL) free(parent_dir);
 
         free(dll_dir);
     }
