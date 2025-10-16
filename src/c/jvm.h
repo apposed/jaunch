@@ -180,7 +180,7 @@ static int launch_jvm(const size_t argc, const char **argv) {
  */
 static void cleanup_jvm() {
     if (cached_jvm != NULL) {
-        LOG_DEBUG("JVM", "Destroying cached JVM");
+        LOG_DEBUG("JVM", "Awaiting JVM destruction");
         (*cached_jvm)->DestroyJavaVM(cached_jvm);
         LOG_DEBUG("JVM", "Closing libjvm");
         lib_close(cached_jvm_library);
