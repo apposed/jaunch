@@ -338,11 +338,14 @@ void *lib_open(const char *path) {
         LOG_DEBUG("WIN32", "DLL directory: %s", dll_dir);
 
         // Check if we're loading from a subdirectory of "bin".
-        // This pattern occurs with JVM (bin\server\jvm.dll or bin\client\jvm.dll),
-        // where the runtime library depends on shared libraries in the parent bin directory.
+        // This pattern occurs with JVM:
+        //   - JDK 9+:  $JDK/bin/server/jvm.dll or $JDK/bin/client/jvm.dll
+        //   - JDK 8-:  $JDK/jre/bin/server/jvm.dll or $JDK/jre/bin/client/jvm.dll
+        // In both cases, the runtime library depends on shared libraries
+        // in the parent bin directory (e.g., java.dll, awt.dll).
         char *parent_dir = get_parent_dir(dll_dir);
         if (parent_dir != NULL && strcmp(get_basename(parent_dir), "bin") == 0) {
-            LOG_DEBUG("WIN32", "Detected bin subdirectory structure");
+            LOG_DEBUG("WIN32", "Detected bin subdirectory structure at: %s", parent_dir);
             const char *dirs[] = { dll_dir, parent_dir };
             prepend_to_path(dirs, 2);
             free(parent_dir);
