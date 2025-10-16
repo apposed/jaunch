@@ -164,7 +164,7 @@ The next section offers step-by-step instructions for the second path: signing a
 6. Run Jaunch's code-signing script:
    ```shell
    export DEV_ID="Penelope Realperson (XY1Q234ABC)"
-   ~/jaunch-2.0.0/bin/sign.sh /path/to/MyApp.app
+   ~/jaunch-2.0.1/bin/sign.sh /path/to/MyApp.app
    ```
    Where your actual `DEV_ID` value is your developer ID info from step 3, and
    `/path/to/MyApp.app` is the location of the .app bundle generated in step 1.
