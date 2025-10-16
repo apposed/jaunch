@@ -46,6 +46,101 @@ int file_exists(const char *path) {
     return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
 }
 
+/**
+ * Get the parent directory of a path.
+ * Returns a newly allocated string, or NULL if there is no parent.
+ * Caller must free the returned string.
+ */
+static char *get_parent_dir(const char *path) {
+    char *parent = strdup(path);
+    char *last_slash = strrchr(parent, '\\');
+    if (last_slash == NULL) last_slash = strrchr(parent, '/');
+
+    if (last_slash != NULL) {
+        *last_slash = '\0';
+        return parent;
+    }
+
+    free(parent);
+    return NULL;
+}
+
+/**
+ * Get the last component (file/directory name) of a path.
+ * Returns a pointer into the original string (no allocation).
+ */
+static const char *get_basename(const char *path) {
+    const char *last_slash = strrchr(path, '\\');
+    if (last_slash == NULL) last_slash = strrchr(path, '/');
+    return (last_slash == NULL) ? path : last_slash + 1;
+}
+
+/**
+ * Check if a directory is already in PATH.
+ */
+static int is_in_path(const char *dir, const char *path_value) {
+    // Search for ";dir;" pattern to avoid partial matches.
+    char search_pattern[MAX_PATH + 2];
+    snprintf(search_pattern, sizeof(search_pattern), ";%s;", dir);
+
+    char *prefixed_path = malloc_or_die(strlen(path_value) + 3, "prefixed PATH");
+    snprintf(prefixed_path, strlen(path_value) + 3, ";%s;", path_value);
+
+    int found = (strstr(prefixed_path, search_pattern) != NULL);
+    free(prefixed_path);
+    return found;
+}
+
+/**
+ * Prepend directories to PATH environment variable.
+ * Takes a NULL-terminated array of directory paths.
+ */
+static void prepend_to_path(const char **dirs, int count) {
+    // Get current PATH.
+    DWORD path_len = GetEnvironmentVariableA("PATH", NULL, 0);
+    if (path_len == 0) {
+        LOG_DEBUG("WIN32", "Warning: Failed to get current PATH");
+        return;
+    }
+
+    char *old_path = malloc_or_die(path_len, "old PATH");
+    GetEnvironmentVariableA("PATH", old_path, path_len);
+
+    // Calculate new PATH length and build it.
+    size_t new_path_len = path_len;
+    for (int i = 0; i < count; i++) {
+        if (!is_in_path(dirs[i], old_path)) {
+            new_path_len += strlen(dirs[i]) + 1; // +1 for semicolon
+        }
+    }
+
+    char *new_path = malloc_or_die(new_path_len + 1, "new PATH");
+    new_path[0] = '\0';
+
+    // Prepend directories not already in PATH.
+    for (int i = 0; i < count; i++) {
+        if (!is_in_path(dirs[i], old_path)) {
+            LOG_DEBUG("WIN32", "Prepending to PATH: %s", dirs[i]);
+            if (new_path[0] != '\0') strcat(new_path, ";");
+            strcat(new_path, dirs[i]);
+        } else {
+            LOG_DEBUG("WIN32", "Already in PATH: %s", dirs[i]);
+        }
+    }
+
+    // Append original PATH.
+    if (new_path[0] != '\0') strcat(new_path, ";");
+    strcat(new_path, old_path);
+
+    // Set the new PATH.
+    if (!SetEnvironmentVariableA("PATH", new_path)) {
+        LOG_DEBUG("WIN32", "Warning: Failed to set PATH: %s", lib_error());
+    }
+
+    free(new_path);
+    free(old_path);
+}
+
 typedef enum {
     PARENT_UNKNOWN,
     PARENT_CMD,
@@ -231,23 +326,42 @@ void teardown() {
 }
 
 void *lib_open(const char *path) {
-    // On Windows, add the DLL's directory to the DLL search path.
-    // This ensures that dependent DLLs (like vcruntime140.dll) can be found
-    // without requiring the DLL's directory to be in the system PATH.
-    char *dll_dir = strdup(path);
-    char *last_slash = strrchr(dll_dir, '\\');
-    if (last_slash != NULL) {
-        *last_slash = '\0'; // Truncate to get directory path
-        LOG_DEBUG("WIN32", "Adding directory to DLL search path: %s", dll_dir);
+    // On Windows, add the DLL's directory to the PATH environment variable.
+    // This ensures that dependent DLLs can be found via the standard LoadLibrary
+    // search order, which is important because runtime code (e.g., Java's AWT)
+    // may use plain LoadLibrary internally and expect dependencies to be findable.
 
-        // Use SetDllDirectory to add the Python directory to the search path.
-        if (!SetDllDirectoryA(dll_dir)) {
-            LOG_DEBUG("WIN32", "Warning: Failed to set DLL directory: %s", lib_error());
-            // Continue anyway - this is not fatal, just falls back to PATH dependency.
+    LOG_DEBUG("WIN32", "lib_open called with path: %s", path);
+
+    char *dll_dir = get_parent_dir(path);
+    if (dll_dir != NULL) {
+        LOG_DEBUG("WIN32", "DLL directory: %s", dll_dir);
+
+        // Check if we're loading from a subdirectory of "bin".
+        // This pattern occurs with JVM (bin\server\jvm.dll or bin\client\jvm.dll),
+        // where the runtime library depends on shared libraries in the parent bin directory.
+        char *parent_dir = get_parent_dir(dll_dir);
+        if (parent_dir != NULL && strcmp(get_basename(parent_dir), "bin") == 0) {
+            LOG_DEBUG("WIN32", "Detected bin subdirectory structure");
+            const char *dirs[] = { dll_dir, parent_dir };
+            prepend_to_path(dirs, 2);
+            free(parent_dir);
+        } else {
+            const char *dirs[] = { dll_dir };
+            prepend_to_path(dirs, 1);
+            if (parent_dir != NULL) free(parent_dir);
         }
+
+        free(dll_dir);
     }
-    free(dll_dir);
-    return LoadLibrary(path);
+
+    // Load the library using LoadLibraryA.
+    HMODULE lib = LoadLibraryA(path);
+    if (lib == NULL) {
+        LOG_DEBUG("WIN32", "LoadLibraryA failed: %s", lib_error());
+    }
+
+    return lib;
 }
 void *lib_sym(void *library, const char *symbol) { return GetProcAddress(library, symbol); }
 void lib_close(void *library) { FreeLibrary(library); }
