@@ -88,7 +88,7 @@ ThreadContext *context = NULL; // see thread.h
 
 // List of places to search for the jaunch configurator executable.
 //
-// NB: This list should align with the configDirs list in Jaunch.kt,
+// NB: This list should align with the configDirs list in main.kt,
 // except for the trailing "Contents/MacOS/" and NULL entries.
 //
 // The trailing slashes make the math simpler in the path function logic.
@@ -97,6 +97,8 @@ const char *JAUNCH_SEARCH_PATHS[] = {
     ".jaunch"SLASH,
     "config"SLASH"jaunch"SLASH,
     ".config"SLASH"jaunch"SLASH,
+    "config"SLASH,
+    ".config"SLASH,
     "Contents"SLASH"MacOS"SLASH,
     NULL,
 };

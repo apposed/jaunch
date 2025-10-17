@@ -188,7 +188,9 @@ private fun findConfigDirectory(appDir: File): File {
         appDir / "jaunch",
         appDir / ".jaunch",
         appDir / "config" / "jaunch",
-        appDir / ".config" / "jaunch"
+        appDir / ".config" / "jaunch",
+        appDir / "config",
+        appDir / ".config"
     )
     val configDir = configDirs.find { it.isDirectory }
         ?: fail("Jaunch config directory not found. Please place config in one of: $configDirs")
