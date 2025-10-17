@@ -153,15 +153,27 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         if (classpath.isNotEmpty()) {
             val classpathString = classpath.joinToString(COLON)
             val cpIndex = args.indexOfFirst { it.startsWith("-Djava.class.path=") }
+            val cpArg: String
             if (cpIndex >= 0) {
                 // Append to existing `-Djava.class.path` argument.
                 args[cpIndex] += "$COLON$classpathString"
-                debug("Extended classpath arg: ${args[cpIndex]}")
+                cpArg = args[cpIndex]
             } else {
                 // No `-Djava.class.path` argument, so we add one.
-                args += "-Djava.class.path=$classpathString"
-                debug("Added classpath arg: ${args.last()}")
+                cpArg = "-Djava.class.path=$classpathString"
+                args += cpArg
             }
+            // Note: If the new classpath component has at least three items,
+            // we print it to only the first and last separated by an ellipsis.
+            // Otherwise, applications that add long classpath print out a monster
+            // line here when run in debug mode, which is also largely redundant
+            // with the earlier listing of the jvm.classpath in a bulleted list.
+            val lt = cpArg.indexOf(COLON)
+            val rt = cpArg.lastIndexOf(COLON)
+            val shortArg =
+                if (lt == rt || rt < 0) cpArg
+                else "${cpArg.substring(0, lt + 1)}...${cpArg.substring(rt)}"
+            debug("Extended classpath: $shortArg")
         }
 
         debug()
