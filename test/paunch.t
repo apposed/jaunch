@@ -42,6 +42,18 @@ Test help text
   --system
                       do not try to run bundled runtime
 
+  $ ./paunch --print-python-home
+  /* (glob)
+
+  $ ./paunch --print-python-info 2>&1 | head -n7
+  root: /* (glob)
+  binPython: .*(bin/python3?|python3?.exe) (re)
+  libPython: .*(libpython[0-9.]*\.so|libpython[0-9.]*\.dylib|Python\.framework/Versions/[^/]*/Python|python[0-9.]*\.dll) (re)
+  version: * (glob)
+  OS name: * (glob)
+  CPU arch: * (glob)
+  packages:* (glob)
+
 Do some basic python stuff
   $ ./paunch -c "print(1+2)"
   3
