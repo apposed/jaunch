@@ -50,6 +50,10 @@ def guess_libpython_path():
                     candidate = p.with_suffix(ext)
                     if candidate.exists():
                         return str(candidate)
+            if not p.exists():
+                # HACK: Check for variant library name on Linux.
+                p1 = p.with_suffix(".so.1")
+                if p1.exists(): p = p1
             return str(p)
 
         return None

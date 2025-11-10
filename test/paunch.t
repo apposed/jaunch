@@ -48,7 +48,7 @@ Test help text
   $ ./paunch --print-python-info 2>&1 | head -n7
   root: /* (glob)
   binPython: .*(bin/python3?|python3?.exe) (re)
-  libPython: .*(libpython[0-9.]*\.so|libpython[0-9.]*\.dylib|Python\.framework/Versions/[^/]*/Python|python[0-9.]*\.dll) (re)
+  libPython: .*(libpython[0-9.]*\.so(\.1)?|libpython[0-9.]*\.dylib|Python\.framework/Versions/[^/]*/Python|python[0-9.]*\.dll) (re)
   version: * (glob)
   OS name: * (glob)
   CPU arch: * (glob)
