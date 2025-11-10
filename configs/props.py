@@ -59,6 +59,19 @@ def guess_libpython_path():
         return None
 
 
+def discern_packages():
+    """Returns a dict mapping package names to versions."""
+    try:
+        from importlib.metadata import distributions
+        return {
+            dist.metadata['Name']: dist.version
+            for dist in distributions()
+            if dist.version is not None
+        }
+    except Exception:
+        return {}
+
+
 props = {
     "jaunch.libpython_path": guess_libpython_path(),
     "platform.machine": platform.machine(),
@@ -69,6 +82,7 @@ props = {
 }
 props.update({f"paths.{k}": v for k, v in sysconfig.get_paths().items()})
 props.update({f"cvars.{k}": v for k, v in sysconfig.get_config_vars().items()})
+props.update({f"packages.{k}": v for k, v in discern_packages().items() if k})
 
 if len(sys.argv) > 1:
     # Generalize machine-specific paths.

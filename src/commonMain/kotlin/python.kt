@@ -268,7 +268,7 @@ class PythonInstallation(
     }
 
     private fun guessInstalledPackages(): Map<String, String> {
-        return guess("installed packages") { askPipForPackages() }
+        return guess("installed packages") { extractPackages(props) }
     }
 
     /** Calls `python props.py` to receive Python environment details from the boss. */
@@ -300,20 +300,6 @@ class PythonInstallation(
 
     // -- Helper methods --
 
-    private fun askPipForPackages(): Map<String, String> {
-        val pythonExe = binPython
-        if (pythonExe == null) {
-            debug("Python executable does not exist.")
-            return emptyMap()
-        }
-        debug("Invoking `\"", pythonExe, "\" -m pip list`...")
-        val lines = execute("\"$pythonExe\" -m pip list") ?: emptyList()
-        // Start at index 2 to skip the table headers.
-        return lines.subList(min(2, lines.size), lines.size)
-            .map { it.split(Regex("\\s+")) }
-            .associate { it[0] to if (it.isEmpty()) "" else it[1] }
-    }
-
     private fun guessAlias(aliasLines: Iterable<String>, propsField: String): String? {
         val aliasMap = linesToMapOfLists(aliasLines)
 
@@ -330,4 +316,11 @@ private fun extractPythonVersion(sysVersion: String?): String? {
     if (sysVersion == null) return null
     val versionPattern = Regex("(\\d+\\.\\d+\\.\\d+[^ ]*)")
     return versionPattern.find(sysVersion)?.value
+}
+
+private fun extractPackages(props: Map<String, String>?): Map<String, String> {
+    // Extract all properties with "packages." prefix.
+    return props?.filterKeys { it.startsWith("packages.") }
+        ?.mapKeys { (key, _) -> key.removePrefix("packages.") }
+        ?: emptyMap()
 }

@@ -188,7 +188,6 @@ python.root-paths = [
 # then Jaunch will check the path /the-best-python/bin/python3 for the
 # library. If found, we have a winning Python installation!
 
-# TODO: Verify this list for all platforms.
 python.exe-suffixes = [
     'OS:LINUX|bin/python',
     'OS:LINUX|bin/python3',
