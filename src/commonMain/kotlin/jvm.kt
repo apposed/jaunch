@@ -127,12 +127,22 @@ class JvmRuntimeConfig(recognizedArgs: Array<String>) :
         mainArgs += vars.calculate(config.jvmMainArgs, hints)
         debugList("Main arguments calculated:", mainArgs)
 
-        this.java = java
-
         // If -XstartOnFirstThread is given, we'd like to issue a RUNLOOP:main directive.
         // But we should only do this if --jaunch-runloop wasn't also given, since that
         // is the more direct and runtime-agnostic way of setting the RUNLOOP mode.
         skipRunLoop = "runloop" in config.internalFlags
+
+        this.java = java
+        configured = true
+    }
+
+    override fun rawConfigValues(config: JaunchConfig): List<Array<String>> {
+        return listOf(
+            config.jvmClasspath,
+            config.jvmRuntimeArgs,
+            config.jvmMainClass,
+            config.jvmMainArgs
+        )
     }
 
     override fun injectInto(vars: Vars) {

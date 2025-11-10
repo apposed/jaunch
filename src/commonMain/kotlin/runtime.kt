@@ -16,6 +16,7 @@ abstract class RuntimeConfig(
     val runtimeArgs = mutableListOf<String>()
     val mainArgs = mutableListOf<String>()
     var mainProgram: String? = null
+    var configured = false
 
     /** Dictionary of supported directives and their associated implementations. */
     abstract val supportedDirectives: DirectivesMap
@@ -36,6 +37,12 @@ abstract class RuntimeConfig(
         hints: MutableSet<String>,
         vars: Vars
     )
+
+    /**
+     * Returns the list of raw config value arrays that this runtime uses.
+     * These will be checked for variable references to other runtimes.
+     */
+    protected abstract fun rawConfigValues(config: JaunchConfig): List<Array<String>>
 
     /** Populate variables with information about this runtime. */
     abstract fun injectInto(vars: Vars)
@@ -66,12 +73,25 @@ abstract class RuntimeConfig(
     }
 
     /**
+     * Check if this runtime depends on the given dependency runtime.
+     * A runtime depends on another if any of its raw config values reference
+     * variables from that runtime's namespace (e.g., `${jvm.libjvmPath}` or `@{jvm.runtimeArgs}`).
+     */
+    fun dependsOn(dependency: RuntimeConfig, config: JaunchConfig): Boolean {
+        val pattern = Regex("""[$@]\{${dependency.prefix}\.[^}]+}""")
+        return rawConfigValues(config).any { configArray ->
+            configArray.any { value -> pattern.containsMatchIn(value) }
+        }
+    }
+
+    /**
      * Attempt to execute the given directive.
      * @param directive The directive to maybe execute.
      * @param args The arguments passed by the user, which the directive might wish to examine.
      * @return true iff the directive was successfully executed.
      */
     fun tryDirective(directive: String, args: ProgramArgs): Boolean {
+        if (!configured) return false
         val doDirective = supportedDirectives[directive] ?: return false
         debug("$prefix: executing directive: $directive")
         doDirective(args)

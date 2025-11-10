@@ -101,7 +101,7 @@ fun main(args: Array<String>) {
     val nonGlobalDirectives = executeGlobalDirectives(globalDirectiveFunctions,
         configDirectives, userArgs)
 
-    val runtimes = configureRuntimes(config, configDir, hints, vars)
+    val runtimes = configureRuntimes(config, configDir, configDirectives, launchDirectives, hints, vars)
 
     debugBanner("BUILDING ARGUMENT LISTS")
 
@@ -377,6 +377,8 @@ private fun applyModeHints(
 private fun configureRuntimes(
     config: JaunchConfig,
     configDir: File,
+    configDirectives: List<String>,
+    launchDirectives: List<String>,
     hints: MutableSet<String>,
     vars: Vars
 ): List<RuntimeConfig> {
@@ -385,10 +387,34 @@ private fun configureRuntimes(
     if (config.jvmEnabled == true) runtimes += JvmRuntimeConfig(config.jvmRecognizedArgs)
     if (config.pythonEnabled == true) runtimes += PythonRuntimeConfig(config.pythonRecognizedArgs)
 
-    // Discover the runtime installations.
+    // Discover the runtime installations - but only for runtimes that are actually needed.
     for (r in runtimes) {
-        debugBanner("CONFIGURING RUNTIME: ${r.directive}")
-        r.configure(configDir, config, hints, vars)
+        // Check if this runtime will be used for any launch or config directives.
+        if (
+            r.directive in launchDirectives ||
+            configDirectives.any { r.supportedDirectives.containsKey(it) }
+        ) {
+            debugBanner("CONFIGURING RUNTIME: ${r.directive}")
+            r.configure(configDir, config, hints, vars)
+        }
+        else {
+            debugBanner("SKIPPING DORMANT RUNTIME: ${r.directive}")
+        }
+    }
+
+    // Now configure any runtimes that are DEPENDENCIES of the now-configured ones.
+    for (r in runtimes) {
+        if (r.configured) continue
+        val needed = runtimes.any { active ->
+            active.configured && active.dependsOn(r, config)
+        }
+        if (needed) {
+            debugBanner("CONFIGURING RUNTIME DEPENDENCY: ${r.directive}")
+            r.configure(configDir, config, hints, vars)
+        }
+        else {
+            debugBanner("SKIPPING UNNEEDED RUNTIME: ${r.directive}")
+        }
     }
 
     return runtimes

@@ -112,6 +112,15 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         debugList("Main arguments calculated:", mainArgs)
 
         this.python = python
+        configured = true
+    }
+
+    override fun rawConfigValues(config: JaunchConfig): List<Array<String>> {
+        return listOf(
+            config.pythonRuntimeArgs,
+            config.pythonScriptPath,
+            config.pythonMainArgs
+        )
     }
 
     override fun injectInto(vars: Vars) {
