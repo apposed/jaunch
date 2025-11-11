@@ -222,7 +222,20 @@ python.version-min = '3.8'
 # ==============================================================================
 # Packages that must be present in the Python installation.
 #
-# TODO The syntax is similar to requirements.txt.
+# The syntax is similar to pip requirements.txt, supporting:
+# - Package name only: "numpy" (any version)
+# - Exact version: "numpy==1.24.0"
+# - Minimum version: "numpy>=1.20.0"
+# - Maximum version: "numpy<=2.0.0"
+# - Not equal: "numpy!=1.23.5"
+# - Combined constraints: "numpy>=1.20.0,<2.0.0"
+#
+# Examples:
+#   python.packages = ['numpy', 'scipy>=1.9.0']
+#   python.packages = ['pandas>=1.5.0,<2.0.0', 'matplotlib==3.7.1']
+#
+# Jaunch will check each Python installation discovered and reject any that
+# do not have all required packages installed with satisfactory versions.
 
 python.packages = []
 

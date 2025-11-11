@@ -7,6 +7,7 @@ data class PythonConstraints(
     val exeSuffixes: List<String>,
     val versionMin: String?,
     val versionMax: String?,
+    val packages: List<String>,
     val osAliases: List<String>,
     val archAliases: List<String>,
     val targetOS: String,
@@ -58,6 +59,7 @@ class PythonRuntimeConfig(recognizedArgs: Array<String>) :
         val constraints = PythonConstraints(
             configDir, pythonSuffixes,
             config.pythonVersionMin, config.pythonVersionMax,
+            config.pythonPackages.toList(),
             osAliases, archAliases, config.targetOS, config.targetArch,
         )
 
@@ -225,10 +227,17 @@ class PythonInstallation(
             }
         }
 
-        // TODO: Verify installation matches targetOS and targetArch.
-
         // Check installed package constraints.
-        // TODO: Actually check packages. ;-)
+        for (packageSpec in constraints.packages) {
+            val constraint = packageConstraint(packageSpec)
+            val pkgVersion = packages[constraint.name]
+            if (pkgVersion == null) {
+                return fail("Required package '${constraint.name}' is not installed.")
+            }
+            if (!constraint.isSatisfiedBy(pkgVersion)) {
+                return fail("Package '${constraint.name}' version $pkgVersion does not satisfy constraint: $constraint")
+            }
+        }
 
         // All checks passed!
         return true
