@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "org.apposed"
-version = "2.0.2"
+version = "2.0.3-SNAPSHOT"
 
 repositories {
     mavenCentral()
