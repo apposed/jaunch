@@ -44,7 +44,7 @@ Test 2: using jaunch to launch an absent application
   ERROR
   2
   20
-  No config file found for missing
+  Launch configuration file not found.
   [20]
 --End of Test 2 expected output--
 

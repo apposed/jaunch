@@ -55,8 +55,7 @@ fun main(args: Array<String>) {
 
     val (exeFile, internalFlags, inputArgs) = parseArguments(args)
     val appDir = discernAppDirectory(exeFile)
-    val configDir = findConfigDirectory(appDir)
-    val configFile = findConfigFile(configDir, exeFile)
+    val configFile = findConfigFile(appDir, exeFile)
     if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
     val config = readConfig(configFile, internalFlags)
 
@@ -76,7 +75,7 @@ fun main(args: Array<String>) {
 
     // Declare a set to store option parameter values.
     // It will be populated at argument parsing time.
-    val vars = Vars(appDir, configDir, exeFile, config.cfgVars)
+    val vars = Vars(appDir, configFile.dir, exeFile, config.cfgVars)
 
     // Sort out the arguments, keeping the user-specified runtime and main arguments in a struct. At this point,
     // it may yet be ambiguous whether certain user args belong with the runtime, the main program, or neither.
@@ -93,7 +92,7 @@ fun main(args: Array<String>) {
         "help" to { _ -> help(exeFile, programName, supportedOptions) },
         "version" to { _ -> version() },
         "print-app-dir" to { _ -> printDir(appDir, "Application") },
-        "print-config-dir" to { _ -> printDir(configDir, "Configuration") },
+        "print-config-dir" to { _ -> printDir(configFile.dir, "Configuration") },
     )
 
     // Execute the global directives (e.g. applying updates)
@@ -101,7 +100,7 @@ fun main(args: Array<String>) {
     val nonGlobalDirectives = executeGlobalDirectives(globalDirectiveFunctions,
         configDirectives, userArgs)
 
-    val runtimes = configureRuntimes(config, configDir, configDirectives, launchDirectives, hints, vars)
+    val runtimes = configureRuntimes(config, configFile.dir, configDirectives, launchDirectives, hints, vars)
 
     debugBanner("BUILDING ARGUMENT LISTS")
 
@@ -182,7 +181,7 @@ private fun discernAppDirectory(exeFile: File?): File {
         return appDir
 }
 
-private fun findConfigDirectory(appDir: File): File {
+private fun findConfigFile(appDir: File, exeFile: File?): File {
     // NB: This list should match the JAUNCH_SEARCH_PATHS array in jaunch.c.
     val configDirs = listOf(
         appDir / "jaunch",
@@ -192,26 +191,21 @@ private fun findConfigDirectory(appDir: File): File {
         appDir / "config",
         appDir / ".config"
     )
-    val configDir = configDirs.find { it.isDirectory }
-        ?: fail("Jaunch config directory not found. Please place config in one of: $configDirs")
-    debug("configDir -> ", configDir)
-    return configDir
+    return configDirs.firstNotNullOfOrNull { findConfigFileInDirectory(it, exeFile) } ?:
+        fail("Launch configuration file not found.")
 }
 
-private fun findConfigFile(configDir: File, exeFile: File?): File {
-    var fileName = exeFile?.base?.name ?: "jaunch"
+private fun findConfigFileInDirectory(configDir: File, exeFile: File?): File? {
     // The launcher might have trailing suffixes such as OS_NAME and/or CPU_ARCH.
     // For example: fizzbuzz-linux-x64. In such a situation, we want to look for
     // fizzbuzz-linux-x64.toml, fizzbuzz-linux.toml, and fizzbuzz.toml.
-    while (true) {
+    return generateSequence(exeFile?.base?.name ?: "jaunch") { name ->
+        name.substringBeforeLast("-", "").takeIf { it.isNotEmpty() }
+    }.firstNotNullOfOrNull { fileName ->
         val configFile = configDir / "$fileName.toml"
         debug("Looking for config file: $configFile")
-        if (configFile.exists) return configFile
-        val dash = fileName.lastIndexOf("-")
-        if (dash < 0) break
-        fileName = fileName.substring(0, dash)
+        configFile.takeIf { it.exists }
     }
-    fail("No config file found for $fileName")
 }
 
 /**
