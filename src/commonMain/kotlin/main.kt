@@ -423,7 +423,10 @@ private fun calculateDirectives(
     debugBanner("CALCULATING DIRECTIVES")
 
     val directives = vars.calculate(config.directives, hints).flatMap { it.split(",") }.toSet()
-    val (launchDirectives, configDirectives) = directives.partition { it == it.uppercase() }
+    val (launchDirectives, configDirectives) = directives.partition {
+        val directiveName = it.substringBefore(':', it)
+        directiveName == directiveName.uppercase()
+    }
 
     debug()
     debug("Directives parsed:")
