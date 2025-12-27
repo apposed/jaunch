@@ -53,9 +53,9 @@ typedef int (*LaunchFunc)(const size_t, const char **);
 int launch(const LaunchFunc launch_func,                 // JVM, PYTHON
     const size_t argc, const char **argv);
 
-// =================
-// UTILITY FUNCTIONS
-// =================
+// ===========================================================
+//                      UTILITY FUNCTIONS
+// ===========================================================
 
 #define CHECK_ARGS(component, name, argc, min, max, argv) do { \
     LOG_DEBUG(component, "%s_argc = %zu", (name), (argc)); \
