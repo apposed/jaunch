@@ -308,6 +308,9 @@ int main(const int argc, const char *argv[]) {
 
     ctx_create();
 
+    // Install crash handler early to catch any runtime aborts.
+    install_crash_handler();
+
     // Perform initial platform-specific setup.
     // * On Windows, initialize the console.
     // * On macOS, untranslocate Gatekeeper-mangled apps.

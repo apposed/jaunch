@@ -3,6 +3,8 @@
 
 #include <stdlib.h>   // for NULL, size_t
 #include <string.h>   // for strcat, strdup, strlen, strtok
+#include <signal.h>   // for signal
+
 
 #include "logging.h"
 
@@ -25,6 +27,7 @@
 #define ERROR_BAD_DIRECTIVE_SYNTAX 17
 #define ERROR_MISSING_FUNCTION 18
 #define ERROR_BAD_LOCKING 19
+#define ERROR_RUNTIME_CRASH 20
 
 // ===========================================================
 //           PLATFORM-SPECIFIC FUNCTION DECLARATIONS
@@ -129,6 +132,32 @@ char *join_strings(const char **strings, size_t count, const char *delim) {
     }
 
     return result;
+}
+
+// ===========================================================
+//                       CRASH HANDLING
+// ===========================================================
+
+void handle_runtime_crash(int sig) {
+    LOG_ERROR("Runtime execution aborted unexpectedly!");
+
+    // Attempt to show a GUI dialog if not in headless mode.
+    // Note: Calling show_alert() from a signal handler is not strictly safe
+    // (could theoretically deadlock if GUI locks are held), but the process is
+    // dying anyway, so attempting it is worthwhile. If it works, users get a
+    // nice error message. If it deadlocks or fails, they still have the stderr
+    // messages above (visible if running from terminal).
+    if (!headless_mode) {
+        show_alert("Runtime Crash",
+            "The runtime process aborted unexpectedly.\n\n"
+            "Check stderr output or logs for details.");
+    }
+
+    _exit(ERROR_RUNTIME_CRASH);
+}
+
+void install_crash_handler() {
+    signal(SIGABRT, handle_runtime_crash);
 }
 
 #endif
