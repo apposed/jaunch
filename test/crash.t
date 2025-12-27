@@ -31,9 +31,11 @@ Test that normal exit() still works
 
 Test that normal exceptions still produce Python output
 
-  $ ./paunch --headless -c "raise ValueError('test error')" 2>&1
+The grep exclusion works around output differences
+between Python 3.13+ and earlier versions:
+
+  $ ./paunch --headless -c "raise ValueError('test error')" 2>&1 | grep -v 'raise ValueError'
   Traceback (most recent call last):
     File "<string>", line 1, in <module>
   ValueError: test error
   [ERROR] Failed to run Python script: 1
-  [1]
