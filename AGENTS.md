@@ -46,7 +46,9 @@ make test                 # Run integration tests (requires demo)
 - Install prysk with: `uv tool install prysk`
 - Tests require demo apps to be built first (`make demo`)
   - Some demo assembly steps (e.g. icon injection) are not needed for tests
-  - Set `JAUNCH_APPIFY_FASTER=1` to assemble demo faster by skipping those steps
+  - **Faster testing**: On systems with wine installed, use `JAUNCH_APPIFY_FASTER=1 make clean test` to skip slow icon injection step
+  - To test without rebuilding demos: `bin/test.sh` (requires demos already built)
+  - To run a subset of tests, pass as arguments: e.g. `bin/test.sh test/j*.t`
 
 ## Architecture
 
