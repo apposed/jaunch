@@ -54,8 +54,8 @@ fun main(args: Array<String>) {
     }
 
     val (exeFile, internalFlags, inputArgs) = parseArguments(args)
-    val (appDir, configDir) = discernDirectories(exeFile, internalFlags)
-    val configFile = findConfigFile(appDir, configDir, exeFile)
+    val (appDir, configuratorDir) = discernDirectories(exeFile, internalFlags)
+    val configFile = findConfigFile(appDir, configuratorDir, exeFile)
     if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
     val config = readConfig(configFile, internalFlags)
 
@@ -184,19 +184,7 @@ private fun discernDirectories(exeFile: File?, internalFlags: Map<String, String
         debug("configuratorFile -> ", configuratorFile)
         debug("configuratorDir -> ", configuratorDir)
         debug("appDir -> ", appDir)
-
-        // Determine the config directory for searching.
-        // For macOS bundles (<AppName>.app/Contents/MacOS), the configurator is inside
-        // the bundle but config files are in standard locations outside the bundle
-        // (e.g., appDir/jaunch/). So we return appDir as the configDir to trigger
-        // the standard location search in findConfigFile.
-        val configDir = if (isMacOSBundleDir(configuratorDir)) {
-            appDir  // macOS bundle: search standard locations relative to appDir
-        } else {
-            configuratorDir  // Non-bundle: config files are with the configurator
-        }
-        debug("configDir -> ", configDir)
-        return Pair(appDir, configDir)
+        return Pair(appDir, configuratorDir)
     }
 
     // Fall back to the old behavior for backward compatibility.
@@ -209,8 +197,7 @@ private fun discernDirectories(exeFile: File?, internalFlags: Map<String, String
     val appDir = if (isMacOSBundleDir(exeDir)) exeDir.dir.dir.dir else exeDir
     debug("appDir -> ", appDir)
 
-    // In fallback mode, we need to search for the config directory.
-    // Return a placeholder that will be replaced by findConfigFile.
+    // In fallback mode, use appDir as the configurator directory placeholder.
     return Pair(appDir, appDir)
 }
 
@@ -249,16 +236,13 @@ private fun discernAppDirFromConfigDir(configDir: File): File {
     }
 }
 
-private fun findConfigFile(appDir: File, configDir: File, exeFile: File?): File {
-    // If we have a specific config directory from the configurator, use it directly.
-    if (configDir != appDir) {
-        return findConfigFileInDirectory(configDir, exeFile)
-            ?: fail("Launch configuration file not found in $configDir.")
-    }
-
-    // Otherwise, fall back to searching standard locations.
+private fun findConfigFile(appDir: File, configuratorDir: File, exeFile: File?): File {
+    // Search in order of preference:
+    // 1. Directory containing the configurator (on non-bundles, this is the actual config dir)
+    // 2. Standard locations relative to appDir (for macOS bundles or other structures)
     // NB: This list should match the JAUNCH_SEARCH_PATHS array in jaunch.c.
     val configDirs = listOf(
+        configuratorDir,
         appDir / "jaunch",
         appDir / ".jaunch",
         appDir / "config" / "jaunch",
