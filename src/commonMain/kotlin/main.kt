@@ -54,8 +54,8 @@ fun main(args: Array<String>) {
     }
 
     val (exeFile, internalFlags, inputArgs) = parseArguments(args)
-    val appDir = discernAppDirectory(exeFile)
-    val configFile = findConfigFile(appDir, exeFile)
+    val (appDir, configDir) = discernDirectories(exeFile, internalFlags)
+    val configFile = findConfigFile(appDir, configDir, exeFile)
     if (debugMode && logFilePath == null) logFilePath = (appDir / "${configFile.base.name}.log").path
     val config = readConfig(configFile, internalFlags)
 
@@ -169,19 +169,77 @@ private fun parseArguments(args: Array<String>): Triple<File?, Map<String, Strin
     return Triple(exeFile, internalFlags, inputArgs)
 }
 
-private fun discernAppDirectory(exeFile: File?): File {
-        // Check for native launcher in <AppName>.app/Contents/MacOS directory.
-        // If so, treat the app directory as three directories higher up.
-        // We do it this way, rather than targetOS == "MACOSX", so that the native
-        // launcher also works on macOS when located (or symlinked) outside the
-        // .app bundle directory structure -- like how it is for Linux and Windows.
-        val exeDir = exeFile?.dir ?: File(".")
-        val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir.dir else exeDir
+private fun discernDirectories(exeFile: File?, internalFlags: Map<String, String?>): Pair<File, File> {
+    // If the C launcher provided the configurator path, use it to determine the directories.
+    val configuratorPath = internalFlags["configurator"]
+    if (configuratorPath != null) {
+        val configuratorFile = File(configuratorPath)
+        val configDir = configuratorFile.dir
+        val appDir = discernAppDirFromConfigDir(configDir)
+        debug("configuratorFile -> ", configuratorFile)
+        debug("configDir -> ", configDir)
         debug("appDir -> ", appDir)
-        return appDir
+        return Pair(appDir, configDir)
+    }
+
+    // Fall back to the old behavior for backward compatibility.
+    // Check for native launcher in <AppName>.app/Contents/MacOS directory.
+    // If so, treat the app directory as three directories higher up.
+    // We do it this way, rather than targetOS == "MACOSX", so that the native
+    // launcher also works on macOS when located (or symlinked) outside the
+    // .app bundle directory structure -- like how it is for Linux and Windows.
+    val exeDir = exeFile?.dir ?: File(".")
+    val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir.dir else exeDir
+    debug("appDir -> ", appDir)
+
+    // In fallback mode, we need to search for the config directory.
+    // Return a placeholder that will be replaced by findConfigFile.
+    return Pair(appDir, appDir)
 }
 
-private fun findConfigFile(appDir: File, exeFile: File?): File {
+private fun discernAppDirFromConfigDir(configDir: File): File {
+    // Determine app directory based on the config directory structure.
+    // The config directory can be in various locations relative to the app directory:
+    // - <app>/jaunch or <app>/.jaunch -> app is parent
+    // - <app>/config/jaunch or <app>/.config/jaunch -> app is grandparent
+    // - <app>/config or <app>/.config -> app is parent
+    // - <app>/<AppName>.app/Contents/MacOS (macOS bundle) -> app is great-grandparent
+
+    val configDirName = configDir.name
+    val parentDir = configDir.dir
+
+    return when {
+        configDirName == "MacOS" && parentDir.name == "Contents" -> {
+            // macOS bundle: <app>/<AppName>.app/Contents/MacOS
+            parentDir.dir.dir
+        }
+        configDirName == "jaunch" || configDirName == ".jaunch" -> {
+            // <app>/jaunch or <app>/.jaunch
+            parentDir
+        }
+        (configDirName == "config" || configDirName == ".config") && parentDir.name != configDirName -> {
+            // <app>/config or <app>/.config (but not nested config/config)
+            parentDir
+        }
+        parentDir.name == "config" || parentDir.name == ".config" -> {
+            // <app>/config/jaunch or <app>/.config/jaunch
+            parentDir.dir
+        }
+        else -> {
+            // Unexpected structure; assume config dir is directly under app dir
+            parentDir
+        }
+    }
+}
+
+private fun findConfigFile(appDir: File, configDir: File, exeFile: File?): File {
+    // If we have a specific config directory from the configurator, use it directly.
+    if (configDir != appDir) {
+        return findConfigFileInDirectory(configDir, exeFile)
+            ?: fail("Launch configuration file not found in $configDir.")
+    }
+
+    // Otherwise, fall back to searching standard locations.
     // NB: This list should match the JAUNCH_SEARCH_PATHS array in jaunch.c.
     val configDirs = listOf(
         appDir / "jaunch",

@@ -319,55 +319,103 @@ int main(const int argc, const char *argv[]) {
     // Resolve argv[0] to canonical path (following symlinks).
     char *exe_path = argc == 0 ? NULL : canonical_path(argv[0]);
 
+    // Walk up directory tree looking for the configurator.
     char *command = NULL;
-    size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
-    for (size_t i = 0; i < search_path_count; i++) {
-        // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
-        command = path(exe_path,
-            JAUNCH_SEARCH_PATHS[i],
-            "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX
-        );
-        if (file_exists(command)) break;
-        LOG_DEBUG("JAUNCH", "No configurator at %s", command);
-        free(command);
+    char *current_path = exe_path;
+    const int max_levels = 10;
 
-        // If not found, look for jaunch configurator with fallback suffix.
-        if (SUFFIX_FALLBACK[0] != '\0') {
-            command = path(exe_path,
+    for (int level = 0; level < max_levels && command == NULL; level++) {
+        size_t search_path_count = sizeof(JAUNCH_SEARCH_PATHS) / sizeof(char *);
+        for (size_t i = 0; i < search_path_count; i++) {
+            // First, look for jaunch configurator with a `-<os>-<arch>` suffix.
+            command = path(current_path,
                 JAUNCH_SEARCH_PATHS[i],
-                "jaunch-" SUFFIX_FALLBACK EXE_SUFFIX
+                "jaunch-" OS_NAME "-" OS_ARCH EXE_SUFFIX
             );
             if (file_exists(command)) break;
-            LOG_DEBUG("JAUNCH", "No fallback configurator at %s", command);
+            LOG_DEBUG("JAUNCH", "No configurator at %s", command);
             free(command);
+
+            // If not found, look for jaunch configurator with fallback suffix.
+            if (SUFFIX_FALLBACK[0] != '\0') {
+                command = path(current_path,
+                    JAUNCH_SEARCH_PATHS[i],
+                    "jaunch-" SUFFIX_FALLBACK EXE_SUFFIX
+                );
+                if (file_exists(command)) break;
+                LOG_DEBUG("JAUNCH", "No fallback configurator at %s", command);
+                free(command);
+            }
+
+            // If not found, look for plain jaunch configurator with no suffix.
+            command = path(current_path,
+                JAUNCH_SEARCH_PATHS[i],
+                "jaunch" EXE_SUFFIX
+            );
+            if (file_exists(command)) break;
+            LOG_DEBUG("JAUNCH", "No plain configurator at %s", command);
+            free(command);
+
+            // Nothing at this search path; move on to the next one.
+            command = NULL;
         }
 
-        // If not found, look for plain jaunch configurator with no suffix.
-        command = path(exe_path,
-            JAUNCH_SEARCH_PATHS[i],
-            "jaunch" EXE_SUFFIX
-        );
-        if (file_exists(command)) break;
-        LOG_DEBUG("JAUNCH", "No plain configurator at %s", command);
-        free(command);
+        // If found, break out of the level loop.
+        if (command != NULL) break;
 
-        // Nothing at this search path; move on to the next one.
-        command = NULL;
+        // Move up one directory level for next iteration.
+        if (level < max_levels - 1) {
+            const char *last_slash = current_path == NULL ? NULL : strrchr(current_path, SLASH[0]);
+            if (last_slash == NULL || last_slash == current_path) {
+                // Reached root directory, can't go higher.
+                break;
+            }
+
+            // Build parent path (need to allocate new string if not first iteration).
+            size_t parent_len = (size_t)(last_slash - current_path);
+            if (parent_len == 0) parent_len = 1; // For root directory "/"
+
+            char *parent_path = (char *)malloc_or_die(parent_len + 1, "parent path");
+            if (parent_len == 1 && last_slash == current_path) {
+                // We're at root already.
+                parent_path[0] = SLASH[0];
+            } else {
+                strncpy(parent_path, current_path, parent_len);
+            }
+            parent_path[parent_len] = '\0';
+
+            // Free the old current_path if it's not the original exe_path.
+            if (level > 0) free(current_path);
+            current_path = parent_path;
+        }
     }
+
+    // Clean up the current_path if it's not the original exe_path.
+    if (current_path != exe_path) free(current_path);
+
     if (command == NULL) {
         DIE(ERROR_COMMAND_PATH, "Failed to locate jaunch configurator program.");
     }
     LOG_INFO("JAUNCH", "Configurator command: %s", command);
 
-    // Prepend original arguments with needed internal arguments.
-    // For the moment, the only internal argument passed here is an
-    // override of the target architecture, so that macos-arm64 and
-    // windows-arm64 can launch in emulated x86-64 mode as appropriate.
-    const int internal_argc = 1;
+    // Prepend original arguments with needed internal arguments:
+    // 1. Configurator path (so the configurator knows where it lives,
+    //    enabling it to find the config directory relative to itself).
+    // 2. Target architecture override (for macos-arm64 and windows-arm64
+    //    to launch in emulated x86-64 mode as appropriate).
+    const int internal_argc = 2;
     const int extended_argc = internal_argc + argc;
     const char **extended_argv = malloc_or_die(extended_argc * sizeof(char *), "extended argv");
+
+    // Build --jaunch-configurator=<path> argument.
+    size_t configurator_arg_len = strlen("--jaunch-configurator=") + strlen(command) + 1;
+    char *configurator_arg = (char *)malloc_or_die(configurator_arg_len, "configurator arg");
+    strcpy(configurator_arg, "--jaunch-configurator=");
+    strcat(configurator_arg, command);
+
     extended_argv[0] = exe_path;
-    extended_argv[1] = "--jaunch-target-arch=" OS_ARCH;
+    extended_argv[1] = configurator_arg;
+    extended_argv[2] = "--jaunch-target-arch=" OS_ARCH;
     for (int i = 1; i < argc; i++) {
         extended_argv[internal_argc + i] = argv[i];
     }
@@ -377,6 +425,7 @@ int main(const int argc, const char *argv[]) {
     char **out_argv;
     run_command((const char *)command, extended_argc, extended_argv, &out_argc, &out_argv);
     if (exe_path != NULL) free(exe_path);
+    free(configurator_arg);
     free(extended_argv);
     free(command);
 
