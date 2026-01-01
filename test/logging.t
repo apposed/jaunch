@@ -12,7 +12,7 @@ Test logging
   Hello from Java!
   $ test "$(cat hi.log | wc -l)" -gt 100 && echo log-populated
   log-populated
-  $ head -n17 hi.log
+  $ head -n18 hi.log
   [DEBUG] 
   [DEBUG] /--------------------------------------\
   [DEBUG] | PROCEEDING WITH JAUNCH CONFIGURATION |
@@ -20,9 +20,10 @@ Test logging
   [DEBUG] executable -> */demo*/hi-* (glob)
   [DEBUG] internalFlags -> {configurator=*, target-arch=*} (glob)
   [DEBUG] inputArgs -> [--debug]
-  [DEBUG] configuratorFile -> */demo/jaunch/jaunch-linux-x64 (glob)
-  [DEBUG] configDir -> */demo/jaunch (glob)
+  [DEBUG] configuratorFile -> */demo/*/jaunch-*-* (glob)
+  [DEBUG] configuratorDir -> */demo/* (glob)
   [DEBUG] appDir -> */demo (glob)
+  [DEBUG] configDir -> */demo (glob)
   [DEBUG] Looking for config file: */demo/jaunch/hi-*-*.toml (glob)
   [DEBUG] Looking for config file: */demo/jaunch/hi-*.toml (glob)
   [DEBUG] Looking for config file: */demo/jaunch/hi.toml (glob)
