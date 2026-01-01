@@ -12,7 +12,7 @@ Test logging
   Hello from Java!
   $ test "$(cat hi.log | wc -l)" -gt 100 && echo log-populated
   log-populated
-  $ head -n17 hi.log
+  $ cat hi.log | sed '/Looking for config file: .*\/Contents\/MacOS/d' | grep -B20 'programName -> '
   [DEBUG] 
   [DEBUG] /--------------------------------------\
   [DEBUG] | PROCEEDING WITH JAUNCH CONFIGURATION |
