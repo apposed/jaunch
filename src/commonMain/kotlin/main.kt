@@ -169,16 +169,33 @@ private fun parseArguments(args: Array<String>): Triple<File?, Map<String, Strin
     return Triple(exeFile, internalFlags, inputArgs)
 }
 
+/** Returns true if the directory is a macOS bundle's MacOS directory (<AppName>.app/Contents/MacOS). */
+private fun isMacOSBundleDir(dir: File): Boolean {
+    return dir.name == "MacOS" && dir.dir.name == "Contents"
+}
+
 private fun discernDirectories(exeFile: File?, internalFlags: Map<String, String?>): Pair<File, File> {
     // If the C launcher provided the configurator path, use it to determine the directories.
     val configuratorPath = internalFlags["configurator"]
     if (configuratorPath != null) {
         val configuratorFile = File(configuratorPath)
-        val configDir = configuratorFile.dir
-        val appDir = discernAppDirFromConfigDir(configDir)
+        val configuratorDir = configuratorFile.dir
+        val appDir = discernAppDirFromConfigDir(configuratorDir)
         debug("configuratorFile -> ", configuratorFile)
-        debug("configDir -> ", configDir)
+        debug("configuratorDir -> ", configuratorDir)
         debug("appDir -> ", appDir)
+
+        // Determine the config directory for searching.
+        // For macOS bundles (<AppName>.app/Contents/MacOS), the configurator is inside
+        // the bundle but config files are in standard locations outside the bundle
+        // (e.g., appDir/jaunch/). So we return appDir as the configDir to trigger
+        // the standard location search in findConfigFile.
+        val configDir = if (isMacOSBundleDir(configuratorDir)) {
+            appDir  // macOS bundle: search standard locations relative to appDir
+        } else {
+            configuratorDir  // Non-bundle: config files are with the configurator
+        }
+        debug("configDir -> ", configDir)
         return Pair(appDir, configDir)
     }
 
@@ -189,7 +206,7 @@ private fun discernDirectories(exeFile: File?, internalFlags: Map<String, String
     // launcher also works on macOS when located (or symlinked) outside the
     // .app bundle directory structure -- like how it is for Linux and Windows.
     val exeDir = exeFile?.dir ?: File(".")
-    val appDir = if (exeDir.name == "MacOS" && exeDir.dir.name == "Contents") exeDir.dir.dir.dir else exeDir
+    val appDir = if (isMacOSBundleDir(exeDir)) exeDir.dir.dir.dir else exeDir
     debug("appDir -> ", appDir)
 
     // In fallback mode, we need to search for the config directory.
@@ -209,7 +226,7 @@ private fun discernAppDirFromConfigDir(configDir: File): File {
     val parentDir = configDir.dir
 
     return when {
-        configDirName == "MacOS" && parentDir.name == "Contents" -> {
+        isMacOSBundleDir(configDir) -> {
             // macOS bundle: <app>/<AppName>.app/Contents/MacOS
             parentDir.dir.dir
         }
