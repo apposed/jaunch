@@ -202,45 +202,37 @@ private fun discernDirectories(exeFile: File?, internalFlags: Map<String, String
 }
 
 private fun discernAppDirFromConfigDir(configDir: File): File {
-    // Determine app directory based on the config directory structure.
-    // The config directory can be in various locations relative to the app directory:
-    // - <app>/jaunch or <app>/.jaunch -> app is parent
-    // - <app>/config/jaunch or <app>/.config/jaunch -> app is grandparent
-    // - <app>/config or <app>/.config -> app is parent
-    // - <app>/<AppName>.app/Contents/MacOS (macOS bundle) -> app is great-grandparent
+    // Determine app directory by climbing up from the config directory,
+    // skipping any intermediate directories with standard config/jaunch names.
+    //
+    // NB: This logic must stay synchronized with the configDirs search paths
+    // in findConfigFile() below, and with JAUNCH_SEARCH_PATHS in jaunch.c.
+    // If those search paths change, this climbing logic may need adjustment.
 
-    val configDirName = configDir.name
-    val parentDir = configDir.dir
-
-    return when {
-        isMacOSBundleDir(configDir) -> {
-            // macOS bundle: <app>/<AppName>.app/Contents/MacOS
-            parentDir.dir.dir
-        }
-        configDirName == "jaunch" || configDirName == ".jaunch" -> {
-            // <app>/jaunch or <app>/.jaunch
-            parentDir
-        }
-        (configDirName == "config" || configDirName == ".config") && parentDir.name != configDirName -> {
-            // <app>/config or <app>/.config (but not nested config/config)
-            parentDir
-        }
-        parentDir.name == "config" || parentDir.name == ".config" -> {
-            // <app>/config/jaunch or <app>/.config/jaunch
-            parentDir.dir
-        }
-        else -> {
-            // Unexpected structure; assume config dir is directly under app dir
-            parentDir
-        }
+    // Special case: macOS bundle structure
+    if (isMacOSBundleDir(configDir)) {
+        // <app>/<AppName>.app/Contents/MacOS
+        return configDir.dir.dir.dir
     }
+
+    // Climb up the directory tree, skipping standard config/jaunch directory names
+    var current = configDir
+    val configDirNames = setOf("config", ".config", "jaunch", ".jaunch")
+    while (current.dir.name in configDirNames) {
+        current = current.dir
+    }
+
+    return current.dir
 }
 
 private fun findConfigFile(appDir: File, configuratorDir: File, exeFile: File?): File {
     // Search in order of preference:
     // 1. Directory containing the configurator (on non-bundles, this is the actual config dir)
     // 2. Standard locations relative to appDir (for macOS bundles or other structures)
+    //
     // NB: This list should match the JAUNCH_SEARCH_PATHS array in jaunch.c.
+    // NB: If you modify this list, review discernAppDirFromConfigDir() above
+    // to ensure its directory-climbing logic remains consistent.
     val configDirs = listOf(
         configuratorDir,
         appDir / "jaunch",
